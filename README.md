@@ -33,7 +33,7 @@ RR,est,nord,quota,US,Attacca_con,pertinente_a,Vaso_ID
 | ID del frammento | sì | Univoco |
 | Attacca con | sì | ID dei frammenti che combaciano, separati da `;` o spazio. Vuoto, `0` o `?` = nessun attacco |
 | Est, Nord | sì | **In metri** (griglia di scavo o sistema proiettato), non in gradi |
-| Quota | no | Serve per le viste laterali, il 3D e le componenti |
+| Quota | no | Serve per le viste laterali, il 3D e le concentrazioni |
 | US | no | Serve per la matrice tra US e l'analisi del palinsesto |
 | Pertinente a | no | Frammenti dello stesso vaso che non combaciano |
 | Vaso | no | Attribuzione al vaso |
@@ -49,7 +49,7 @@ Le regole complete sono in [`dati_esempio/LEGGIMI.md`](dati_esempio/LEGGIMI.md).
 
 **La rete.** Ogni frammento è un nodo, ogni attacco un legame. I **gruppi di rimontaggio** sono i frammenti collegati tra loro, anche indirettamente. Le pertinenze sono tratteggiate e, salvo scelta esplicita, non uniscono i gruppi.
 
-**Viste.** Pianta, proiezioni verticali est-ovest e nord-sud (tutti i punti visti di lato, non una sezione di scavo) e vista 3D con un modello indicativo dei volumi delle US ricavato dalle quote. Colori per gruppo, vaso, US, quota o componente.
+**Viste.** Pianta, proiezioni verticali est-ovest e nord-sud (tutti i punti visti di lato, non una sezione di scavo) e vista 3D con un modello indicativo dei volumi delle US ricavato dalle quote. Colori per gruppo, vaso, US, quota o concentrazione.
 
 ![Vista 3D colorata per US](docs/img/vista_3d.jpg)
 
@@ -61,14 +61,14 @@ Le regole complete sono in [`dati_esempio/LEGGIMI.md`](dati_esempio/LEGGIMI.md).
 | Collegamenti | Ogni attacco con distanza in pianta, differenza di quota e US |
 | Matrice US | Numero di attacchi tra ogni coppia di US |
 | Distanze | Istogrammi della distanza in pianta e della differenza di quota |
-| Componenti | Raggruppamenti statistici dei frammenti per posizione e verifica con i rimontaggi |
+| Concentrazioni | Raggruppamenti statistici dei frammenti per posizione e verifica con i rimontaggi |
 | Palinsesto | Attacchi nell'ordine di quota delle US, osservati contro attesi, insiemi di US |
 | Controlli | Errori nei dati e correzioni proposte |
 | Dati | La tabella, modificabile cella per cella |
 
-**Componenti statistiche.** Una miscela gaussiana stimata con l'algoritmo EM raggruppa i frammenti per posizione e quota; il numero di componenti si sceglie con due punteggi, BIC (*Bayesian Information Criterion*) e ICL (*Integrated Completed Likelihood*). Il BIC somma quanto il modello si scosta dai dati e una penalità per ogni componente in più; l'ICL aggiunge un'altra penalità quando i frammenti stanno a metà tra due componenti, quindi preferisce componenti ben separate. Vince il valore più basso. Sono punteggi di confronto: il numero in sé non ha unità di misura e non si confronta tra dataset diversi, conta solo quale numero di componenti dà il minimo. Un indice di separazione (PDI) dice infine quanto le componenti sono distinte. Le componenti **non sono fasi cronologiche**: sono raggruppamenti statistici, numerati dall'alto. I rimontaggi fanno da verifica indipendente: lo strumento confronta la quota di attacchi interni a ciascuna componente con quella attesa se gli attacchi fossero distribuiti a caso. Il metodo segue il pacchetto R [palimpsestr](https://CRAN.R-project.org/package=palimpsestr).
+**Concentrazioni (cluster).** Una miscela gaussiana stimata con l'algoritmo EM raggruppa i frammenti per posizione e quota; il numero di concentrazioni si sceglie con due punteggi, BIC (*Bayesian Information Criterion*) e ICL (*Integrated Completed Likelihood*). Il BIC somma quanto il modello si scosta dai dati e una penalità per ogni concentrazione in più; l'ICL aggiunge un'altra penalità quando i frammenti stanno a metà tra due concentrazioni, quindi preferisce concentrazioni ben separate. Vince il valore più basso. Sono punteggi di confronto: il numero in sé non ha unità di misura e non si confronta tra dataset diversi, conta solo quale numero di concentrazioni dà il minimo. Un indice di separazione (PDI) dice infine quanto le concentrazioni sono distinte. Le concentrazioni **non sono fasi cronologiche**: sono raggruppamenti statistici, numerati dall'alto (in statistica si chiamano componenti della miscela). I rimontaggi fanno da verifica indipendente: lo strumento confronta la quota di attacchi interni a ciascuna concentrazione con quella attesa se gli attacchi fossero distribuiti a caso. Il metodo segue il pacchetto R [palimpsestr](https://CRAN.R-project.org/package=palimpsestr).
 
-![Scheda Componenti](docs/img/scheda_componenti.jpg)
+![Scheda Concentrazioni](docs/img/scheda_concentrazioni.jpg)
 
 **Palinsesto.** Le US vengono ordinate per quota mediana dei frammenti (un'approssimazione, da confrontare con il matrix di Harris). Lo strumento conta di quante posizioni si sposta ogni attacco, confronta gli attacchi osservati tra US con quelli attesi per caso (modello di configurazione) e cerca gli insiemi di US più legati tra loro (modularità, algoritmo di Clauset, Newman e Moore).
 
@@ -89,7 +89,7 @@ Ogni correzione si applica con un clic, si può annullare e resta registrata nel
 
 **Progetti.** Dati, campi e impostazioni si salvano come progetto nel browser e si riprendono più tardi. Con **Esporta** il progetto diventa un file `.progetto.json`, da trascinare di nuovo nel riquadro Dati su un altro computer.
 
-**Esportazioni.** Collegamenti, gruppi e frammenti in GeoJSON (si aprono in QGIS; il sistema di riferimento va assegnato a mano), tabelle CSV di matrice US, controlli, componenti, sintesi per US, osservati e attesi, un CSV pronto per `palimpsestr::fit_sef` e la tabella dei dati modificati.
+**Esportazioni.** Collegamenti, gruppi e frammenti in GeoJSON (si aprono in QGIS; il sistema di riferimento va assegnato a mano), tabelle CSV di matrice US, controlli, concentrazioni, sintesi per US, osservati e attesi, un CSV pronto per `palimpsestr::fit_sef` e la tabella dei dati modificati.
 
 ## Dati di esempio
 
@@ -111,7 +111,7 @@ I primi tre sono sia in CSV sia in GeoJSON, con dati identici.
 | Attacco | Due frammenti le cui fratture combaciano: erano lo stesso oggetto fino alla stessa rottura (non per forza la stessa deposizione) |
 | Pertinenza | Frammenti attribuiti allo stesso vaso senza contatto: un'ipotesi, non un fatto |
 | Gruppo di rimontaggio | Frammenti collegati dagli attacchi, anche indirettamente |
-| Componente | Raggruppamento statistico di frammenti per posizione; non è una fase cronologica |
+| Concentrazione (cluster) | Raggruppamento statistico di frammenti per posizione; non è una fase cronologica |
 | Insieme di US | US che la rete degli attacchi tiene legate più del caso |
 | Ordine di quota | US ordinate per quota mediana; non è la sequenza stratigrafica |
 | Atteso | Valore che si avrebbe se gli attacchi fossero distribuiti a caso |

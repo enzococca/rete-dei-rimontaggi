@@ -18,9 +18,9 @@ Il caso "sano": vasi rotti in posto, ognuno dentro la sua US.
 | Sintesi | 7% di attacchi tra US diverse (4 su 60); distanza mediana 24 cm |
 | Matrice US | Quasi tutto sulla diagonale |
 | Palinsesto | 56 attacchi nella stessa US, 4 tra US vicine in quota, nessun salto lungo; 5 insiemi, modularità 0,73 |
-| Componenti | 4 componenti, 95% di attacchi interni (57 su 60) contro il 29% atteso se fossero distribuiti a caso |
+| Concentrazioni | 4 concentrazioni, 95% di attacchi interni (57 su 60) contro il 29% atteso se fossero distribuiti a caso |
 
-Da far notare: il modello unisce le US 101 e 102 in una sola componente perché sono vicine in quota, ma i rimontaggi le tengono distinte. La componente è un raggruppamento statistico, non una fase cronologica, e non sostituisce l'US.
+Da far notare: il modello unisce le US 101 e 102 in una sola concentrazione perché sono vicine in quota, ma i rimontaggi le tengono distinte. La concentrazione è un raggruppamento statistico, non una fase cronologica, e non sostituisce l'US.
 
 ## 2. Fossa che taglia le US
 
@@ -48,7 +48,7 @@ Sei vasi hanno i frammenti piccoli rimasti nell'area d'uso e i pezzi grandi butt
 | Pianta | Fascio di linee lunghe tra due concentrazioni |
 | Distanze | Due picchi: mediana 31 cm, ma massimo 5,7 m |
 | Matrice US | 13 attacchi tra 301 e 305; la 302 non ha attacchi con le altre |
-| Componenti | Le due aree finiscono in componenti diverse, ma 13 attacchi le collegano |
+| Concentrazioni | Le due aree finiscono in concentrazioni diverse, ma 13 attacchi le collegano |
 
 Da far notare: qui l'attacco lungo non è un disturbo. Area d'uso e scarico appartengono alla stessa occupazione, come le unità d'abitazione di Pincevent. La differenza di quota resta piccola (mediana 3 cm): lo spostamento è solo laterale.
 
@@ -104,7 +104,7 @@ RR,est,nord,quota,US,_Attacca_con,_pertinente_a,_Vaso_ID
 | Attacca con | sì | `attacca_con`, `refit`, `rimontaggio` | Uno o più ID separati da punto e virgola, virgola, barra o spazio. Vuoto, `0`, `?`, `nd` = nessun attacco |
 | X / Est | sì | `x`, `est`, `east`, `easting` | In metri |
 | Y / Nord | sì | `y`, `nord`, `north`, `northing` | In metri |
-| Quota | no | `z`, `quota`, `elev` | Serve per proiezioni verticali, 3D e componenti |
+| Quota | no | `z`, `quota`, `elev` | Serve per proiezioni verticali, 3D e concentrazioni |
 | US | no | `US`, `contesto`, `strato`, `layer` | Serve per matrice US e palinsesto. "20 base" e "20 tetto" contano come US 20 |
 | Pertinente a | no | `pertinente_a` | Stesse regole di "Attacca con" |
 | Vaso | no | `vaso`, `vaso_id`, `vessel` | |

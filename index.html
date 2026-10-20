@@ -336,7 +336,7 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
       </section>
 
       <section>
-        <h2>Componenti statistiche <span class="n" id="phBusy"></span></h2>
+        <h2>Concentrazioni (cluster) <span class="n" id="phBusy"></span></h2>
         <div class="wfields">
           <label for="wXY">Posizione XY</label>
           <select id="wXY"><option value="0">esclusa</option><option value="0.25">peso 0,25</option><option value="0.5" selected>peso 0,5</option><option value="1">peso 1</option></select>
@@ -344,20 +344,20 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
           <select id="wZ"><option value="0">esclusa</option><option value="0.5">peso 0,5</option><option value="1" selected>peso 1</option><option value="2">peso 2</option></select>
           <label for="wUS">US</label>
           <select id="wUS"><option value="0" selected>esclusa</option><option value="0.5">peso 0,5</option><option value="1">peso 1</option><option value="2">peso 2</option></select>
-          <label for="kSel">Numero di componenti</label>
+          <label for="kSel">Numero di concentrazioni</label>
           <select id="kSel"><option value="auto" selected>automatico</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select>
         </div>
         <div>
           <span class="label">Criterio</span>
           <div class="seg two" id="critSeg" role="group" aria-label="Criterio">
-            <button type="button" data-crit="icl" aria-pressed="true" title="Integrated Completed Likelihood: preferisce componenti ben separate">ICL</button>
+            <button type="button" data-crit="icl" aria-pressed="true" title="Integrated Completed Likelihood: preferisce concentrazioni ben separate">ICL</button>
             <button type="button" data-crit="bic" aria-pressed="false" title="Bayesian Information Criterion">BIC</button>
           </div>
         </div>
         <div class="checks">
-          <label><input type="checkbox" id="optConstr"> I gruppi di rimontaggio restano interi nella stessa componente (vincolo)</label>
+          <label><input type="checkbox" id="optConstr"> I gruppi di rimontaggio restano interi nella stessa concentrazione (vincolo)</label>
         </div>
-        <p class="hint">Miscela gaussiana stimata con EM e diagnostiche di palimpsestr (ICL, BIC, PDI). Le componenti sono raggruppamenti statistici dei frammenti per posizione, non fasi cronologiche. Senza vincolo i rimontaggi restano una verifica indipendente.</p>
+        <p class="hint">Miscela gaussiana stimata con EM e diagnostiche di palimpsestr (ICL, BIC, PDI). Le concentrazioni (cluster) sono raggruppamenti statistici dei frammenti per posizione, non fasi cronologiche. Senza vincolo i rimontaggi restano una verifica indipendente.</p>
       </section>
 
       <section>
@@ -380,7 +380,7 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
           <button class="btn" type="button" data-exp="linkscsv">Collegamenti<span>CSV con WKT</span></button>
           <button class="btn" type="button" data-exp="matrix">Matrice US<span>CSV</span></button>
           <button class="btn" type="button" data-exp="issues">Controlli<span>CSV</span></button>
-          <button class="btn" type="button" data-exp="phases">Componenti<span>CSV</span></button>
+          <button class="btn" type="button" data-exp="phases">Concentrazioni<span>CSV</span></button>
           <button class="btn" type="button" data-exp="ussum">Sintesi US<span>CSV</span></button>
           <button class="btn" type="button" data-exp="oe">Osservati/attesi<span>CSV</span></button>
           <button class="btn" type="button" data-exp="palimpsestr">palimpsestr<span>CSV per fit_sef</span></button>
@@ -420,7 +420,7 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
               <option value="vaso">Vaso</option>
               <option value="us">US</option>
               <option value="quota">Quota</option>
-              <option value="fase">Componente statistica</option>
+              <option value="fase">Concentrazione</option>
             </select>
           </div>
         </div>
@@ -444,7 +444,7 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
           <button role="tab" data-tab="collegamenti" aria-selected="false">Collegamenti<span class="cnt" id="cntL"></span></button>
           <button role="tab" data-tab="matrice" aria-selected="false">Matrice US</button>
           <button role="tab" data-tab="distanze" aria-selected="false">Distanze</button>
-          <button role="tab" data-tab="fasi" aria-selected="false">Componenti</button>
+          <button role="tab" data-tab="fasi" aria-selected="false">Concentrazioni</button>
           <button role="tab" data-tab="palinsesto" aria-selected="false">Palinsesto</button>
           <button role="tab" data-tab="controlli" aria-selected="false">Controlli<span class="cnt" id="cntI"></span></button>
           <button role="tab" data-tab="dati" aria-selected="false">Dati<span class="cnt" id="cntD"></span></button>
@@ -1575,7 +1575,7 @@ function renderDetail() {
           <dt>US</dt><dd>${esc(f.us ?? "—")}</dd>
           <dt>E, N</dt><dd>${fmtN(f.x)}, ${fmtN(f.y)}</dd>
           <dt>Quota</dt><dd>${fmtN(f.z)}</dd>
-          ${state.ph && state.ph.ok && state.ph.frag.get(f.id) ? `<dt>Componente</dt><dd>C${state.ph.frag.get(f.id).phase} · appartenenza ${fmtN(state.ph.frag.get(f.id).p, 2)}</dd>` : ""}
+          ${state.ph && state.ph.ok && state.ph.frag.get(f.id) ? `<dt>Concentrazione</dt><dd>C${state.ph.frag.get(f.id).phase} · appartenenza ${fmtN(state.ph.frag.get(f.id).p, 2)}</dd>` : ""}
         </dl>
         ${rel.length ? `<div><span class="label">Collegato a</span><div style="display:grid;gap:3px;margin-top:3px">${rel.join("<br>")}</div></div>` : ""}
         ${missing.length ? `<p class="hint">Attacchi non mappabili: ${missing.join(", ")}</p>` : ""}`;
@@ -1620,9 +1620,9 @@ function renderLegend() {
     if (c.usList.length > 8) items.push(sw(c.other, "Altre US"));
   } else if (state.colorBy === "fase") {
     const ph = state.ph;
-    if (!ph) items.push(`<div class="li"><span class="label">Componenti</span><span>calcolo in corso…</span></div>`);
+    if (!ph) items.push(`<div class="li"><span class="label">Concentrazioni</span><span>calcolo in corso…</span></div>`);
     else if (!ph.ok) items.push(`<div class="li"><span>${esc(ph.reason)}</span></div>`);
-    else { ph.phases.forEach(f => items.push(sw(phaseColor(f.id), `C${f.id} · ${f.n} fr.${f.zMean !== null ? " · q. " + fmtN(f.zMean, 2) : ""}`))); if (ph.excluded) items.push(sw(c.other, "Senza componente")); }
+    else { ph.phases.forEach(f => items.push(sw(phaseColor(f.id), `C${f.id} · ${f.n} fr.${f.zMean !== null ? " · q. " + fmtN(f.zMean, 2) : ""}`))); if (ph.excluded) items.push(sw(c.other, "Senza concentrazione")); }
   } else {
     items.push(`<div class="li"><span class="label">Quota</span><span class="mono" style="font-size:11px">${fmtN(c.zmax)}</span><span class="ramp"></span><span class="mono" style="font-size:11px">${fmtN(c.zmin)}</span></div>`);
   }
@@ -1647,7 +1647,7 @@ function renderStats() {
     st("Distanza mediana", s.d2med === null ? "—" : fmtN(s.d2med, 2), s.d2max === null ? "—" : `massima ${fmtN(s.d2max, 2)} m`, s.d2med === null ? "" : "m") +
     st("Diff. di quota mediana", s.dzmed === null ? "—" : fmtN(s.dzmed * 100, 1), s.dzmax === null ? "campo quota assente" : `massimo ${fmtN(s.dzmax * 100, 1)} cm`, s.dzmed === null ? "" : "cm") +
     st("Tra US diverse", s.crossUS === null ? "—" : pct(s.crossUS, s.sameN), s.crossUS === null ? "campo US assente" : `${s.crossUS} attacchi su ${s.sameN}`) +
-    st("Componenti", state.phBusy ? "…" : !state.ph ? "—" : state.ph.ok ? state.ph.K : "—", state.phBusy ? "calcolo in corso" : !state.ph ? "servono frammenti con coordinate" : state.ph.ok ? `separazione ${fmtN(state.ph.pdi, 2)} · ${state.ph.crit.toUpperCase()}${state.ph.K > 1 && state.ph.coherence.tot ? ` · ${fmtN(100 * state.ph.coherence.pct, 0)}% attacchi interni` : ""}` : esc(state.ph.reason));
+    st("Concentrazioni", state.phBusy ? "…" : !state.ph ? "—" : state.ph.ok ? state.ph.K : "—", state.phBusy ? "calcolo in corso" : !state.ph ? "servono frammenti con coordinate" : state.ph.ok ? `separazione ${fmtN(state.ph.pdi, 2)} · ${state.ph.crit.toUpperCase()}${state.ph.K > 1 && state.ph.coherence.tot ? ` · ${fmtN(100 * state.ph.coherence.pct, 0)}% attacchi interni` : ""}` : esc(state.ph.reason));
 }
 
 /* ---------- schede risultati ---------- */
@@ -1843,7 +1843,7 @@ function applyPhases(job, ph) {
 }
 function setBusy(on) {
   state.phBusy = on;
-  $("#phBusy").textContent = on ? "calcolo…" : (state.ph && state.ph.ok ? `${state.ph.K} componenti · separazione ${fmtN(state.ph.pdi, 2)}` : "");
+  $("#phBusy").textContent = on ? "calcolo…" : (state.ph && state.ph.ok ? `${state.ph.K} concentrazioni · separazione ${fmtN(state.ph.pdi, 2)}` : "");
 }
 function phaseColor(p) {
   const K = state.ph && state.ph.ok ? state.ph.K : 1;
@@ -2217,7 +2217,7 @@ function bicChart(ph) {
   const y = v => T + (H - T - Bm) * (1 - (v - y0) / (y1 - y0 || 1));
   let g = ticks.map(t => `<line class="gridl" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text x="${L - 6}" y="${y(t) + 3.5}" text-anchor="end">${fmtN(t, 0)}</text>`).join("");
   g += sc.map(s => `<text x="${x(s.K)}" y="${H - Bm + 15}" text-anchor="middle">${s.K}</text>`).join("");
-  g += `<text x="${W - R}" y="${H + 2}" text-anchor="end">numero di componenti K</text>`;
+  g += `<text x="${W - R}" y="${H + 2}" text-anchor="end">numero di concentrazioni K</text>`;
   const series = [["icl", "var(--c1)", "ICL"], ["bic", "var(--c2)", "BIC"]];
   const last = sc[sc.length - 1];
   let ly = { icl: y(last.icl), bic: y(last.bic) };
@@ -2231,9 +2231,9 @@ function bicChart(ph) {
   const ch = sc.find(s => s.K === ph.K);
   if (ch) lines += `<circle cx="${x(ch.K)}" cy="${y(ch[ph.crit])}" r="8.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/><text x="${x(ch.K)}" y="${y(ch[ph.crit]) - 14}" text-anchor="middle" class="dl">scelto</text>`;
   const hits = sc.map(s => `<rect x="${x(s.K) - 14}" y="${T}" width="28" height="${H - T - Bm}" fill="transparent" data-tip="K = ${s.K} · ICL ${fmtN(s.icl, 1)} · BIC ${fmtN(s.bic, 1)} · PDI ${fmtN(s.pdi, 2)}"/>`).join("");
-  return `<div class="chart"><h3>Scelta del numero di componenti</h3><p>Valori più bassi indicano un modello migliore. Criterio usato: ${ph.crit.toUpperCase()}.</p>
+  return `<div class="chart"><h3>Scelta del numero di concentrazioni</h3><p>Valori più bassi indicano un modello migliore. Criterio usato: ${ph.crit.toUpperCase()}.</p>
     <div class="lg"><span><i style="background:var(--c1)"></i>ICL</span><span><i style="background:var(--c2)"></i>BIC</span></div>
-    <svg viewBox="0 0 ${W} ${H + 6}" role="img" aria-label="ICL e BIC per numero di componenti">${g}<line class="axis" x1="${L}" x2="${W - R}" y1="${H - Bm}" y2="${H - Bm}"/>${lines}${hits}</svg></div>`;
+    <svg viewBox="0 0 ${W} ${H + 6}" role="img" aria-label="ICL e BIC per numero di concentrazioni">${g}<line class="axis" x1="${L}" x2="${W - R}" y1="${H - Bm}" y2="${H - Bm}"/>${lines}${hits}</svg></div>`;
 }
 
 function profileChart(res, ph, usr) {
@@ -2263,38 +2263,38 @@ function profileChart(res, ph, usr) {
     marks += `<circle class="dot" cx="${cx.toFixed(1)}" cy="${y(f.z).toFixed(1)}" r="4" fill="${fill}" stroke="var(--surface)" stroke-width="1.5" data-id="${esc(f.id)}" data-tip="Frammento ${esc(f.id)} · US ${esc(f.us)} · q. ${fmtN(f.z)}${v ? ` · F${v.phase} (p ${fmtN(v.p, 2)})` : ""}"/>`;
   }
   const lg = ph && ph.ok ? `<div class="lg">${ph.phases.map(f => `<span><i style="background:${phaseColor(f.id)}"></i>C${f.id}</span>`).join("")}<span><i style="background:var(--ink-2);height:2px;border-radius:0"></i>mediana US</span></div>` : "";
-  return `<div class="chart"><h3>Profilo di quota per US</h3><p>Ogni punto è un frammento, colorato per componente; le linee tratteggiate sono le quote medie delle componenti.</p>${lg}
+  return `<div class="chart"><h3>Profilo di quota per US</h3><p>Ogni punto è un frammento, colorato per concentrazione; le linee tratteggiate sono le quote medie delle concentrazioni.</p>${lg}
     <div class="svgscroll"><svg viewBox="0 0 ${W} ${H + 8}" style="min-width:${Math.min(W, 640)}px" role="img" aria-label="Quote dei frammenti per US">${g}<line class="axis" x1="${L}" x2="${W - R}" y1="${H - Bm}" y2="${H - Bm}"/>${marks}</svg></div></div>`;
 }
 
 function tabPhases(P, res) {
   const ph = state.ph;
-  if (state.phBusy || !ph) { P.innerHTML = `<p class="hint">Calcolo delle componenti in corso…</p>`; return; }
+  if (state.phBusy || !ph) { P.innerHTML = `<p class="hint">Calcolo delle concentrazioni in corso…</p>`; return; }
   if (!ph.ok) { P.innerHTML = `<p class="hint">${esc(ph.reason)}</p>`; return; }
   const c = ph.coherence, pct = v => v === null ? "—" : fmtN(100 * v, 0) + "%";
   const lift = c.tot && c.expected ? c.pct / c.expected : null;
   let verdict = "";
   if (ph.constrained) verdict = "I gruppi di rimontaggio sono usati come vincolo, quindi questa percentuale non è una verifica indipendente.";
-  else if (c.tot && ph.K > 1) verdict = lift >= 1.3 ? "I rimontaggi sono coerenti con la separazione in componenti, più di quanto ci si aspetterebbe per caso: le componenti sono candidate a episodi deposizionali distinti. Gli attacchi tra componenti diverse indicano spostamenti o rimescolamento."
-    : lift >= 1.05 ? "I rimontaggi sostengono solo debolmente la separazione in componenti: il deposito è probabilmente rimescolato."
-    : "I rimontaggi non sostengono la separazione in componenti: le componenti potrebbero non corrispondere a episodi deposizionali distinti.";
+  else if (c.tot && ph.K > 1) verdict = lift >= 1.3 ? "I rimontaggi sono coerenti con la separazione in concentrazioni, più di quanto ci si aspetterebbe per caso: le concentrazioni sono candidate a episodi deposizionali distinti. Gli attacchi tra concentrazioni diverse indicano spostamenti o rimescolamento."
+    : lift >= 1.05 ? "I rimontaggi sostengono solo debolmente la separazione in concentrazioni: il deposito è probabilmente rimescolato."
+    : "I rimontaggi non sostengono la separazione in concentrazioni: le concentrazioni potrebbero non corrispondere a episodi deposizionali distinti.";
   const split = (state.usr ? state.usr.units : []).filter(u => { const t = [...u.phases.values()].reduce((a, b) => a + b, 0); const mx = Math.max(0, ...u.phases.values()); return t >= 4 && mx / t <= 0.8; });
   const amb = [...ph.frag.entries()].filter(([, v]) => v.p < 0.7).sort((a, b) => a[1].p - b[1].p);
   P.innerHTML = `<div class="summary">
-      <p><b>${ph.K} ${ph.K === 1 ? "componente" : "componenti"}</b> su ${ph.n} frammenti (criterio ${ph.crit.toUpperCase()}${state.phOpt.k !== "auto" ? ", K fissato" : ""}); separazione (PDI) ${fmtN(ph.pdi, 2)}${ph.excluded ? `; ${ph.excluded} frammenti senza i campi necessari esclusi` : ""}.
-      ${ph.K > 1 ? `Il <b>${pct(c.pct)}</b> degli attacchi (${c.same} su ${c.tot}) unisce frammenti della stessa componente, contro il ${pct(c.expected)} atteso se gli attacchi fossero distribuiti a caso.` : ""}</p>
+      <p><b>${ph.K} ${ph.K === 1 ? "concentrazione" : "concentrazioni"}</b> su ${ph.n} frammenti (criterio ${ph.crit.toUpperCase()}${state.phOpt.k !== "auto" ? ", K fissato" : ""}); separazione (PDI) ${fmtN(ph.pdi, 2)}${ph.excluded ? `; ${ph.excluded} frammenti senza i campi necessari esclusi` : ""}.
+      ${ph.K > 1 ? `Il <b>${pct(c.pct)}</b> degli attacchi (${c.same} su ${c.tot}) unisce frammenti della stessa concentrazione, contro il ${pct(c.expected)} atteso se gli attacchi fossero distribuiti a caso.` : ""}</p>
       ${verdict ? `<p>${verdict}</p>` : ""}
-      ${split.length ? `<p>US divise tra più componenti (possibili palinsesti o US da rivedere): ${split.map(u => `<b>US ${esc(u.us)}</b> (${[...u.phases.entries()].sort((a, b) => a[0] - b[0]).map(([k, n]) => `C${k} ${n}`).join(", ")})`).join("; ")}.</p>` : ""}
+      ${split.length ? `<p>US divise tra più concentrazioni (possibili palinsesti o US da rivedere): ${split.map(u => `<b>US ${esc(u.us)}</b> (${[...u.phases.entries()].sort((a, b) => a[0] - b[0]).map(([k, n]) => `C${k} ${n}`).join(", ")})`).join("; ")}.</p>` : ""}
     </div>
     <div class="charts">${bicChart(ph)}${profileChart(res, ph, state.usr)}</div>
-    <h3 class="sub">Componenti</h3>
-    <div class="tablewrap"><table><thead><tr><th>Componente</th><th class="n">Fr.</th><th class="n">Quota media</th><th class="n">Dev. st.</th><th class="n">Intervallo</th><th>US (frammenti)</th><th class="n">Appartenenza media</th><th class="n">Incerti</th></tr></thead><tbody>
+    <h3 class="sub">Concentrazioni</h3>
+    <div class="tablewrap"><table><thead><tr><th>Concentrazione</th><th class="n">Fr.</th><th class="n">Quota media</th><th class="n">Dev. st.</th><th class="n">Intervallo</th><th>US (frammenti)</th><th class="n">Appartenenza media</th><th class="n">Incerti</th></tr></thead><tbody>
     ${ph.phases.map(f => `<tr data-ph="${f.id}"><td><span class="gchip"><i style="background:${phaseColor(f.id)}"></i>C${f.id}</span></td><td class="n">${f.n}</td><td class="n">${fmtN(f.zMean, 3)}</td><td class="n">${fmtN(f.zSd, 3)}</td><td class="n">${f.zMin === null ? "—" : fmtN(f.zMin, 3) + " – " + fmtN(f.zMax, 3)}</td><td class="wrap">${f.us.map(([u, n]) => `${esc(u)} (${n})`).join(", ") || "—"}</td><td class="n">${fmtN(f.meanP, 2)}</td><td class="n">${f.ambiguous}</td></tr>`).join("")}
     </tbody></table></div>
-    ${ph.K > 1 && c.tot ? `<h3 class="sub">Attacchi tra componenti</h3><div class="tablewrap" style="max-width:${120 + ph.K * 70}px"><table class="matrix"><thead><tr><th class="rowh"></th>${ph.phases.map(f => `<th>C${f.id}</th>`).join("")}</tr></thead><tbody>${
+    ${ph.K > 1 && c.tot ? `<h3 class="sub">Attacchi tra concentrazioni</h3><div class="tablewrap" style="max-width:${120 + ph.K * 70}px"><table class="matrix"><thead><tr><th class="rowh"></th>${ph.phases.map(f => `<th>C${f.id}</th>`).join("")}</tr></thead><tbody>${
       ph.phases.map((f, i) => `<tr><th class="rowh">C${f.id}</th>${ph.phases.map((g, j) => { const v = j >= i ? c.matrix[i][j] : c.matrix[j][i]; return `<td class="${i === j ? "diag" : ""}">${v || "·"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>` : ""}
-    ${amb.length ? `<h3 class="sub">Frammenti incerti (appartenenza alla componente &lt; 0,70)</h3><div class="ids">${amb.slice(0, 80).map(([id, v]) => `<button class="idbtn" type="button" data-id="${esc(id)}" title="F${v.phase}, p ${fmtN(v.p, 2)}">${esc(id)}</button>`).join("")}</div>` : ""}
-    <p class="note">Modello a miscela gaussiana stimato con EM (5 inizializzazioni), con le diagnostiche di palimpsestr: BIC, ICL, entropia, PDI = 1 − entropia media / log K. I pesi delle variabili agiscono sulla verosimiglianza. Le componenti sono numerate dall'alto (C1 è la più alta): sono raggruppamenti statistici per posizione, non fasi cronologiche, e la numerazione non indica un ordine di tempo. palimpsestr le chiama «phases». Gli stessi risultati si ottengono con <span class="mono">refitting.py</span>.</p>`;
+    ${amb.length ? `<h3 class="sub">Frammenti incerti (appartenenza alla concentrazione &lt; 0,70)</h3><div class="ids">${amb.slice(0, 80).map(([id, v]) => `<button class="idbtn" type="button" data-id="${esc(id)}" title="F${v.phase}, p ${fmtN(v.p, 2)}">${esc(id)}</button>`).join("")}</div>` : ""}
+    <p class="note">Modello a miscela gaussiana stimato con EM (5 inizializzazioni), con le diagnostiche di palimpsestr: BIC, ICL, entropia, PDI = 1 − entropia media / log K. I pesi delle variabili agiscono sulla verosimiglianza. Le concentrazioni sono numerate dall'alto (C1 è la più alta): sono raggruppamenti statistici per posizione, non fasi cronologiche, e la numerazione non indica un ordine di tempo. In statistica si chiamano componenti della miscela; palimpsestr le chiama «phases». Gli stessi risultati si ottengono con <span class="mono">refitting.py</span>.</p>`;
   chartTip(P);
   P.querySelectorAll(".dot, .idbtn").forEach(b => b.addEventListener("click", () => select({ type: "frag", id: b.dataset.id }, true)));
   P.querySelectorAll("tr[data-ph]").forEach(tr => tr.addEventListener("click", () => { state.colorBy = "fase"; $("#colorBy").value = "fase"; renderLegend(); draw(); }));
@@ -2352,7 +2352,7 @@ function tabPalimpsest(P, res) {
     <h3 class="sub">Osservati e attesi tra US</h3>
     ${oeMatrix(usr)}
     <h3 class="sub">US</h3>
-    <div class="tablewrap"><table><thead><tr><th class="n">Ordine</th><th>US</th><th class="n">Fr.</th><th class="n">Quota mediana</th><th class="n">Quota 5–95%</th><th class="n">Interni</th><th class="n">Verso altre US</th><th class="n">Apertura</th><th class="n">Diff. quota mediana</th><th>Insieme</th><th>Componenti</th></tr></thead><tbody>
+    <div class="tablewrap"><table><thead><tr><th class="n">Ordine</th><th>US</th><th class="n">Fr.</th><th class="n">Quota mediana</th><th class="n">Quota 5–95%</th><th class="n">Interni</th><th class="n">Verso altre US</th><th class="n">Apertura</th><th class="n">Diff. quota mediana</th><th>Insieme</th><th>Concentrazioni</th></tr></thead><tbody>
     ${usr.units.map(u => `<tr><td class="n">${u.rank + 1}</td><td class="mono">${esc(u.us)}</td><td class="n">${u.n}</td><td class="n">${fmtN(u.zMed, 3)}</td><td class="n">${u.z05 === null ? "—" : fmtN(u.z05, 3) + " – " + fmtN(u.z95, 3)}</td><td class="n">${u.internal}</td><td class="n">${u.external}</td><td class="n">${u.open === null ? "—" : fmtN(100 * u.open, 0) + "%"}</td><td class="n">${u.dzMed === null ? "—" : fmtN(u.dzMed * 100, 1) + " cm"}</td><td>${u.set ? `<span class="gchip"><i style="background:${u.set <= 8 ? `var(--c${u.set})` : "var(--other)"}"></i>${u.set}</span>` : "—"}</td><td class="mono">${[...u.phases.entries()].sort((a, b) => a[0] - b[0]).map(([k, c]) => `C${k}:${c}`).join(" ") || "—"}</td></tr>`).join("")}
     </tbody></table></div>
     <p class="note">L'ordine delle US segue la quota mediana dei frammenti: è un'approssimazione e non sostituisce la sequenza stratigrafica del diagramma di Harris. Atteso = numero di attacchi previsto se gli attacchi si distribuissero a caso mantenendo il numero di attacchi di ogni US (modello di configurazione). Gli insiemi massimizzano la modularità (aggregazione di Clauset–Newman–Moore). Apertura = quota degli attacchi di una US che la collega ad altre US.</p>`;
@@ -2454,13 +2454,13 @@ function exportData(kind) {
     case "issues": return { name: `${base}_controlli.csv`, data: csvOf(["livello", "codice", "messaggio", "frammenti"], res.issues.map(i => [i.level, i.code, i.message, i.fragments.join(";")])) };
     case "phases": {
       const ph = state.ph;
-      if (!ph || !ph.ok) { toast(ph ? ph.reason : "Le componenti sono ancora in calcolo."); return null; }
-      return { name: `${base}_componenti.csv`, data: csvOf(["frammento", "componente", "appartenenza", "entropia", "us", "quota", "gruppo", ...ph.phases.map(f => "appartenenza_C" + f.id)],
+      if (!ph || !ph.ok) { toast(ph ? ph.reason : "Le concentrazioni sono ancora in calcolo."); return null; }
+      return { name: `${base}_concentrazioni.csv`, data: csvOf(["frammento", "concentrazione", "appartenenza", "entropia", "us", "quota", "gruppo", ...ph.phases.map(f => "appartenenza_C" + f.id)],
         [...ph.frag.entries()].map(([id, v]) => { const f = res.frags.get(id); return [id, v.phase, r4(v.p), r4(v.H), f.us, f.z, res.clusterOf.get(id) ?? "", ...v.probs.map(r4)]; })) };
     }
     case "ussum": {
       const u = state.usr; if (!u) { toast("Serve il campo US."); return null; }
-      return { name: `${base}_us_sintesi.csv`, data: csvOf(["ordine", "us", "n", "quota_mediana", "quota_p05", "quota_p95", "attacchi_interni", "attacchi_esterni", "apertura", "dz_mediano", "insieme", "componenti"],
+      return { name: `${base}_us_sintesi.csv`, data: csvOf(["ordine", "us", "n", "quota_mediana", "quota_p05", "quota_p95", "attacchi_interni", "attacchi_esterni", "apertura", "dz_mediano", "insieme", "concentrazioni"],
         u.units.map(x => [x.rank + 1, x.us, x.n, x.zMed, x.z05, x.z95, x.internal, x.external, x.open === null ? "" : Math.round(x.open * 1000) / 1000, x.dzMed === null ? "" : r4(x.dzMed), x.set ?? "", [...x.phases.entries()].sort((a, b) => a[0] - b[0]).map(([k, c]) => `C${k}:${c}`).join(";")])) };
     }
     case "oe": {
@@ -2471,7 +2471,7 @@ function exportData(kind) {
     }
     case "palimpsestr": {
       const ph = state.ph && state.ph.ok ? state.ph : null;
-      return { name: `${base}_palimpsestr.csv`, data: csvOf(["id", "x", "y", "z", "context", "date_min", "date_max", "class", "taf_score", "vaso", "gruppo_rimontaggio", "componente", "appartenenza"],
+      return { name: `${base}_palimpsestr.csv`, data: csvOf(["id", "x", "y", "z", "context", "date_min", "date_max", "class", "taf_score", "vaso", "gruppo_rimontaggio", "concentrazione", "appartenenza"],
         [...res.frags.values()].map(f => { const v = ph ? ph.frag.get(f.id) : null; return [f.id, f.x, f.y, f.z, usKey(f.us), "", "", "ceramica", "", f.vessel, res.clusterOf.get(f.id) ?? "", v ? v.phase : "", v ? r4(v.p) : ""]; })) };
     }
   }
