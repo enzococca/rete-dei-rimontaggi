@@ -1,0 +1,2806 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Rete dei Rimontaggi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: field-plan sheet — a control strip on the left like a drawing's legend column,
+   the excavation plan as the main sheet, and results filed below it like appendices. */
+:root {
+  --bg: #eef1f0;
+  --surface: #fbfcfc;
+  --surface-2: #f3f6f5;
+  --ink: #16212a;
+  --ink-2: #44515b;
+  --muted: #6f7c85;
+  --line: #d2dada;
+  --grid: #e3e9e8;
+  --grid-strong: #c8d1d1;
+  --accent: #1d5f6b;
+  --accent-soft: #dcebed;
+  --mark: #e85d0c;
+  --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100;
+  --c5: #e87ba4; --c6: #008300; --c7: #4a3aa7; --c8: #e34948;
+  --other: #9aa6ad;
+  --s1: #b7d3f6; --s2: #86b6ef; --s3: #5598e7; --s4: #2a78d6; --s5: #1c5cab; --s6: #104281; --s7: #0d366b;
+  --p1: #ea9a62; --p2: #e07c42; --p3: #cb6027; --p4: #aa4b1b; --p5: #873913; --p6: #64280c; --p7: #441a06;
+  --div-pos: #2a78d6; --div-neg: #e34948; --div-mid: #f0efec;
+  --l1: #bfa47b; --l2: #ad9068; --l3: #997c56; --l4: #846946; --l5: #6f5739; --l6: #5a462d; --l7: #463622;
+  --crit: #d03b3b; --warn: #fab219; --good: #0ca30c;
+  --f-display: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1418; --surface: #151d23; --surface-2: #1a242b; --ink: #e2e8eb; --ink-2: #b0bcc3;
+    --muted: #85929a; --line: #29353d; --grid: #1c272e; --grid-strong: #2b3943;
+    --accent: #6cc3cf; --accent-soft: #19343a; --mark: #ff8a3d;
+    --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+    --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767;
+    --p1: #fad3b2; --p2: #f4b285; --p3: #ec915a; --p4: #dd7135; --p5: #c25a20; --p6: #a54b19; --p7: #8a3e14;
+    --div-pos: #3987e5; --div-neg: #e66767; --div-mid: #2a3338;
+    --l1: #efe2c8; --l2: #dfccaa; --l3: #cbb48d; --l4: #b59b72; --l5: #9c815a; --l6: #836a47; --l7: #6c5638;
+    --other: #5d6a72;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1418; --surface: #151d23; --surface-2: #1a242b; --ink: #e2e8eb; --ink-2: #b0bcc3;
+  --muted: #85929a; --line: #29353d; --grid: #1c272e; --grid-strong: #2b3943;
+  --accent: #6cc3cf; --accent-soft: #19343a; --mark: #ff8a3d;
+  --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500;
+  --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767;
+  --p1: #fad3b2; --p2: #f4b285; --p3: #ec915a; --p4: #dd7135; --p5: #c25a20; --p6: #a54b19; --p7: #8a3e14;
+  --div-pos: #3987e5; --div-neg: #e66767; --div-mid: #2a3338;
+    --l1: #efe2c8; --l2: #dfccaa; --l3: #cbb48d; --l4: #b59b72; --l5: #9c815a; --l6: #836a47; --l7: #6c5638;
+  --other: #5d6a72;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+.page { padding-inline: 16px; padding-block: 14px 40px; max-width: 1560px; margin: 0 auto; display: grid; gap: 14px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.label { font-family: var(--f-display); font-weight: 600; font-size: 12.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+
+/* title block */
+.titlebar { display: flex; flex-wrap: wrap; align-items: stretch; border: 1.5px solid var(--ink); background: var(--surface); border-radius: 2px; }
+.titlebar > div { padding: 8px 14px; display: flex; flex-direction: column; justify-content: center; gap: 1px; min-width: 0; }
+.titlebar > div + div { border-left: 1px solid var(--ink); }
+.titlebar h1 { font-size: 26px; line-height: 1.05; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.titlebar .grow { flex: 1 1 260px; }
+.tb-val { font-family: var(--f-mono); font-size: 13px; overflow-wrap: anywhere; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-display); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; padding: 2px 8px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); width: fit-content; }
+
+.app { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .app { grid-template-columns: minmax(0, 1fr); } .main { order: -1; } }
+
+/* control column */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); display: grid; }
+.panel section { padding: 14px; display: grid; gap: 10px; }
+.panel section + section { border-top: 1px solid var(--line); }
+.panel h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em; display: flex; align-items: baseline; gap: 8px; }
+.panel h2 .n { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: 0; font-weight: 400; }
+.drop { border: 1.5px dashed var(--grid-strong); border-radius: var(--r); padding: 14px; text-align: center; display: grid; gap: 6px; cursor: pointer; background: var(--surface-2); transition: border-color .15s, background .15s; }
+.drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop strong { font-weight: 600; }
+.drop small { color: var(--muted); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 6px 11px; border-radius: 5px; cursor: pointer; font-weight: 500; font-size: 13px; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); color: var(--surface); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.fields { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 10px; align-items: center; }
+.fields label { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.fields label .req { color: var(--mark); }
+select { width: 100%; min-width: 0; padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2); font-size: 13px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface-2); padding: 6px 4px; font-size: 12.5px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); font-weight: 600; }
+.checks { display: grid; gap: 6px; }
+.checks label { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; }
+.checks input { margin-top: 3px; accent-color: var(--accent); }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+.exp { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.exp .btn { text-align: left; font-size: 12.5px; padding: 6px 8px; }
+.exp .btn span { display: block; font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); }
+.proj-save { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+.proj-save input { min-width: 0; padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2); color: var(--ink); font: inherit; font-size: 13px; }
+.proj-list { display: grid; gap: 6px; }
+.proj { border: 1px solid var(--line); border-radius: 5px; padding: 7px 8px; display: grid; gap: 5px; background: var(--surface-2); }
+.proj.on { border-color: var(--accent); background: var(--accent-soft); }
+.proj b { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.proj small { font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); overflow-wrap: anywhere; }
+.proj .row { gap: 5px; }
+.proj .row .btn { font-size: 12px; padding: 3px 8px; }
+.btn.danger { color: var(--crit); }
+.btn.danger:hover { border-color: var(--crit); color: var(--crit); }
+.btn.danger.arm { background: var(--crit); border-color: var(--crit); color: var(--surface); }
+.datatools { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-bottom: 10px; }
+.datatools input[type=search] { padding: 5px 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2); color: var(--ink); font: inherit; font-size: 13px; min-width: 180px; }
+.datatools label { font-size: 13px; display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.datatools input[type=checkbox] { accent-color: var(--accent); }
+.grid th { cursor: default; }
+.grid td { padding: 0; }
+.grid td input { width: 100%; min-width: 74px; border: 0; background: transparent; padding: 5px 8px; font-family: var(--f-mono); font-size: 12.5px; color: var(--ink); }
+.grid td input:focus { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--surface); }
+.grid tr.bad td { background: color-mix(in srgb, var(--warn) 16%, transparent); }
+.grid td.rn { padding: 0 8px; color: var(--muted); font-family: var(--f-mono); font-size: 11px; text-align: right; }
+.grid .del { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 2px 8px; font-size: 15px; line-height: 1; }
+.grid .del:hover { color: var(--crit); }
+.fixhead { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin: 0 0 8px; }
+.fixhead h3 { font-size: 15px; text-transform: uppercase; letter-spacing: .07em; font-family: var(--f-display); margin: 0; }
+.fixes { display: grid; border: 1px solid var(--line); border-radius: 5px; margin-bottom: 8px; }
+.fix { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 10px; padding: 9px 12px; align-items: center; }
+.fix + .fix { border-top: 1px solid var(--line); }
+.fix p { margin: 0; }
+.fix small { display: block; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+.pill.sicura { color: var(--good); border-color: var(--good); }
+.pill.verifica { color: color-mix(in srgb, var(--warn) 70%, var(--ink)); border-color: var(--warn); }
+.fixlog { font-size: 12.5px; color: var(--muted); margin: 6px 0 16px; padding-left: 18px; }
+.fixlog li + li { margin-top: 2px; }
+@media (max-width: 560px) { .fix { grid-template-columns: minmax(0, 1fr); } }
+
+/* main column */
+.main { display: grid; gap: 14px; min-width: 0; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+.stat { padding: 10px 14px; display: grid; gap: 2px; min-width: 0; }
+.stat + .stat { border-left: 1px solid var(--line); }
+.stat .v { font-family: var(--f-display); font-weight: 600; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .v small { font-family: var(--f-body); font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 3px; }
+.stat .s { font-size: 12px; color: var(--muted); }
+@media (max-width: 640px) { .stat + .stat { border-left: 0; } .stats { grid-template-columns: repeat(2, minmax(0,1fr)); } .stat { border-bottom: 1px solid var(--line); } }
+
+.mapcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: grid; }
+.maptools { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.maptools .grp { display: flex; align-items: center; gap: 6px; }
+.maptools .seg { grid-template-columns: none; grid-auto-flow: column; }
+.seg.two { grid-template-columns: repeat(2, 1fr); }
+.wfields { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 10px; align-items: center; }
+.wfields label { font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.summary { display: grid; gap: 7px; max-width: 82ch; margin: 0 0 16px; font-size: 13.5px; }
+.summary p { margin: 0; }
+h3.sub { font-size: 15px; text-transform: uppercase; letter-spacing: .07em; margin: 18px 0 8px; color: var(--ink-2); }
+.lg { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); margin: 0 0 6px; }
+.lg span { display: inline-flex; align-items: center; gap: 6px; }
+.lg i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.chart .dl { fill: var(--ink-2); font-family: var(--f-display); font-weight: 600; font-size: 11.5px; letter-spacing: .04em; }
+.chart .ul { fill: var(--ink); font-family: var(--f-mono); font-weight: 500; font-size: 12px; }
+.chart .al { fill: var(--ink-2); font-size: 10px; }
+.chart .in { fill: #ffffff; font-size: 10px; font-weight: 500; }
+.chart .dot { cursor: pointer; }
+.chart .dot:hover, .chart .dot.hl { stroke: var(--ink); stroke-width: 2; }
+.chart path[data-tip]:hover, .chart path.hl { stroke-opacity: 1; }
+.svgscroll { overflow-x: auto; }
+.ids { display: flex; flex-wrap: wrap; gap: 4px; }
+.hbars { display: grid; gap: 8px; margin-top: 6px; }
+.hb { display: grid; grid-template-columns: 96px minmax(0, 1fr) 32px; gap: 10px; align-items: center; font-size: 13px; }
+.hb div { height: 14px; background: var(--surface-2); border-radius: 0 4px 4px 0; }
+.hb i { display: block; height: 100%; background: var(--c1); border-radius: 0 4px 4px 0; }
+.hb b { font-family: var(--f-mono); font-weight: 500; text-align: right; }
+.oe td { line-height: 1.15; }
+.oe td small { display: block; font-size: 9.5px; color: var(--ink-2); }
+.maptools .seg button { padding: 5px 10px; }
+.maptools select { width: auto; }
+.mapwrap { position: relative; height: clamp(380px, 64vh, 780px); touch-action: none; }
+#map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+#map.drag { cursor: grabbing; }
+.zoom { position: absolute; right: 12px; top: 12px; display: grid; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; background: var(--surface); }
+.zoom button { border: 0; background: var(--surface); width: 32px; height: 30px; cursor: pointer; font-size: 16px; }
+.zoom button + button { border-top: 1px solid var(--line); }
+.zoom button:hover { color: var(--accent); }
+.legend { border-top: 1px solid var(--line); padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; align-items: center; }
+.legend .li { display: flex; align-items: center; gap: 7px; }
+.legend .sw { width: 11px; height: 11px; border-radius: 50%; flex: none; border: 1.5px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.legend .ln { width: 22px; height: 0; border-top: 2px solid var(--ink-2); flex: none; }
+.legend .ln.dash { border-top-style: dashed; }
+.legend .ramp.earth { background: linear-gradient(90deg, var(--l1), var(--l3), var(--l5), var(--l7)); opacity: .8; }
+.maptools input[type="range"] { width: 110px; accent-color: var(--accent); }
+.legend .ramp { width: 120px; height: 9px; border-radius: 2px; background: linear-gradient(90deg, var(--s1), var(--s3), var(--s5), var(--s7)); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); padding: 6px 9px; border-radius: 4px; font-size: 12px; line-height: 1.4; white-space: nowrap; transform: translate(12px, -50%); z-index: 3; }
+.tip b { font-family: var(--f-mono); font-weight: 500; }
+.detail { position: absolute; left: 12px; top: 12px; width: min(290px, calc(100% - 70px)); background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--mark); border-radius: 5px; padding: 10px 12px; display: grid; gap: 6px; font-size: 12.5px; z-index: 2; max-height: calc(100% - 24px); overflow: auto; }
+.detail h3 { font-size: 18px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.detail h3 button { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-family: var(--f-mono); overflow-wrap: anywhere; }
+.empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 24px; }
+
+/* results */
+.results { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); min-width: 0; }
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs button { border: 0; background: none; padding: 10px 14px; cursor: pointer; font-family: var(--f-display); font-weight: 600; font-size: 14px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs .cnt { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0; margin-left: 4px; }
+.tabpanel { padding: 14px; min-width: 0; }
+.tablewrap { overflow-x: auto; max-height: 460px; overflow-y: auto; border: 1px solid var(--line); border-radius: 5px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--surface-2); font-family: var(--f-display); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 12.5px; color: var(--ink-2); cursor: pointer; user-select: none; z-index: 1; }
+th[data-sort]::after { content: " ↕"; color: var(--muted); font-size: 10px; }
+th[data-dir="asc"]::after { content: " ↑"; color: var(--accent); }
+th[data-dir="desc"]::after { content: " ↓"; color: var(--accent); }
+td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+td.mono { font-family: var(--f-mono); }
+td.wrap { white-space: normal; min-width: 180px; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr.on { background: var(--accent-soft); }
+.gchip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-mono); font-weight: 500; }
+.gchip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 1px 7px; border-radius: 10px; font-family: var(--f-display); letter-spacing: .06em; text-transform: uppercase; border: 1px solid; }
+.pill.errore { color: var(--crit); border-color: var(--crit); }
+.pill.avviso { color: color-mix(in srgb, var(--warn) 70%, var(--ink)); border-color: var(--warn); }
+.pill.info { color: var(--muted); border-color: var(--line); }
+.issues { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 5px; }
+.issue { display: grid; grid-template-columns: 82px minmax(0,1fr); gap: 10px; padding: 9px 12px; align-items: start; }
+.issue + .issue { border-top: 1px solid var(--line); }
+.issue p { margin: 0; }
+.issue .ids { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+.idbtn { font-family: var(--f-mono); font-size: 11.5px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 3px; padding: 0 5px; cursor: pointer; }
+.idbtn:hover { border-color: var(--accent); color: var(--accent); }
+.idbtn:disabled { cursor: default; opacity: .6; }
+.matrix td, .matrix th { text-align: center; padding: 5px 8px; min-width: 38px; }
+.matrix th { cursor: default; }
+.matrix th.rowh { text-align: right; position: sticky; left: 0; z-index: 2; }
+.matrix td { font-family: var(--f-mono); font-variant-numeric: tabular-nums; cursor: default; }
+.matrix td.diag { outline: 1.5px solid var(--ink-2); outline-offset: -3px; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.chart h3 { font-size: 16px; }
+.chart p { margin: 2px 0 8px; font-size: 12.5px; color: var(--muted); }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .bar { fill: var(--c1); }
+.chart .bar:hover, .chart .bar.hl { fill: var(--s5); }
+.chart text { fill: var(--muted); font-family: var(--f-mono); font-size: 10.5px; }
+.chart .gridl { stroke: var(--grid); }
+.chart .axis { stroke: var(--grid-strong); }
+.note { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 8px 14px; border-radius: 5px; font-size: 13px; z-index: 10; max-width: calc(100% - 32px); }
+textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font-size: 11px; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 8px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <header class="titlebar">
+    <div class="grow">
+      <span class="label">Analisi spaziale</span>
+      <h1>Rete dei rimontaggi</h1>
+    </div>
+    <div>
+      <span class="label">Progetto</span>
+      <span class="tb-val" id="tbProject">non salvato</span>
+    </div>
+    <div>
+      <span class="label">Dataset</span>
+      <span class="tb-val" id="tbSource">—</span>
+      <span class="badge" id="demoBadge" hidden>Dati di esempio sintetici</span>
+    </div>
+    <div>
+      <span class="label">Coordinate</span>
+      <span class="tb-val">griglia locale · m</span>
+    </div>
+  </header>
+
+  <div class="app">
+    <aside class="panel" aria-label="Impostazioni">
+      <section>
+        <h2>Dati <span class="n" id="rowCount"></span></h2>
+        <label class="drop" id="drop" for="file">
+          <strong>Trascina qui il file</strong>
+          <small>CSV, TXT, TSV, GeoJSON di punti o progetto esportato · separatore rilevato in automatico</small>
+          <input type="file" id="file" accept=".csv,.txt,.tsv,.geojson,.json" hidden>
+        </label>
+        <div class="row">
+          <button class="btn" id="demoBtn" type="button">Carica l'esempio</button>
+          <button class="btn" id="newBtn" type="button" title="Tabella vuota da compilare nella scheda Dati">Nuovo dataset</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Progetto <span class="n" id="projCount"></span></h2>
+        <div class="proj-save">
+          <input type="text" id="projName" placeholder="Nome del progetto" maxlength="80" aria-label="Nome del progetto">
+          <button class="btn primary" id="projSave" type="button" title="Salva dati, campi e impostazioni">Salva</button>
+        </div>
+        <div class="proj-list" id="projList"></div>
+        <p class="hint" id="projHint"></p>
+      </section>
+
+      <section>
+        <h2>Campi</h2>
+        <div class="fields" id="fields"></div>
+        <p class="hint">Il campo rimontaggi accetta più ID separati da <span class="mono">; , |</span> o spazi. Valori vuoti, 0 e "?" sono ignorati. Un frammento ripetuto su più righe nella stessa posizione viene unito.</p>
+      </section>
+
+      <section>
+        <h2>Analisi</h2>
+        <div>
+          <span class="label">Linee per gruppo</span>
+          <div class="seg" id="modeSeg" role="group" aria-label="Linee per gruppo">
+            <button type="button" data-mode="diretti" aria-pressed="true" title="Una linea per ogni attacco dichiarato">Attacchi</button>
+            <button type="button" data-mode="mst" aria-pressed="false" title="Albero di lunghezza minima che collega il gruppo">Albero min.</button>
+            <button type="button" data-mode="completi" aria-pressed="false" title="Tutte le coppie dentro il gruppo">Tutte</button>
+          </div>
+        </div>
+        <div class="checks">
+          <label><input type="checkbox" id="optOutliers" checked> Escludi coordinate anomale (restano tra i controlli)</label>
+          <label><input type="checkbox" id="optPertGroups"> Le pertinenze uniscono i gruppi di rimontaggio (gruppo = vaso)</label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Componenti statistiche <span class="n" id="phBusy"></span></h2>
+        <div class="wfields">
+          <label for="wXY">Posizione XY</label>
+          <select id="wXY"><option value="0">esclusa</option><option value="0.25">peso 0,25</option><option value="0.5" selected>peso 0,5</option><option value="1">peso 1</option></select>
+          <label for="wZ">Quota</label>
+          <select id="wZ"><option value="0">esclusa</option><option value="0.5">peso 0,5</option><option value="1" selected>peso 1</option><option value="2">peso 2</option></select>
+          <label for="wUS">US</label>
+          <select id="wUS"><option value="0" selected>esclusa</option><option value="0.5">peso 0,5</option><option value="1">peso 1</option><option value="2">peso 2</option></select>
+          <label for="kSel">Numero di componenti</label>
+          <select id="kSel"><option value="auto" selected>automatico</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select>
+        </div>
+        <div>
+          <span class="label">Criterio</span>
+          <div class="seg two" id="critSeg" role="group" aria-label="Criterio">
+            <button type="button" data-crit="icl" aria-pressed="true" title="Integrated Completed Likelihood: preferisce componenti ben separate">ICL</button>
+            <button type="button" data-crit="bic" aria-pressed="false" title="Bayesian Information Criterion">BIC</button>
+          </div>
+        </div>
+        <div class="checks">
+          <label><input type="checkbox" id="optConstr"> I gruppi di rimontaggio restano interi nella stessa componente (vincolo)</label>
+        </div>
+        <p class="hint">Miscela gaussiana stimata con EM e diagnostiche di palimpsestr (ICL, BIC, PDI). Le componenti sono raggruppamenti statistici dei frammenti per posizione, non fasi cronologiche. Senza vincolo i rimontaggi restano una verifica indipendente.</p>
+      </section>
+
+      <section>
+        <h2>Mostra</h2>
+        <div class="checks">
+          <label><input type="checkbox" id="optHulls" checked> Inviluppi dei gruppi</label>
+          <label><input type="checkbox" id="optPert" checked> Pertinenze (tratteggio)</label>
+          <label><input type="checkbox" id="optUnlinked" checked> Frammenti senza attacchi</label>
+          <label><input type="checkbox" id="optLabels"> Numeri dei frammenti</label>
+          <label><input type="checkbox" id="optDrop" checked> Linee verticali al piano (3D)</label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Esporta</h2>
+        <div class="exp">
+          <button class="btn" type="button" data-exp="links">Collegamenti<span>GeoJSON · .json</span></button>
+          <button class="btn" type="button" data-exp="groups">Gruppi<span>GeoJSON · .json</span></button>
+          <button class="btn" type="button" data-exp="frags">Frammenti<span>GeoJSON · .json</span></button>
+          <button class="btn" type="button" data-exp="linkscsv">Collegamenti<span>CSV con WKT</span></button>
+          <button class="btn" type="button" data-exp="matrix">Matrice US<span>CSV</span></button>
+          <button class="btn" type="button" data-exp="issues">Controlli<span>CSV</span></button>
+          <button class="btn" type="button" data-exp="phases">Componenti<span>CSV</span></button>
+          <button class="btn" type="button" data-exp="ussum">Sintesi US<span>CSV</span></button>
+          <button class="btn" type="button" data-exp="oe">Osservati/attesi<span>CSV</span></button>
+          <button class="btn" type="button" data-exp="palimpsestr">palimpsestr<span>CSV per fit_sef</span></button>
+          <button class="btn" type="button" data-exp="datacsv">Dati modificati<span>CSV della tabella</span></button>
+        </div>
+        <p class="hint">I file .json sono GeoJSON: QGIS li apre direttamente. Nessun sistema di riferimento è assegnato: usa quello del rilievo.</p>
+      </section>
+    </aside>
+
+    <div class="main">
+      <div class="stats" id="stats" aria-live="polite"></div>
+
+      <div class="mapcard">
+        <div class="maptools">
+          <div class="grp">
+            <span class="label">Vista</span>
+            <div class="seg" id="viewSeg" role="group" aria-label="Vista">
+              <button type="button" data-view="pianta" aria-pressed="true">Pianta</button>
+              <button type="button" data-view="eo" aria-pressed="false" title="Tutti i punti proiettati su un piano verticale est-ovest: non è una sezione di scavo">Proiezione E–O</button>
+              <button type="button" data-view="ns" aria-pressed="false" title="Tutti i punti proiettati su un piano verticale nord-sud: non è una sezione di scavo">Proiezione N–S</button>
+              <button type="button" data-view="3d" aria-pressed="false" title="Vista tridimensionale: trascina per ruotare">3D</button>
+            </div>
+          </div>
+          <div class="grp" id="exagGrp" hidden>
+            <label class="label" for="exag">Esag. vert.</label>
+            <select id="exag"><option value="1">×1</option><option value="2">×2</option><option value="3">×3</option><option value="5">×5</option></select>
+          </div>
+          <div class="grp" id="strataGrp" hidden>
+            <label class="label" for="strataA">Volumi US</label>
+            <input type="range" id="strataA" min="0" max="0.7" step="0.05" value="0.3" aria-label="Opacità dei volumi US ricostruiti (0 li nasconde)">
+            <select id="strataFocus" aria-label="Evidenzia una US"><option value="">tutte le US</option></select>
+          </div>
+          <div class="grp">
+            <label class="label" for="colorBy">Colore</label>
+            <select id="colorBy">
+              <option value="gruppo">Gruppo di rimontaggio</option>
+              <option value="vaso">Vaso</option>
+              <option value="us">US</option>
+              <option value="quota">Quota</option>
+              <option value="fase">Componente statistica</option>
+            </select>
+          </div>
+        </div>
+        <div class="mapwrap" id="mapwrap">
+          <canvas id="map" aria-label="Pianta dei frammenti e dei rimontaggi" role="img"></canvas>
+          <div class="zoom">
+            <button type="button" id="zin" aria-label="Ingrandisci">+</button>
+            <button type="button" id="zout" aria-label="Riduci">−</button>
+            <button type="button" id="zfit" aria-label="Adatta alla vista" title="Adatta alla vista">⤢</button>
+          </div>
+          <div class="detail" id="detail" hidden></div>
+          <div class="tip" id="tip" hidden></div>
+          <div class="empty" id="emptyMap" hidden></div>
+        </div>
+        <div class="legend" id="legend" aria-label="Legenda"></div>
+      </div>
+
+      <div class="results">
+        <div class="tabs" role="tablist" id="tabs">
+          <button role="tab" data-tab="gruppi" aria-selected="true">Gruppi<span class="cnt" id="cntG"></span></button>
+          <button role="tab" data-tab="collegamenti" aria-selected="false">Collegamenti<span class="cnt" id="cntL"></span></button>
+          <button role="tab" data-tab="matrice" aria-selected="false">Matrice US</button>
+          <button role="tab" data-tab="distanze" aria-selected="false">Distanze</button>
+          <button role="tab" data-tab="fasi" aria-selected="false">Componenti</button>
+          <button role="tab" data-tab="palinsesto" aria-selected="false">Palinsesto</button>
+          <button role="tab" data-tab="controlli" aria-selected="false">Controlli<span class="cnt" id="cntI"></span></button>
+          <button role="tab" data-tab="dati" aria-selected="false">Dati<span class="cnt" id="cntD"></span></button>
+        </div>
+        <div class="tabpanel" id="tabpanel"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script id="core">
+/* ======================================================================
+   Nucleo di analisi — stessa logica del modulo Python refitting.py
+   ====================================================================== */
+const EMPTY = new Set(["", "0", "none", "null", "nan", "na", "-", "—", "?", "??", "nd", "n.d."]);
+
+function normaliseId(v) {
+  if (v === null || v === undefined) return null;
+  let s = String(v).trim();
+  if (/^-?\d+\.0+$/.test(s)) s = s.split(".")[0];
+  return EMPTY.has(s.toLowerCase()) ? null : s;
+}
+function parseRefits(v) {
+  if (v === null || v === undefined) return [];
+  const out = [];
+  for (const p of String(v).split(/[;,|/\s]+/)) {
+    const n = normaliseId(p);
+    if (n !== null && !out.includes(n)) out.push(n);
+  }
+  return out;
+}
+function toFloat(v) {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  const s = String(v).trim().replace(",", ".");
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+function natKey(s) {
+  return String(s).split(/(\d+)/).filter(t => t !== "").map(t => /^\d+$/.test(t) ? [0, +t, ""] : [1, 0, t.toLowerCase()]);
+}
+function natCmp(a, b) {
+  const A = natKey(a), B = natKey(b);
+  for (let i = 0; i < Math.min(A.length, B.length); i++) {
+    for (let j = 0; j < 3; j++) {
+      if (A[i][j] < B[i][j]) return -1;
+      if (A[i][j] > B[i][j]) return 1;
+    }
+  }
+  return A.length - B.length;
+}
+const usKey = us => us ? us.split(/\s+/)[0] : null;
+
+function cross(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+function convexHull(points) {
+  const seen = new Set(), pts = [];
+  for (const p of points) { const k = p[0] + "," + p[1]; if (!seen.has(k)) { seen.add(k); pts.push(p); } }
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (pts.length <= 2) return pts;
+  const lower = [], upper = [];
+  for (const p of pts) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
+  for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
+  return lower.slice(0, -1).concat(upper.slice(0, -1));
+}
+function polygonArea(ring) {
+  let s = 0;
+  for (let i = 0; i < ring.length - 1; i++) s += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+  return Math.abs(s) / 2;
+}
+function capsule(p, q, r, seg = 16) {
+  const dx = q[0] - p[0], dy = q[1] - p[1];
+  const ang = (dx || dy) ? Math.atan2(dy, dx) : 0, ring = [];
+  for (let i = 0; i <= seg; i++) { const t = ang - Math.PI / 2 + Math.PI * i / seg; ring.push([q[0] + r * Math.cos(t), q[1] + r * Math.sin(t)]); }
+  for (let i = 0; i <= seg; i++) { const t = ang + Math.PI / 2 + Math.PI * i / seg; ring.push([p[0] + r * Math.cos(t), p[1] + r * Math.sin(t)]); }
+  ring.push(ring[0]);
+  return ring;
+}
+function hullRing(points, buf) {
+  const h = convexHull(points);
+  if (h.length >= 3) return { ring: h.concat([h[0]]), kind: "convex" };
+  const ext = h.length === 2 ? h : [h[0], h[0]];
+  return { ring: capsule(ext[0], ext[1], buf), kind: "buffer" };
+}
+function median(a) { const s = [...a].sort((x, y) => x - y), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : NaN; }
+function mean(a) { return a.reduce((x, y) => x + y, 0) / a.length; }
+
+function buildFragments(rows, m) {
+  const out = [];
+  for (const row of rows) {
+    const id = normaliseId(row[m.id]);
+    if (id === null) continue;
+    out.push({
+      id,
+      x: toFloat(row[m.x]), y: toFloat(row[m.y]),
+      z: m.z ? toFloat(row[m.z]) : null,
+      vessel: m.vessel ? normaliseId(row[m.vessel]) : null,
+      us: m.us ? normaliseId(row[m.us]) : null,
+      refits: parseRefits(row[m.refit]),
+      pert: m.pert ? parseRefits(row[m.pert]) : [],
+    });
+  }
+  return out;
+}
+
+function makeLink(fa, fb, kind, cluster) {
+  const d2 = Math.hypot(fa.x - fb.x, fa.y - fb.y);
+  const dz = (fa.z !== null && fb.z !== null) ? fb.z - fa.z : null;
+  const d3 = dz !== null ? Math.sqrt(d2 * d2 + dz * dz) : null;
+  const ka = usKey(fa.us), kb = usKey(fb.us);
+  return { a: fa.id, b: fb.id, kind, cluster, d2, dz, d3, usA: fa.us, usB: fb.us, vA: fa.vessel, vB: fb.vessel,
+           sameUS: (ka === null || kb === null) ? null : ka === kb };
+}
+function mst(members, frags) {
+  if (members.length < 2) return [];
+  const f0 = frags.get(members[0]), best = new Map(), edges = [];
+  for (const m of members.slice(1)) { const f = frags.get(m); best.set(m, [Math.hypot(f.x - f0.x, f.y - f0.y), members[0]]); }
+  while (best.size) {
+    let mk = null, md = Infinity;
+    for (const [k, v] of best) if (v[0] < md) { md = v[0]; mk = k; }
+    const parent = best.get(mk)[1]; best.delete(mk); edges.push([parent, mk]);
+    const fm = frags.get(mk);
+    for (const [k, v] of best) { const f = frags.get(k); const d = Math.hypot(f.x - fm.x, f.y - fm.y); if (d < v[0]) best.set(k, [d, mk]); }
+  }
+  return edges;
+}
+function robustScale(v) { const med = median(v); return [med, median(v.map(x => Math.abs(x - med))) * 1.4826]; }
+function coordinateOutliers(frags, threshold = 10) {
+  const out = new Map();
+  if (frags.size < 8) return out;
+  const fs = [...frags.values()], xs = fs.map(f => f.x), ys = fs.map(f => f.y);
+  let [mx, sx] = robustScale(xs), [my, sy] = robustScale(ys);
+  const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) || 1;
+  sx = Math.max(sx, span * 1e-3); sy = Math.max(sy, span * 1e-3);
+  for (const f of fs) {
+    const score = Math.max(Math.abs(f.x - mx) / sx, Math.abs(f.y - my) / sy);
+    if (score > threshold) out.set(f.id, { score, swapped: Math.max(Math.abs(f.y - mx) / sx, Math.abs(f.x - my) / sy) <= threshold });
+  }
+  return out;
+}
+
+function analyse(input, opt) {
+  const issues = [], frags = new Map(), excluded = new Map();
+  let merged = 0; const moved = new Map();
+  for (const f of input) {
+    if (f.x === null || f.y === null) { if (!excluded.has(f.id)) excluded.set(f.id, "senza coordinate"); continue; }
+    const g = frags.get(f.id);
+    if (!g) { frags.set(f.id, { ...f, refits: [...f.refits], pert: [...f.pert] }); continue; }
+    if (Math.hypot(g.x - f.x, g.y - f.y) > 1e-6 * Math.max(1, Math.abs(g.x), Math.abs(g.y))) moved.set(f.id, (moved.get(f.id) || 0) + 1);
+    else merged++;
+    for (const r of f.refits) if (!g.refits.includes(r)) g.refits.push(r);
+    for (const r of f.pert) if (!g.pert.includes(r)) g.pert.push(r);
+    g.vessel = g.vessel || f.vessel; g.us = g.us || f.us; if (g.z === null) g.z = f.z;
+  }
+  for (const id of [...excluded.keys()]) if (frags.has(id)) excluded.delete(id);
+  const noCoords = [...excluded.keys()].sort(natCmp);
+  if (noCoords.length) issues.push({ level: "avviso", code: "senza_coordinate",
+    message: `${pl(noCoords.length, "frammento senza coordinate escluso", "frammenti senza coordinate esclusi")} dalla mappa.`, fragments: noCoords });
+  if (merged) issues.push({ level: "info", code: "righe_multiple",
+    message: `${merged} ${merged === 1 ? "riga ripete" : "righe ripetono"} un frammento già presente nella stessa posizione: unite come connessioni multiple.`, fragments: [] });
+  for (const [id, n] of moved) issues.push({ level: "errore", code: "id_duplicato",
+    message: `L'ID ${id} compare in ${n + 1} posizioni diverse: tenuta la prima, rimontaggi uniti.`, fragments: [id] });
+
+  const outl = [...coordinateOutliers(frags).entries()].sort((a, b) => natCmp(a[0], b[0]));
+  for (const [id, o] of outl) {
+    const f = frags.get(id);
+    const hint = o.swapped ? " Scambiando est e nord cadrebbe vicino agli altri: verifica se sono invertiti." : "";
+    issues.push({ level: "errore", code: "coordinate_anomale",
+      message: `Il frammento ${id} (${fmtN(f.x)}, ${fmtN(f.y)}) è molto lontano dagli altri.${hint}${opt.excludeOutliers ? " Escluso dall'analisi." : ""}`,
+      fragments: [id], outlier: { x: f.x, y: f.y } });
+    if (opt.excludeOutliers) { excluded.set(id, o.swapped ? "est/nord invertiti?" : "coordinate anomale"); frags.delete(id); }
+  }
+
+  const pk = (a, b) => natCmp(a, b) <= 0 ? [a, b] : [b, a];
+  function collect(attr, label) {
+    const pairs = new Map(), orphans = [];
+    for (const f of frags.values()) for (const r of f[attr]) {
+      if (r === f.id) issues.push({ level: "avviso", code: "auto_riferimento", message: `Il frammento ${f.id} è collegato a sé stesso (${label}).`, fragments: [f.id] });
+      else if (frags.has(r)) { const p = pk(f.id, r); pairs.set(p.join("\u0000"), p); }
+      else orphans.push([f.id, r]);
+    }
+    return [pairs, orphans];
+  }
+  const [pairs, orphans] = collect("refits", "attacco");
+  const [pertPairs, pertOrphans] = collect("pert", "pertinenza");
+  for (const k of pairs.keys()) pertPairs.delete(k);
+
+  for (const [kind, lst] of [["attacco", orphans], ["pertinenza", pertOrphans]]) {
+    if (!lst.length) continue;
+    const absent = lst.filter(([, b]) => !excluded.has(b)), dropped = lst.filter(([, b]) => excluded.has(b));
+    const ex = l => l.slice(0, 8).map(([a, b]) => `${a}→${b}`).join(", ") + (l.length > 8 ? "…" : "");
+    const ids = l => [...new Set(l.flat())].sort(natCmp);
+    if (absent.length) issues.push({ level: "avviso", code: kind + "_verso_assente",
+      message: `${pl(absent.length, `collegamento di ${kind} punta a un frammento non presente`, `collegamenti di ${kind} puntano a frammenti non presenti`)} nella tabella (${ex(absent)}).`, fragments: ids(absent) });
+    if (dropped.length) issues.push({ level: "avviso", code: kind + "_verso_escluso",
+      message: `${pl(dropped.length, `collegamento di ${kind} punta a un frammento escluso`, `collegamenti di ${kind} puntano a frammenti esclusi`)} (senza coordinate o anomali): ${ex(dropped)}.`, fragments: ids(dropped) });
+  }
+
+  // gruppi: union-find iterativo
+  const parent = new Map();
+  const find = x => { if (!parent.has(x)) parent.set(x, x); let r = x; while (parent.get(r) !== r) r = parent.get(r); while (parent.get(x) !== r) { const n = parent.get(x); parent.set(x, r); x = n; } return r; };
+  const union = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) parent.set(rb, ra); };
+  for (const [a, b] of pairs.values()) union(a, b);
+  const nodes = new Set([...pairs.values()].flat());
+  if (opt.pertInGroups) { for (const [a, b] of pertPairs.values()) { union(a, b); nodes.add(a); nodes.add(b); } }
+  const groups = new Map();
+  for (const id of [...nodes].sort(natCmp)) { const r = find(id); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(id); }
+  const ordered = [...groups.values()].sort((a, b) => b.length - a.length || natCmp(a[0], b[0]));
+  const clusterOf = new Map();
+  ordered.forEach((g, i) => g.forEach(m => clusterOf.set(m, i + 1)));
+
+  const allF = [...frags.values()];
+  const diag = allF.length ? Math.hypot(Math.max(...allF.map(f => f.x)) - Math.min(...allF.map(f => f.x)), Math.max(...allF.map(f => f.y)) - Math.min(...allF.map(f => f.y))) : 0;
+  const buf = diag > 0 ? diag * 0.015 : 1;
+  const clusters = ordered.map((members, i) => {
+    const fs = members.map(m => frags.get(m)), pts = fs.map(f => [f.x, f.y]);
+    const vessels = [...new Set(fs.map(f => f.vessel).filter(Boolean))].sort(natCmp);
+    const us = [...new Set(fs.map(f => usKey(f.us)).filter(Boolean))].sort(natCmp);
+    const { ring, kind } = hullRing(pts, buf);
+    let span = 0;
+    for (let a = 0; a < pts.length; a++) for (let b = a + 1; b < pts.length; b++) span = Math.max(span, Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]));
+    const zs = fs.map(f => f.z).filter(z => z !== null);
+    if (vessels.length > 1) issues.push({ level: "avviso", code: "vasi_misti",
+      message: `Il gruppo G${i + 1} unisce frammenti attribuiti a vasi diversi (${vessels.join(", ")}).`, fragments: members });
+    return { id: i + 1, members, vessels, us, hull: ring, hullKind: kind, area: polygonArea(ring), span,
+             zRange: zs.length > 1 ? Math.max(...zs) - Math.min(...zs) : (zs.length ? 0 : null) };
+  });
+
+  const sortP = m => [...m.values()].sort((p, q) => natCmp(p[0], q[0]) || natCmp(p[1], q[1]));
+  const direct = sortP(pairs).map(([a, b]) => makeLink(frags.get(a), frags.get(b), "attacco", clusterOf.get(a) ?? null));
+  const pert = sortP(pertPairs).map(([a, b]) => makeLink(frags.get(a), frags.get(b), "pertinenza", clusterOf.get(a) ?? null));
+  let links;
+  if (opt.mode === "diretti") links = direct;
+  else if (opt.mode === "mst") links = clusters.flatMap(c => mst(c.members, frags).map(([a, b]) => makeLink(frags.get(a), frags.get(b), "albero", c.id)));
+  else links = clusters.flatMap(c => { const o = []; for (let i = 0; i < c.members.length; i++) for (let j = i + 1; j < c.members.length; j++) o.push(makeLink(frags.get(c.members[i]), frags.get(c.members[j]), "coppia", c.id)); return o; });
+
+  return { frags, excluded, issues, direct, pert, links, clusters, clusterOf, buf };
+}
+
+function usMatrix(res) {
+  const m = new Map(), keys = new Set();
+  for (const l of res.direct) {
+    const a = usKey(l.usA), b = usKey(l.usB);
+    if (a === null || b === null) continue;
+    keys.add(a); keys.add(b);
+    const [p, q] = natCmp(a, b) <= 0 ? [a, b] : [b, a];
+    const k = p + "\u0000" + q; m.set(k, (m.get(k) || 0) + 1);
+  }
+  return { keys: [...keys].sort(natCmp), get: (a, b) => { const [p, q] = natCmp(a, b) <= 0 ? [a, b] : [b, a]; return m.get(p + "\u0000" + q) || 0; }, pairs: m };
+}
+function summary(res) {
+  const d2 = res.direct.map(l => l.d2), dz = res.direct.filter(l => l.dz !== null).map(l => Math.abs(l.dz));
+  const linked = new Set(res.direct.flatMap(l => [l.a, l.b]));
+  const same = res.direct.filter(l => l.sameUS !== null);
+  return {
+    frags: res.frags.size, excluded: res.excluded.size, linked: linked.size,
+    joins: res.direct.length, pert: res.pert.length, groups: res.clusters.length,
+    maxGroup: Math.max(0, ...res.clusters.map(c => c.members.length)),
+    d2med: d2.length ? median(d2) : null, d2max: d2.length ? Math.max(...d2) : null, d2mean: d2.length ? mean(d2) : null,
+    dzmed: dz.length ? median(dz) : null, dzmax: dz.length ? Math.max(...dz) : null,
+    crossUS: same.length ? same.filter(l => !l.sameUS).length : null, sameN: same.length,
+  };
+}
+const pl = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+function fmtN(v, d) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  if (d === undefined) d = Math.abs(v) >= 1000 ? 2 : 3;
+  return v.toLocaleString("it-IT", { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+</script>
+
+<script id="strat">
+/* ======================================================================
+   Analisi stratigrafica — fasi deposizionali (GMM) e connessioni tra US.
+   Stessi algoritmi, stesso generatore pseudo-casuale e stesso ordine delle
+   operazioni del modulo Python, così i risultati coincidono.
+   ====================================================================== */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const LOG2PI = Math.log(2 * Math.PI);
+
+function quantile(sorted, p) {
+  const n = sorted.length;
+  if (!n) return null;
+  const h = (n - 1) * p, lo = Math.floor(h), hi = Math.min(n - 1, lo + 1);
+  return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo]);
+}
+
+/* Prepara la matrice delle variabili.
+   o = { useXY, useZ, useUS, wXY, wZ, wUS, constrained } */
+function phaseData(res, o) {
+  const all = [...res.frags.values()];
+  const fs = all.filter(f => (!o.useZ || f.z !== null) && (!o.useUS || usKey(f.us) !== null));
+  const cols = [];
+  if (o.useXY) {
+    const xs = fs.map(f => f.x), ys = fs.map(f => f.y);
+    const mx = xs.reduce((a, b) => a + b, 0) / (fs.length || 1);
+    const my = ys.reduce((a, b) => a + b, 0) / (fs.length || 1);
+    let v = 0;
+    for (let i = 0; i < fs.length; i++) v += (xs[i] - mx) ** 2 + (ys[i] - my) ** 2;
+    const sd = Math.sqrt(v / (2 * (fs.length || 1))) || 1;
+    cols.push({ name: "x", w: o.wXY, vals: xs.map(x => (x - mx) / sd) });
+    cols.push({ name: "y", w: o.wXY, vals: ys.map(y => (y - my) / sd) });
+  }
+  if (o.useZ) {
+    const zs = fs.map(f => f.z);
+    const mz = zs.reduce((a, b) => a + b, 0) / (fs.length || 1);
+    let v = 0;
+    for (const z of zs) v += (z - mz) ** 2;
+    const sd = Math.sqrt(v / (fs.length || 1)) || 1;
+    cols.push({ name: "z", w: o.wZ, vals: zs.map(z => (z - mz) / sd) });
+  }
+  const n = fs.length, d = cols.length;
+  const X = new Float64Array(n * d), W = new Float64Array(d);
+  cols.forEach((c, j) => { W[j] = c.w; for (let i = 0; i < n; i++) X[i * d + j] = c.vals[i]; });
+  let cat = null, cats = [];
+  if (o.useUS) {
+    cats = [...new Set(fs.map(f => usKey(f.us)))].sort(natCmp);
+    const idx = new Map(cats.map((c, i) => [c, i]));
+    cat = Int32Array.from(fs.map(f => idx.get(usKey(f.us))));
+  }
+  // gruppi indivisibili: i gruppi di rimontaggio quando sono un vincolo
+  const chunks = [], seen = new Map();
+  fs.forEach((f, i) => {
+    const g = o.constrained ? res.clusterOf.get(f.id) : undefined;
+    if (g === undefined) { chunks.push([i]); return; }
+    if (!seen.has(g)) { seen.set(g, chunks.length); chunks.push([]); }
+    chunks[seen.get(g)].push(i);
+  });
+  return { fs, ids: fs.map(f => f.id), n, d, X, W, cat, C: cats.length, cats, wc: o.useUS ? o.wUS : 0, chunks, excluded: all.length - n };
+}
+
+function kmeansInit(D, K, rnd) {
+  const { n, d, X, W } = D, sw = Array.from(W, w => Math.sqrt(w));
+  const dist2 = (i, c) => { let s = 0; const o = i * d; for (let j = 0; j < d; j++) { const t = (X[o + j] - c[j]) * sw[j]; s += t * t; } return s; };
+  const row = i => Array.from(X.subarray(i * d, i * d + d));
+  const centers = [row(Math.floor(rnd() * n))];
+  while (centers.length < K) {
+    const dm = new Float64Array(n);
+    let tot = 0;
+    for (let i = 0; i < n; i++) {
+      let m = Infinity;
+      for (const c of centers) m = Math.min(m, dist2(i, c));
+      dm[i] = m; tot += m;
+    }
+    let pick = n - 1;
+    if (tot <= 0) pick = Math.floor(rnd() * n);
+    else {
+      let r = rnd() * tot;
+      for (let i = 0; i < n; i++) { r -= dm[i]; if (r <= 0) { pick = i; break; } }
+    }
+    centers.push(row(pick));
+  }
+  const lab = new Int32Array(n);
+  for (let it = 0; it < 10; it++) {
+    for (let i = 0; i < n; i++) {
+      let b = 0, bd = Infinity;
+      for (let k = 0; k < K; k++) { const v = dist2(i, centers[k]); if (v < bd) { bd = v; b = k; } }
+      lab[i] = b;
+    }
+    for (let k = 0; k < K; k++) {
+      const s = new Array(d).fill(0); let c = 0;
+      for (let i = 0; i < n; i++) if (lab[i] === k) { c++; for (let j = 0; j < d; j++) s[j] += X[i * d + j]; }
+      if (c) centers[k] = s.map(v => v / c);
+    }
+  }
+  return lab;
+}
+
+function emRun(D, K, rnd, maxIter) {
+  const { n, d, X, W, cat, C, wc, chunks } = D;
+  const R = new Float64Array(n * K);
+  if (d > 0) { const lab = kmeansInit(D, K, rnd); for (let i = 0; i < n; i++) R[i * K + lab[i]] = 1; }
+  else for (let i = 0; i < n; i++) R[i * K + Math.floor(rnd() * K)] = 1;
+  const pi = new Float64Array(K), mu = new Float64Array(K * d), va = new Float64Array(K * d);
+  const P = cat ? new Float64Array(K * C) : null, CNT = cat ? new Float64Array(C) : null;
+  const LP = new Float64Array(n * K), CK = new Float64Array(K), IV = new Float64Array(K * d);
+  const LPC = cat ? new Float64Array(K * C) : null, L = new Float64Array(K);
+  let ll = -Infinity, prev = -Infinity, iter = 0;
+  for (iter = 0; iter < maxIter; iter++) {
+    // M
+    for (let k = 0; k < K; k++) {
+      let nk = 1e-10;
+      for (let i = 0; i < n; i++) nk += R[i * K + k];
+      pi[k] = nk / n;
+      for (let j = 0; j < d; j++) {
+        let sm = 0;
+        for (let i = 0; i < n; i++) sm += R[i * K + k] * X[i * d + j];
+        const m = sm / nk; let v = 0;
+        for (let i = 0; i < n; i++) { const t = X[i * d + j] - m; v += R[i * K + k] * t * t; }
+        mu[k * d + j] = m; va[k * d + j] = Math.max(v / nk, 1e-3);
+      }
+      if (cat) {
+        for (let c = 0; c < C; c++) CNT[c] = 0;
+        for (let i = 0; i < n; i++) CNT[cat[i]] += R[i * K + k];
+        for (let c = 0; c < C; c++) P[k * C + c] = (CNT[c] + 1) / (nk + C);
+      }
+    }
+    // E (costanti per componente calcolate una volta per iterazione)
+    for (let k = 0; k < K; k++) {
+      let c0 = 0;
+      for (let j = 0; j < d; j++) { const v = va[k * d + j]; c0 += W[j] * -0.5 * (LOG2PI + Math.log(v)); IV[k * d + j] = W[j] * 0.5 / v; }
+      CK[k] = c0;
+      if (cat) for (let c = 0; c < C; c++) LPC[k * C + c] = wc * Math.log(P[k * C + c]);
+    }
+    for (let i = 0; i < n; i++) {
+      const o = i * d;
+      for (let k = 0; k < K; k++) {
+        let s = CK[k];
+        const q = k * d;
+        for (let j = 0; j < d; j++) { const t = X[o + j] - mu[q + j]; s -= IV[q + j] * t * t; }
+        if (cat) s += LPC[k * C + cat[i]];
+        LP[i * K + k] = s;
+      }
+    }
+    ll = 0;
+    for (let c = 0; c < chunks.length; c++) {
+      const ch = chunks[c], m = ch.length;
+      let mx = -Infinity;
+      for (let k = 0; k < K; k++) {
+        let s = Math.log(pi[k]);
+        for (let t = 0; t < m; t++) s += LP[ch[t] * K + k];
+        L[k] = s; if (s > mx) mx = s;
+      }
+      let z = 0;
+      for (let k = 0; k < K; k++) z += Math.exp(L[k] - mx);
+      const lz = mx + Math.log(z);
+      ll += lz;
+      for (let k = 0; k < K; k++) { const r = Math.exp(L[k] - lz); for (let t = 0; t < m; t++) R[ch[t] * K + k] = r; }
+    }
+    if (Math.abs(ll - prev) < 1e-8 * (1 + Math.abs(ll))) break;
+    prev = ll;
+  }
+  return { K, ll, R, pi, mu, va, P, iter };
+}
+
+function fitPhases(D, K, seed = 1, nInit = 5, maxIter = 300) {
+  let best = null;
+  for (let t = 0; t < nInit; t++) {
+    const r = emRun(D, K, mulberry32(seed + t), maxIter);
+    if (!best || r.ll > best.ll + 1e-9) best = r;
+  }
+  const { n, d, C } = D;
+  const p = (K - 1) + K * 2 * d + (D.cat ? K * (C - 1) : 0);
+  const H = new Float64Array(n);
+  let sumH = 0;
+  for (let i = 0; i < n; i++) {
+    let h = 0;
+    for (let k = 0; k < K; k++) { const r = best.R[i * K + k]; if (r > 1e-300) h -= r * Math.log(r); }
+    H[i] = h; sumH += h;
+  }
+  best.params = p;
+  best.bic = -2 * best.ll + p * Math.log(n);
+  best.icl = best.bic + 2 * sumH;
+  best.H = H;
+  best.pdi = K === 1 ? 1 : 1 - (sumH / n) / Math.log(K);
+  return best;
+}
+
+/* Analisi completa delle fasi. o: opzioni di phaseData + { k: "auto" | numero, crit: "icl" | "bic" } */
+function phaseAnalysis(res, o) {
+  const D = phaseData(res, o);
+  if (D.n < 6 || (D.d === 0 && !D.cat)) return { ok: false, reason: D.n < 6 ? "Servono almeno 6 frammenti con i campi scelti." : "Scegli almeno una variabile.", D };
+  const kMax = Math.max(1, Math.min(8, Math.floor(D.n / 8)));
+  const scan = [];
+  for (let k = 1; k <= kMax; k++) scan.push(fitPhases(D, k));
+  let chosen;
+  const crit = o.crit === "bic" ? "bic" : "icl";
+  if (o.k === "auto") chosen = scan.reduce((a, b) => b[crit] < a[crit] - 1e-9 ? b : a);
+  else chosen = scan[Math.min(kMax, +o.k) - 1] || fitPhases(D, +o.k);
+  const K = chosen.K, n = D.n;
+  // fasi ordinate dalla più alta alla più bassa (quota media pesata)
+  const key = [];
+  for (let k = 0; k < K; k++) {
+    let s = 0, w = 0, sy = 0;
+    for (let i = 0; i < n; i++) { const r = chosen.R[i * K + k]; w += r; if (D.fs[i].z !== null) s += r * D.fs[i].z; sy += r * D.fs[i].y; }
+    key.push({ k, z: w ? s / w : 0, y: w ? sy / w : 0, w });
+  }
+  const useZ = D.fs.every(f => f.z !== null);
+  key.sort((a, b) => useZ ? b.z - a.z || a.k - b.k : b.w - a.w || a.k - b.k);
+  const relabel = new Int32Array(K); key.forEach((e, idx) => { relabel[e.k] = idx; });
+  const frag = new Map();
+  for (let i = 0; i < n; i++) {
+    const probs = new Array(K).fill(0);
+    for (let k = 0; k < K; k++) probs[relabel[k]] = chosen.R[i * K + k];
+    let b = 0; for (let k = 1; k < K; k++) if (probs[k] > probs[b] + 1e-12) b = k;
+    frag.set(D.ids[i], { phase: b + 1, p: probs[b], probs, H: chosen.H[i] });
+  }
+  const phases = [];
+  for (let k = 0; k < K; k++) {
+    const mem = D.fs.filter(f => frag.get(f.id).phase === k + 1);
+    const zs = mem.map(f => f.z).filter(z => z !== null).sort((a, b) => a - b);
+    const us = new Map();
+    for (const f of mem) { const u = usKey(f.us); if (u) us.set(u, (us.get(u) || 0) + 1); }
+    const zMean = zs.length ? zs.reduce((a, b) => a + b, 0) / zs.length : null;
+    const zSd = zs.length > 1 ? Math.sqrt(zs.reduce((a, z) => a + (z - zMean) ** 2, 0) / (zs.length - 1)) : null;
+    phases.push({
+      id: k + 1, n: mem.length, members: mem.map(f => f.id),
+      zMean, zSd, zMin: zs.length ? zs[0] : null, zMax: zs.length ? zs[zs.length - 1] : null,
+      us: [...us.entries()].sort((a, b) => b[1] - a[1] || natCmp(a[0], b[0])),
+      meanP: mem.length ? mem.reduce((a, f) => a + frag.get(f.id).p, 0) / mem.length : null,
+      ambiguous: mem.filter(f => frag.get(f.id).p < 0.7).length,
+    });
+  }
+  // coerenza dei rimontaggi con le fasi
+  const M = Array.from({ length: K }, () => new Array(K).fill(0));
+  const ends = new Array(K).fill(0);
+  let same = 0, tot = 0;
+  for (const l of res.direct) {
+    const a = frag.get(l.a), b = frag.get(l.b);
+    if (!a || !b) continue;
+    tot++; ends[a.phase - 1]++; ends[b.phase - 1]++;
+    const [p, q] = a.phase <= b.phase ? [a.phase, b.phase] : [b.phase, a.phase];
+    M[p - 1][q - 1]++;
+    if (a.phase === b.phase) same++;
+  }
+  const expSame = tot ? ends.reduce((s, e) => s + (e / (2 * tot)) ** 2, 0) : null;
+  return {
+    ok: true, D, K, kMax, scan: scan.map(s => ({ K: s.K, bic: s.bic, icl: s.icl, ll: s.ll, pdi: s.pdi })),
+    chosen, frag, phases, pdi: chosen.pdi, bic: chosen.bic, icl: chosen.icl,
+    coherence: { same, tot, pct: tot ? same / tot : null, expected: expSame, matrix: M },
+    constrained: !!o.constrained, crit,
+  };
+}
+
+/* Connessioni tra US: osservato/atteso, insiemi per modularità, salti */
+function usAnalysis(res, ph) {
+  const by = new Map();
+  for (const f of res.frags.values()) {
+    const u = usKey(f.us); if (u === null) continue;
+    if (!by.has(u)) by.set(u, []);
+    by.get(u).push(f);
+  }
+  const units = [...by.entries()].map(([u, fs]) => {
+    const zs = fs.map(f => f.z).filter(z => z !== null).sort((a, b) => a - b);
+    return { us: u, n: fs.length, nz: zs.length, zMed: quantile(zs, .5), z05: quantile(zs, .05), z95: quantile(zs, .95),
+             zMin: zs.length ? zs[0] : null, zMax: zs.length ? zs[zs.length - 1] : null, internal: 0, external: 0, deg: 0, dzs: [], phases: new Map() };
+  });
+  units.sort((a, b) => (a.zMed === null) - (b.zMed === null) || (b.zMed ?? 0) - (a.zMed ?? 0) || natCmp(a.us, b.us));
+  const idx = new Map(units.map((u, i) => [u.us, i]));
+  units.forEach((u, i) => { u.rank = i; });
+  if (ph && ph.ok) for (const [id, v] of ph.frag) { const f = res.frags.get(id), u = usKey(f.us); if (u !== null) { const m = units[idx.get(u)].phases; m.set(v.phase, (m.get(v.phase) || 0) + 1); } }
+  const N = units.length, O = Array.from({ length: N }, () => new Array(N).fill(0));
+  const jumps = [0, 0, 0, 0];
+  let L = 0;
+  for (const l of res.direct) {
+    const a = usKey(l.usA), b = usKey(l.usB);
+    if (a === null || b === null) continue;
+    const i = idx.get(a), j = idx.get(b);
+    L++;
+    units[i].deg++; units[j].deg++;
+    if (i === j) { O[i][i]++; units[i].internal++; }
+    else { O[i][j]++; O[j][i]++; units[i].external++; units[j].external++; }
+    if (l.dz !== null) { units[i].dzs.push(Math.abs(l.dz)); if (i !== j) units[j].dzs.push(Math.abs(l.dz)); }
+    jumps[Math.min(3, Math.abs(i - j))]++;
+  }
+  const E = Array.from({ length: N }, (_, i) => Array.from({ length: N }, (_, j) => L ? (i === j ? units[i].deg ** 2 / (4 * L) : units[i].deg * units[j].deg / (2 * L)) : 0));
+  for (const u of units) { const s = [...u.dzs].sort((a, b) => a - b); u.dzMed = quantile(s, .5); u.open = u.internal + u.external ? u.external / (u.internal + u.external) : null; }
+
+  // modularità: aggregazione greedy (Clauset–Newman–Moore) sul grafo delle US
+  const active = units.filter(u => u.deg > 0).map(u => u.rank);
+  let comms = active.map(r => [r]);
+  const m2 = 2 * L;
+  const A = (i, j) => i === j ? 2 * O[i][i] : O[i][j];
+  const qOf = cs => cs.reduce((q, c) => {
+    let ein = 0, deg = 0;
+    for (const a of c) { deg += units[a].deg; for (const b of c) ein += A(a, b); }
+    return q + ein / m2 - (deg / m2) ** 2;
+  }, 0);
+  const merges = [];
+  let Q = L ? qOf(comms) : 0, bestQ = Q, best = comms.map(c => [...c]);
+  while (L && comms.length > 1) {
+    let bi = -1, bj = -1, bd = -Infinity;
+    for (let i = 0; i < comms.length; i++) for (let j = i + 1; j < comms.length; j++) {
+      let e = 0;
+      for (const a of comms[i]) for (const b of comms[j]) e += A(a, b);
+      if (e === 0) continue;
+      const ai = comms[i].reduce((s, a) => s + units[a].deg, 0) / m2, aj = comms[j].reduce((s, a) => s + units[a].deg, 0) / m2;
+      const dq = 2 * (e / m2 - ai * aj);
+      if (dq > bd + 1e-12) { bd = dq; bi = i; bj = j; }
+    }
+    if (bi < 0) break;
+    const merged = [...comms[bi], ...comms[bj]].sort((a, b) => a - b);
+    merges.push({ a: comms[bi].map(r => units[r].us), b: comms[bj].map(r => units[r].us), dQ: bd });
+    comms = comms.filter((_, k) => k !== bi && k !== bj).concat([merged]).sort((p, q) => p[0] - q[0]);
+    Q += bd;
+    merges[merges.length - 1].Q = Q;
+    if (Q > bestQ + 1e-12) { bestQ = Q; best = comms.map(c => [...c]); }
+  }
+  best.sort((p, q) => p[0] - q[0]);
+  const sets = best.map((c, i) => {
+    let inside = 0;
+    for (const a of c) for (const b of c) if (a <= b) inside += O[a][b];
+    return { id: i + 1, ranks: c, us: c.map(r => units[r].us), links: inside };
+  });
+  const setOf = new Map(); sets.forEach(s => s.ranks.forEach(r => setOf.set(r, s.id)));
+  units.forEach(u => { u.set = setOf.get(u.rank) ?? null; });
+  const internalTot = units.reduce((s, u) => s + u.internal, 0);
+  return { units, O, E, L, jumps, sets, Q: bestQ, merges, isolated: units.filter(u => u.deg === 0).map(u => u.us), internalTot };
+}
+</script>
+
+<script>
+/* ======================================================================
+   Interfaccia
+   ====================================================================== */
+const $ = s => document.querySelector(s);
+const FIELD_DEFS = [
+  { key: "id", label: "ID frammento", req: true, guess: [/^rr$/i, /framm|fragment|^n_?fr/i, /^id$/i] },
+  { key: "refit", label: "Attacca con", req: true, guess: [/attacca_?con|refit|rimonta/i, /attacc|join/i] },
+  { key: "pert", label: "Pertinente a", guess: [/pertin|appartien|belong/i] },
+  { key: "x", label: "X / Est", req: true, guess: [/^__geom_x$/, /^(x|est|east|e|easting|coord_?x)$/i] },
+  { key: "y", label: "Y / Nord", req: true, guess: [/^__geom_y$/, /^(y|nord|north|n|northing|coord_?y)$/i] },
+  { key: "z", label: "Quota", guess: [/^(z|quota|q|elev|elevation|h|coord_?z)$/i, /^__geom_z$/, /quota/i] },
+  { key: "vessel", label: "Vaso", guess: [/vaso_?id|id_?vaso|num_?vaso|^vaso$/i, /vaso|vessel/i] },
+  { key: "us", label: "US", guess: [/^(us|su|sus|context|contesto|strato|layer)$/i, /^us[_ ]|unit/i] },
+];
+const GEOM_LABEL = { __geom_x: "⟨geometria X⟩", __geom_y: "⟨geometria Y⟩", __geom_z: "⟨geometria Z⟩" };
+
+const state = {
+  rows: [], headers: [], source: "", demo: false, map: {},
+  opt: { mode: "diretti", excludeOutliers: true, pertInGroups: false },
+  show: { hulls: true, pert: true, unlinked: true, labels: false, drop: true },
+  phOpt: { wXY: 0.5, wZ: 1, wUS: 0, k: "auto", crit: "icl", constrained: false },
+  ph: null, usr: null, phJob: 0, phBusy: false,
+  strataA: 0.3, strataFocus: "",
+  colorBy: "gruppo", view: "pianta", exag: 1,
+  res: null, sel: null, tab: "gruppi", sort: {},
+  project: null, history: [], fixLog: [], dirty: false, dataFilter: "", dataOnlyBad: false,
+};
+
+/* ---------- lettura file ---------- */
+function parseCSV(text) {
+  text = text.replace(/^﻿/, "");
+  const first = text.split(/\r?\n/).find(l => l.trim()) || "";
+  let delim = ",", best = -1;
+  for (const d of [",", ";", "\t", "|"]) {
+    let n = 0, q = false;
+    for (const ch of first) { if (ch === '"') q = !q; else if (ch === d && !q) n++; }
+    if (n > best) { best = n; delim = d; }
+  }
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === delim) { row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell); cell = ""; if (row.some(c => c.trim() !== "")) rows.push(row); row = [];
+    } else cell += ch;
+  }
+  row.push(cell); if (row.some(c => c.trim() !== "")) rows.push(row);
+  if (!rows.length) throw new Error("Il file è vuoto.");
+  const seen = {}, headers = rows[0].map((h, i) => {
+    let k = h.trim() || `colonna_${i + 1}`;
+    if (seen[k]) k = `${k}_${++seen[k]}`; else seen[k] = 1;
+    return k;
+  });
+  return { headers, rows: rows.slice(1).map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ""]))) };
+}
+function parseGeoJSON(text) {
+  const d = JSON.parse(text);
+  const feats = d.type === "FeatureCollection" ? d.features : (d.type === "Feature" ? [d] : null);
+  if (!feats) throw new Error("Il GeoJSON non contiene una FeatureCollection.");
+  const headers = new Set(["__geom_x", "__geom_y", "__geom_z"]), rows = [];
+  for (const f of feats) {
+    const p = { ...(f.properties || {}) }; Object.keys(p).forEach(k => headers.add(k));
+    let c = f.geometry && f.geometry.coordinates;
+    if (f.geometry && f.geometry.type === "MultiPoint" && c) c = c[0];
+    const ok = f.geometry && (f.geometry.type === "Point" || f.geometry.type === "MultiPoint") && c;
+    p.__geom_x = ok ? c[0] : ""; p.__geom_y = ok ? c[1] : ""; p.__geom_z = ok && c.length > 2 ? c[2] : "";
+    rows.push(p);
+  }
+  return { headers: [...headers], rows };
+}
+function readFile(file) {
+  const rd = (enc) => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = ko; r.readAsText(file, enc); });
+  rd("utf-8").then(t => t.includes(String.fromCharCode(0xFFFD)) ? rd("windows-1252") : t).then(text => {
+    const isJson = /\.(geo)?json$/i.test(file.name) || /^\s*\{/.test(text);
+    if (isJson) { let d = null; try { d = JSON.parse(text); } catch { /* lo segnala parseGeoJSON */ } if (d && d.formato === PROJ_FMT) { projImport(d); return; } }
+    const parsed = isJson ? parseGeoJSON(text) : parseCSV(text);
+    loadData(parsed, file.name, false);
+  }).catch(e => toast(`Impossibile leggere ${file.name}: ${e.message}`));
+}
+function guessMap(headers) {
+  const m = {}, used = new Set();
+  for (const def of FIELD_DEFS) {
+    let hit = null;
+    for (const re of def.guess) { hit = headers.find(h => !used.has(h) && re.test(h)); if (hit) break; }
+    m[def.key] = hit || "";
+    if (hit) used.add(hit);
+  }
+  return m;
+}
+function loadData(parsed, source, demo) {
+  state.rows = parsed.rows; state.headers = parsed.headers; state.source = source; state.demo = demo;
+  state.map = guessMap(parsed.headers); state.sel = null; state.project = null;
+  state.history = []; state.fixLog = []; state.dirty = false; state.dataFilter = "";
+  $("#projName").value = ""; renderProjects();
+  $("#tbSource").textContent = source;
+  $("#demoBadge").hidden = !demo;
+  $("#rowCount").textContent = `${parsed.rows.length} righe`;
+  renderFields(); run(true);
+}
+
+/* ---------- dati di esempio sintetici (seme fisso) ---------- */
+function demoCSV() {
+  let s = 20250226;
+  const rnd = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const gauss = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const US = [["6", 79.52], ["16", 79.47], ["17", 79.40], ["20", 79.27], ["21", 79.16], ["33", 79.13], ["36", 78.95]];
+  const ids = new Set(); const newId = () => { let id; do { id = String(100 + Math.floor(rnd() * 1900)); } while (ids.has(id)); ids.add(id); return id; };
+  const rows = [];
+  for (let v = 1; v <= 13; v++) {
+    const cx = 101.35 + ((v - 1) % 4) * 0.62 + rnd() * 0.25, cy = 498.05 + Math.floor((v - 1) / 4) * 0.6 + rnd() * 0.25, ui = 1 + Math.floor(rnd() * 5);
+    const n = 3 + Math.floor(rnd() * 5), frs = [];
+    for (let k = 0; k < n; k++) {
+      const u = US[Math.min(US.length - 1, Math.max(0, ui + Math.round(gauss() * 0.8)))];
+      frs.push({ RR: newId(), est: cx + gauss() * 0.17, nord: cy + gauss() * 0.17, quota: u[1] + gauss() * 0.035, US: u[0] + (rnd() < .2 ? " base" : ""), v });
+    }
+    const split = n >= 5 && rnd() < .5 ? Math.floor(n / 2) : n;
+    frs.forEach((f, k) => {
+      const grpStart = k < split ? 0 : split;
+      const tgt = k === grpStart ? frs[k + 1 < (k < split ? split : n) ? k + 1 : grpStart] : frs[grpStart + Math.floor(rnd() * (k - grpStart))];
+      f._Attacca_con = tgt && tgt !== f ? tgt.RR : "";
+      if (rnd() < .15 && k > grpStart + 1) f._Attacca_con += "; " + frs[grpStart].RR;
+      f._pertinente_a = split < n && k === split ? frs[0].RR : "";
+      f._Vaso_ID = rnd() < .12 ? "?" : String(v);
+    });
+    rows.push(...frs);
+  }
+  rows.push({ RR: newId(), est: 102.3, nord: 498.9, quota: 79.3, US: "20", _Attacca_con: "", _pertinente_a: "", _Vaso_ID: "?" });
+  rows.push({ RR: newId(), est: 101.9, nord: 499.4, quota: 79.2, US: "21", _Attacca_con: "", _pertinente_a: "", _Vaso_ID: "?" });
+  rows.push({ RR: newId(), est: "", nord: "", quota: "", US: "20", _Attacca_con: rows[3].RR, _pertinente_a: "", _Vaso_ID: rows[3]._Vaso_ID });
+  rows[7].est = rows[7].nord; rows[7].nord = 101.84;                 // est/nord invertiti
+  rows[12]._Attacca_con = "3164";                                     // rimanda a un pezzo non schedato
+  const H = ["RR", "est", "nord", "quota", "US", "_Attacca_con", "_pertinente_a", "_Vaso_ID"];
+  const f3 = v => typeof v === "number" ? v.toFixed(3) : v;
+  return { headers: H, rows: rows.map(r => Object.fromEntries(H.map(h => [h, String(f3(r[h]))]))) };
+}
+
+/* ---------- campi ---------- */
+function renderFields() {
+  const box = $("#fields"); box.innerHTML = "";
+  for (const def of FIELD_DEFS) {
+    const id = "f_" + def.key;
+    const lab = document.createElement("label"); lab.htmlFor = id;
+    lab.innerHTML = def.label + (def.req ? ' <span class="req" title="obbligatorio">*</span>' : "");
+    const sel = document.createElement("select"); sel.id = id;
+    sel.append(new Option(def.req ? "— scegli —" : "— nessuno —", ""));
+    for (const h of state.headers) sel.append(new Option(GEOM_LABEL[h] || h, h));
+    sel.value = state.map[def.key] || "";
+    sel.addEventListener("change", () => { state.map[def.key] = sel.value; state.sel = null; run(true); });
+    box.append(lab, sel);
+  }
+}
+
+/* ---------- esecuzione ---------- */
+let colorCache = {};
+function run(refit) {
+  const m = state.map;
+  const missing = FIELD_DEFS.filter(d => d.req && !m[d.key]).map(d => d.label);
+  if (!state.rows.length || missing.length) {
+    state.res = null; state.ph = null; state.usr = null; state.phJob++; setBusy(false);
+    showEmpty(state.rows.length ? `Scegli i campi obbligatori: ${missing.join(", ")}.` : state.headers.length ? "Tabella vuota: aggiungi i frammenti nella scheda Dati." : "Carica un file o l'esempio per iniziare.");
+    renderStats(); renderTabs(); renderLegend(); return;
+  }
+  const frags = buildFragments(state.rows, m);
+  state.res = analyse(frags, state.opt);
+  assignColors();
+  const hasZ = [...state.res.frags.values()].some(f => f.z !== null);
+  for (const b of $("#viewSeg").querySelectorAll("button")) if (b.dataset.view !== "pianta") b.disabled = !hasZ;
+  if (!hasZ && state.view !== "pianta") setView("pianta", false);
+  if (!state.res.frags.size) showEmpty("Nessun frammento con coordinate valide nei campi scelti.");
+  else $("#emptyMap").hidden = true;
+  state.ph = null;
+  fillStrataFocus();
+  renderStats(); renderTabs(); renderLegend(); renderDetail();
+  if (refit) fit(); draw();
+  schedulePhases();
+}
+function showEmpty(msg) { const e = $("#emptyMap"); e.textContent = msg; e.hidden = false; draw(); }
+
+/* ---------- colori ---------- */
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function palette() { return [1, 2, 3, 4, 5, 6, 7, 8].map(i => css("--c" + i)); }
+function assignColors() {
+  const res = state.res; if (!res) return;
+  const cat = palette(), other = css("--other");
+  const byCount = vals => { const c = new Map(); vals.forEach(v => { if (v !== null) c.set(v, (c.get(v) || 0) + 1); }); return [...c.entries()].sort((a, b) => b[1] - a[1] || natCmp(a[0], b[0])).map(e => e[0]); };
+  const fs = [...res.frags.values()];
+  const vessels = byCount(fs.map(f => f.vessel)), uss = byCount(fs.map(f => usKey(f.us)));
+  const zs = fs.map(f => f.z).filter(z => z !== null);
+  colorCache = {
+    cat, other,
+    group: id => id && id <= 8 ? cat[id - 1] : other,
+    vesselList: vessels, vessel: v => { const i = vessels.indexOf(v); return i >= 0 && i < 8 ? cat[i] : other; },
+    usList: uss, us: u => { const i = uss.indexOf(usKey(u)); return i >= 0 && i < 8 ? cat[i] : other; },
+    zmin: zs.length ? Math.min(...zs) : 0, zmax: zs.length ? Math.max(...zs) : 1,
+    seq: [1, 2, 3, 4, 5, 6, 7].map(i => css("--s" + i)),
+    phaseRamp: [1, 2, 3, 4, 5, 6, 7].map(i => css("--p" + i)),
+  };
+}
+function fragColor(f) {
+  const c = colorCache;
+  switch (state.colorBy) {
+    case "vaso": return c.vessel(f.vessel);
+    case "us": return c.us(f.us);
+    case "quota": {
+      if (f.z === null) return c.other;
+      const t = c.zmax > c.zmin ? (c.zmax - f.z) / (c.zmax - c.zmin) : .5;   // più profondo = più scuro
+      return c.seq[Math.min(6, Math.max(1, Math.round(1 + t * 5)))];
+    }
+    case "fase": {
+      const v = state.ph && state.ph.ok ? state.ph.frag.get(f.id) : null;
+      return v ? phaseColor(v.phase) : c.other;
+    }
+    default: return c.group(state.res.clusterOf.get(f.id));
+  }
+}
+
+/* ---------- mappa ---------- */
+const cv = $("#map"), ctx = cv.getContext("2d");
+const view = { cx: 0, cy: 0, s: 100, W: 0, H: 0 };
+function proj(f) {
+  if (state.view === "3d") return f.z === null ? null : [f.x, f.y];
+  if (state.view === "eo") return f.z === null ? null : [f.x, f.z * state.exag];
+  if (state.view === "ns") return f.z === null ? null : [f.y, f.z * state.exag];
+  return [f.x, f.y];
+}
+const toS = p => [(p[0] - view.cx) * view.s + view.W / 2, view.H / 2 - (p[1] - view.cy) * view.s];
+const toW = (sx, sy) => [(sx - view.W / 2) / view.s + view.cx, (view.H / 2 - sy) / view.s + view.cy];
+function visibleFrags() { return state.res ? [...state.res.frags.values()].filter(f => proj(f)) : []; }
+function fitTo(points) {
+  if (!points.length) return;
+  const xs = points.map(p => p[0]), ys = points.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  view.cx = (x0 + x1) / 2; view.cy = (y0 + y1) / 2;
+  const w = Math.max(x1 - x0, 1e-3), h = Math.max(y1 - y0, 1e-3);
+  view.s = Math.min((view.W - 120) / w, (view.H - 110) / h);
+  if (!Number.isFinite(view.s) || view.s <= 0) view.s = 100;
+}
+function fit() { if (state.view === "3d") { fit3D(); return; } fitTo(visibleFrags().map(proj)); }
+function screenPos(f) {
+  if (state.view === "3d") { const w = world(f); return w ? p3(w, camBasis()) : null; }
+  const p = proj(f); return p ? toS(p) : null;
+}
+function resize() {
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const first = !view.W;
+  view.W = r.width; view.H = r.height;
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (first) fit();
+  draw();
+}
+function niceStep(px) {
+  const raw = px / view.s, p = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const m of [1, 2, 5, 10]) if (m * p >= raw) return m * p;
+  return 10 * p;
+}
+function decimalsFor(step) { return Math.max(0, -Math.floor(Math.log10(step) + 1e-9)); }
+function highlightSet() {
+  const res = state.res, sel = state.sel;
+  if (!res || !sel) return null;
+  if (sel.type === "group") return new Set(res.clusters[sel.id - 1]?.members || []);
+  const g = res.clusterOf.get(sel.id);
+  if (g) return new Set(res.clusters[g - 1].members);
+  return new Set([sel.id, ...res.pert.filter(l => l.a === sel.id || l.b === sel.id).flatMap(l => [l.a, l.b])]);
+}
+function draw() {
+  const W = view.W, H = view.H; if (!W) return;
+  const ink = css("--ink"), ink2 = css("--ink-2"), muted = css("--muted"), surf = css("--surface"), gridc = css("--grid"), gridS = css("--grid-strong"), mark = css("--mark");
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = surf; ctx.fillRect(0, 0, W, H);
+  const res = state.res;
+  if (!res || !res.frags.size) return;
+  if (state.view === "3d") { draw3D(); return; }
+
+  // griglia
+  const step = niceStep(70), minor = step / 5, dec = decimalsFor(step);
+  const [wx0, wy1] = toW(0, 0), [wx1, wy0] = toW(W, H);
+  ctx.lineWidth = 1;
+  if (minor * view.s >= 10) {
+    ctx.strokeStyle = gridc; ctx.beginPath();
+    for (let x = Math.ceil(wx0 / minor) * minor; x <= wx1; x += minor) { const sx = Math.round(toS([x, 0])[0]) + .5; ctx.moveTo(sx, 0); ctx.lineTo(sx, H); }
+    for (let y = Math.ceil(wy0 / minor) * minor; y <= wy1; y += minor) { const sy = Math.round(toS([0, y])[1]) + .5; ctx.moveTo(0, sy); ctx.lineTo(W, sy); }
+    ctx.stroke();
+  }
+  ctx.strokeStyle = gridS; ctx.beginPath();
+  for (let x = Math.ceil(wx0 / step) * step; x <= wx1; x += step) { const sx = Math.round(toS([x, 0])[0]) + .5; ctx.moveTo(sx, 0); ctx.lineTo(sx, H); }
+  for (let y = Math.ceil(wy0 / step) * step; y <= wy1; y += step) { const sy = Math.round(toS([0, y])[1]) + .5; ctx.moveTo(0, sy); ctx.lineTo(W, sy); }
+  ctx.stroke();
+
+  const hl = highlightSet();
+  const alphaOf = ids => !hl || ids.some(id => hl.has(id)) ? 1 : .16;
+  const fs = visibleFrags(), P = new Map(fs.map(f => [f.id, toS(proj(f))]));
+
+  // inviluppi (calcolati nella vista corrente)
+  const vbuf = (() => { const pts = fs.map(proj); if (!pts.length) return 1; const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); return (Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) || 1) * 0.015; })();
+  const groupLabels = [];
+  for (const c of res.clusters) {
+    const mem = c.members.filter(m => P.has(m)); if (!mem.length) continue;
+    const col = state.colorBy === "gruppo" ? colorCache.group(c.id) : ink2;
+    const a = alphaOf(c.members);
+    const pts = mem.map(m => proj(res.frags.get(m)));
+    const { ring } = hullRing(pts, vbuf);
+    const sr = ring.map(toS);
+    if (state.show.hulls) {
+      ctx.beginPath(); sr.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath();
+      ctx.globalAlpha = .10 * a; ctx.fillStyle = col; ctx.fill();
+      ctx.globalAlpha = .55 * a; ctx.strokeStyle = col; ctx.lineWidth = 1.25; ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    let top = sr[0]; for (const p of sr) if (p[1] < top[1]) top = p;
+    groupLabels.push({ c, x: top[0], y: top[1] - 6, a, col });
+  }
+
+  // pertinenze
+  if (state.show.pert) {
+    ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = muted;
+    for (const l of res.pert) {
+      const p = P.get(l.a), q = P.get(l.b); if (!p || !q) continue;
+      ctx.globalAlpha = alphaOf([l.a, l.b]);
+      ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+    }
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  }
+  // collegamenti
+  ctx.lineWidth = 2; ctx.lineCap = "round";
+  for (const l of res.links) {
+    const p = P.get(l.a), q = P.get(l.b); if (!p || !q) continue;
+    ctx.strokeStyle = state.colorBy === "gruppo" ? colorCache.group(l.cluster) : ink2;
+    ctx.globalAlpha = alphaOf([l.a, l.b]) * (state.opt.mode === "completi" ? .7 : 1);
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // punti
+  for (const f of fs) {
+    const p = P.get(f.id), linked = res.clusterOf.has(f.id);
+    if (!linked && !state.show.unlinked && !(hl && hl.has(f.id))) continue;
+    ctx.globalAlpha = alphaOf([f.id]);
+    ctx.beginPath(); ctx.arc(p[0], p[1], linked ? 5 : 3.5, 0, Math.PI * 2);
+    if (linked) { ctx.fillStyle = fragColor(f); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = surf; ctx.stroke(); }
+    else { ctx.fillStyle = surf; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = state.colorBy === "gruppo" ? muted : fragColor(f); ctx.stroke(); }
+  }
+  ctx.globalAlpha = 1;
+
+  // etichette
+  ctx.textBaseline = "middle";
+  if (state.show.labels) {
+    ctx.font = `500 10.5px ${css("--f-mono")}`;
+    for (const f of fs) {
+      const p = P.get(f.id); if (!res.clusterOf.has(f.id) && !state.show.unlinked) continue;
+      ctx.globalAlpha = alphaOf([f.id]);
+      ctx.lineWidth = 3; ctx.strokeStyle = surf; ctx.strokeText(f.id, p[0] + 7, p[1] - 6);
+      ctx.fillStyle = ink2; ctx.fillText(f.id, p[0] + 7, p[1] - 6);
+    }
+  }
+  ctx.font = `600 12px ${css("--f-display")}`; ctx.textAlign = "center";
+  for (const g of groupLabels) {
+    if (!state.show.hulls && !(hl && g.a === 1)) continue;
+    ctx.globalAlpha = g.a;
+    const t = "G" + g.c.id, w = ctx.measureText(t).width + 8;
+    ctx.fillStyle = surf; ctx.fillRect(g.x - w / 2, g.y - 8, w, 15);
+    ctx.fillStyle = state.colorBy === "gruppo" && g.c.id <= 8 ? g.col : ink2; ctx.fillText(t, g.x, g.y);
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = "left";
+
+  // selezione
+  if (state.sel && state.sel.type === "frag" && P.has(state.sel.id)) {
+    const p = P.get(state.sel.id);
+    ctx.beginPath(); ctx.arc(p[0], p[1], 9, 0, Math.PI * 2); ctx.lineWidth = 2.5; ctx.strokeStyle = mark; ctx.stroke();
+  }
+
+  // coordinate ai bordi
+  ctx.font = `400 10px ${css("--f-mono")}`; ctx.fillStyle = muted;
+  ctx.textBaseline = "top";
+  const lab = v => (state.view !== "pianta" && false) ? v : v.toFixed(dec);
+  for (let x = Math.ceil(wx0 / step) * step; x <= wx1; x += step) { const sx = toS([x, 0])[0]; if (sx > 30 && sx < W - 60) { ctx.fillStyle = surf; const t = lab(x); const w = ctx.measureText(t).width; ctx.fillRect(sx - w / 2 - 2, H - 15, w + 4, 13); ctx.fillStyle = muted; ctx.textAlign = "center"; ctx.fillText(t, sx, H - 14); } }
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  for (let y = Math.ceil(wy0 / step) * step; y <= wy1; y += step) { const sy = toS([0, y])[1]; if (sy > 50 && sy < H - 30) { const v = state.view === "pianta" ? y : y / state.exag; const t = v.toFixed(state.view === "pianta" ? dec : Math.max(dec, decimalsFor(step / state.exag))); const w = ctx.measureText(t).width; ctx.fillStyle = surf; ctx.fillRect(3, sy - 7, w + 4, 13); ctx.fillStyle = muted; ctx.fillText(t, 5, sy); } }
+
+  // scala grafica
+  const sbW = niceStep(110) * view.s, sbLen = niceStep(110);
+  const sx0 = W - 22 - sbW, sy0 = H - 30;
+  ctx.fillStyle = surf; ctx.fillRect(sx0 - 6, sy0 - 18, sbW + 12, 28);
+  ctx.strokeStyle = ink; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(sx0, sy0 - 4); ctx.lineTo(sx0, sy0 + 2); ctx.lineTo(sx0 + sbW, sy0 + 2); ctx.lineTo(sx0 + sbW, sy0 - 4); ctx.stroke();
+  ctx.fillStyle = ink; ctx.fillRect(sx0, sy0, sbW / 2, 2);
+  ctx.font = `500 11px ${css("--f-mono")}`; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.fillText(sbLen >= 1 ? `${+sbLen.toFixed(3)} m` : `${+(sbLen * 100).toFixed(1)} cm`, sx0 + sbW / 2, sy0 - 7);
+  ctx.textAlign = "left";
+
+  // nord o etichetta di sezione
+  if (state.view === "pianta") {
+    const nx = W - 62, ny = 30;
+    ctx.fillStyle = ink; ctx.beginPath(); ctx.moveTo(nx, ny - 14); ctx.lineTo(nx + 7, ny + 8); ctx.lineTo(nx, ny + 3); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(nx, ny - 14); ctx.lineTo(nx - 7, ny + 8); ctx.lineTo(nx, ny + 3); ctx.stroke();
+    ctx.font = `600 12px ${css("--f-display")}`; ctx.textAlign = "center"; ctx.fillText("N", nx, ny + 20); ctx.textAlign = "left";
+  } else {
+    ctx.font = `600 12px ${css("--f-display")}`; ctx.fillStyle = muted; ctx.textAlign = "right";
+    ctx.fillText(`PROIEZIONE ${state.view === "eo" ? "OVEST ← → EST" : "SUD ← → NORD"} · QUOTA${state.exag > 1 ? " ×" + state.exag : ""}`, W - 56, 24);
+    ctx.textAlign = "left";
+  }
+}
+
+/* interazione mappa: un solo ridisegno per fotogramma durante trascinamento e zoom */
+let drawPending = false;
+function requestDraw() { if (drawPending) return; drawPending = true; requestAnimationFrame(() => { drawPending = false; draw(); }); }
+const pointers = new Map(); let dragMoved = false, pinchD = 0, lastTap = 0;
+function pick(sx, sy) {
+  let best = null, bd = 12;
+  for (const f of visibleFrags()) {
+    if (!state.res.clusterOf.has(f.id) && !state.show.unlinked) continue;
+    const p = screenPos(f); if (!p) continue;
+    const d = Math.hypot(p[0] - sx, p[1] - sy);
+    if (d < bd) { bd = d; best = f; }
+  }
+  return best;
+}
+function zoomAt(sx, sy, k) {
+  if (state.view === "3d") {
+    cam.px = sx - view.W / 2 - (sx - view.W / 2 - cam.px) * k;
+    cam.py = sy - view.H / 2 - (sy - view.H / 2 - cam.py) * k;
+    cam.s *= k; requestDraw(); return;
+  }
+  const before = toW(sx, sy); view.s *= k;
+  const after = toW(sx, sy); view.cx += before[0] - after[0]; view.cy += before[1] - after[1]; requestDraw();
+}
+cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.offsetX, e.offsetY]); dragMoved = false; if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchD = Math.hypot(a[0] - b[0], a[1] - b[1]); } });
+cv.addEventListener("pointermove", e => {
+  const prev = pointers.get(e.pointerId);
+  if (!prev) { hover(e.offsetX, e.offsetY); return; }
+  const cur = [e.offsetX, e.offsetY];
+  if (pointers.size === 1) {
+    const dx = cur[0] - prev[0], dy = cur[1] - prev[1];
+    if (Math.abs(dx) + Math.abs(dy) > 2) dragMoved = true;
+    if (dragMoved) {
+      cv.classList.add("drag"); $("#tip").hidden = true;
+      if (state.view === "3d" && !e.shiftKey) { cam.yaw += dx * 0.008; cam.pitch = Math.min(Math.PI / 2, Math.max(0.02, cam.pitch + dy * 0.008)); }
+      else if (state.view === "3d") { cam.px += dx; cam.py += dy; }
+      else { view.cx -= dx / view.s; view.cy += dy / view.s; }
+      requestDraw();
+    }
+    pointers.set(e.pointerId, cur);
+  } else if (pointers.size === 2) {
+    pointers.set(e.pointerId, cur); dragMoved = true;
+    const [a, b] = [...pointers.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    if (pinchD) zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, d / pinchD);
+    pinchD = d;
+  }
+});
+const endPointer = e => {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.delete(e.pointerId); cv.classList.remove("drag");
+  if (!dragMoved && pointers.size === 0 && e.type === "pointerup") {
+    const now = Date.now();
+    if (now - lastTap < 300) { zoomAt(e.offsetX, e.offsetY, 1.8); lastTap = 0; return; }
+    lastTap = now;
+    const f = pick(e.offsetX, e.offsetY);
+    select(f ? { type: "frag", id: f.id } : null, false);
+  }
+  if (pointers.size < 2) pinchD = 0;
+};
+cv.addEventListener("pointerup", endPointer); cv.addEventListener("pointercancel", endPointer);
+cv.addEventListener("pointerleave", () => { if (!pointers.size) $("#tip").hidden = true; });
+cv.addEventListener("wheel", e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+function hover(sx, sy) {
+  const tip = $("#tip"), f = state.res && pick(sx, sy);
+  if (!f) { tip.hidden = true; return; }
+  const g = state.res.clusterOf.get(f.id);
+  tip.innerHTML = `Frammento <b>${esc(f.id)}</b>${g ? " · G" + g : ""}<br>Vaso ${esc(f.vessel ?? "—")} · US ${esc(f.us ?? "—")}${f.z !== null ? " · q. " + fmtN(f.z) : ""}`;
+  tip.hidden = false;
+  const r = $("#mapwrap").getBoundingClientRect();
+  tip.style.left = Math.min(sx, r.width - tip.offsetWidth - 20) + "px"; tip.style.top = sy + "px";
+}
+$("#zin").onclick = () => zoomAt(view.W / 2, view.H / 2, 1.5);
+$("#zout").onclick = () => zoomAt(view.W / 2, view.H / 2, 1 / 1.5);
+$("#zfit").onclick = () => { fit(); draw(); };
+new ResizeObserver(resize).observe($("#mapwrap"));
+
+/* selezione */
+function select(sel, zoom) {
+  state.sel = sel;
+  if (sel && zoom && state.res) {
+    const ids = sel.type === "group" ? state.res.clusters[sel.id - 1].members : [sel.id];
+    if (state.view === "3d") { fit3D(ids); renderDetail(); draw(); return; }
+    const pts = ids.map(id => state.res.frags.get(id)).filter(Boolean).map(proj).filter(Boolean);
+    if (pts.length) {
+      if (pts.length === 1) { view.cx = pts[0][0]; view.cy = pts[0][1]; view.s = Math.max(view.s, 600); }
+      else { fitTo(pts); view.s *= .6; }
+    }
+  }
+  renderDetail(); draw();
+  document.querySelectorAll("tbody tr[data-g]").forEach(tr => tr.classList.toggle("on", !!sel && sel.type === "group" && +tr.dataset.g === sel.id));
+}
+function renderDetail() {
+  const box = $("#detail"), res = state.res, sel = state.sel;
+  if (!res || !sel) { box.hidden = true; return; }
+  if (sel.type === "frag") {
+    const f = res.frags.get(sel.id);
+    if (!f) {
+      const why = res.excluded.get(sel.id);
+      box.innerHTML = `<h3>Frammento ${esc(sel.id)} <button type="button" aria-label="Chiudi">×</button></h3><p class="hint">${why ? "Escluso dalla mappa: " + esc(why) + "." : "Non presente nella tabella."}</p>`;
+    } else {
+      const g = res.clusterOf.get(f.id);
+      const rel = res.direct.concat(res.pert).filter(l => l.a === f.id || l.b === f.id).map(l => {
+        const o = l.a === f.id ? l.b : l.a, dz = l.dz === null ? "" : `, Δz ${fmtN(l.a === f.id ? l.dz : -l.dz, 3)}`;
+        return `<button class="idbtn" data-id="${esc(o)}" type="button">${esc(o)}</button> <span class="mono" style="color:var(--muted)">${l.kind === "pertinenza" ? "pert." : ""} ${fmtN(l.d2, 2)} m${dz}</span>`;
+      });
+      const missing = f.refits.filter(r => !res.frags.has(r)).map(r => esc(r) + (res.excluded.has(r) ? " (escluso)" : " (assente)"));
+      box.innerHTML = `<h3>Frammento ${esc(f.id)} <button type="button" aria-label="Chiudi">×</button></h3>
+        <dl class="kv">
+          <dt>Gruppo</dt><dd>${g ? `<button class="idbtn" data-g="${g}" type="button">G${g}</button> · ${res.clusters[g - 1].members.length} frammenti` : "nessun attacco"}</dd>
+          <dt>Vaso</dt><dd>${esc(f.vessel ?? "—")}</dd>
+          <dt>US</dt><dd>${esc(f.us ?? "—")}</dd>
+          <dt>E, N</dt><dd>${fmtN(f.x)}, ${fmtN(f.y)}</dd>
+          <dt>Quota</dt><dd>${fmtN(f.z)}</dd>
+          ${state.ph && state.ph.ok && state.ph.frag.get(f.id) ? `<dt>Componente</dt><dd>C${state.ph.frag.get(f.id).phase} · appartenenza ${fmtN(state.ph.frag.get(f.id).p, 2)}</dd>` : ""}
+        </dl>
+        ${rel.length ? `<div><span class="label">Collegato a</span><div style="display:grid;gap:3px;margin-top:3px">${rel.join("<br>")}</div></div>` : ""}
+        ${missing.length ? `<p class="hint">Attacchi non mappabili: ${missing.join(", ")}</p>` : ""}`;
+    }
+  } else {
+    const c = res.clusters[sel.id - 1];
+    if (!c) { box.hidden = true; return; }
+    box.innerHTML = `<h3>Gruppo G${c.id} <button type="button" aria-label="Chiudi">×</button></h3>
+      <dl class="kv">
+        <dt>Frammenti</dt><dd>${c.members.length}</dd>
+        <dt>Vasi</dt><dd>${esc(c.vessels.join(", ") || "—")}</dd>
+        <dt>US</dt><dd>${esc(c.us.join(", ") || "—")}</dd>
+        <dt>Estensione</dt><dd>${fmtN(c.span, 2)} m</dd>
+        <dt>Diff. di quota</dt><dd>${c.zRange === null ? "—" : fmtN(c.zRange, 3) + " m"}</dd>
+      </dl>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${c.members.map(m => `<button class="idbtn" data-id="${esc(m)}" type="button">${esc(m)}</button>`).join("")}</div>`;
+  }
+  box.hidden = false;
+}
+$("#detail").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.id) select({ type: "frag", id: b.dataset.id }, true);
+  else if (b.dataset.g) select({ type: "group", id: +b.dataset.g }, true);
+  else select(null);
+});
+
+/* ---------- legenda ---------- */
+function renderLegend() {
+  const L = $("#legend"), res = state.res;
+  if (!res || !res.frags.size) { L.hidden = true; return; }
+  L.hidden = false;
+  const c = colorCache, items = [];
+  const sw = (col, t) => `<div class="li"><span class="sw" style="background:${col}"></span><span>${esc(t)}</span></div>`;
+  if (state.colorBy === "gruppo") {
+    res.clusters.slice(0, 8).forEach(g => items.push(sw(c.group(g.id), `G${g.id} · ${g.members.length} fr.${g.vessels.length ? " · vaso " + g.vessels.join("/") : ""}`)));
+    if (res.clusters.length > 8) items.push(sw(c.other, `G9–G${res.clusters.length} (etichettati in mappa)`));
+  } else if (state.colorBy === "vaso") {
+    c.vesselList.slice(0, 8).forEach(v => items.push(sw(c.vessel(v), "Vaso " + v)));
+    items.push(sw(c.other, c.vesselList.length > 8 ? "Altri vasi o non attribuiti" : "Vaso non attribuito"));
+  } else if (state.colorBy === "us") {
+    c.usList.slice(0, 8).forEach(u => items.push(sw(c.us(u), "US " + u)));
+    if (c.usList.length > 8) items.push(sw(c.other, "Altre US"));
+  } else if (state.colorBy === "fase") {
+    const ph = state.ph;
+    if (!ph) items.push(`<div class="li"><span class="label">Componenti</span><span>calcolo in corso…</span></div>`);
+    else if (!ph.ok) items.push(`<div class="li"><span>${esc(ph.reason)}</span></div>`);
+    else { ph.phases.forEach(f => items.push(sw(phaseColor(f.id), `C${f.id} · ${f.n} fr.${f.zMean !== null ? " · q. " + fmtN(f.zMean, 2) : ""}`))); if (ph.excluded) items.push(sw(c.other, "Senza componente")); }
+  } else {
+    items.push(`<div class="li"><span class="label">Quota</span><span class="mono" style="font-size:11px">${fmtN(c.zmax)}</span><span class="ramp"></span><span class="mono" style="font-size:11px">${fmtN(c.zmin)}</span></div>`);
+  }
+  if (state.view === "3d" && state.strataA > 0 && buildStrata(res)) items.push(`<div class="li"><span class="ramp earth" style="width:60px"></span><span>Volumi US ricostruiti dalle quote (modello indicativo)</span></div>`);
+  items.push(`<div class="li"><span class="ln"></span><span>${{ diretti: "Attacco", mst: "Albero minimo del gruppo", completi: "Coppia nel gruppo" }[state.opt.mode]}</span></div>`);
+  if (state.show.pert && res.pert.length) items.push(`<div class="li"><span class="ln dash"></span><span>Pertinenza</span></div>`);
+  L.innerHTML = items.join("");
+}
+
+/* ---------- sintesi ---------- */
+function renderStats() {
+  const box = $("#stats"), res = state.res;
+  if (!res) { box.innerHTML = `<div class="stat"><span class="label">Nessun dato</span><span class="s">Carica un file per vedere la sintesi.</span></div>`; return; }
+  const s = summary(res);
+  const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "—";
+  const st = (label, v, sub, unit = "") => `<div class="stat"><span class="label">${label}</span><span class="v">${v}${unit ? `<small>${unit}</small>` : ""}</span><span class="s">${sub}</span></div>`;
+  box.innerHTML =
+    st("Frammenti", s.frags, s.excluded ? `${s.excluded} esclusi dalla mappa` : "tutti in mappa") +
+    st("Rimontati", s.linked, `${pct(s.linked, s.frags)} dei frammenti`) +
+    st("Attacchi", s.joins, s.pert ? `+ ${s.pert} pertinenze` : "nessuna pertinenza") +
+    st("Gruppi", s.groups, s.groups ? `il maggiore ha ${s.maxGroup} pezzi` : "—") +
+    st("Distanza mediana", s.d2med === null ? "—" : fmtN(s.d2med, 2), s.d2max === null ? "—" : `massima ${fmtN(s.d2max, 2)} m`, s.d2med === null ? "" : "m") +
+    st("Diff. di quota mediana", s.dzmed === null ? "—" : fmtN(s.dzmed * 100, 1), s.dzmax === null ? "campo quota assente" : `massimo ${fmtN(s.dzmax * 100, 1)} cm`, s.dzmed === null ? "" : "cm") +
+    st("Tra US diverse", s.crossUS === null ? "—" : pct(s.crossUS, s.sameN), s.crossUS === null ? "campo US assente" : `${s.crossUS} attacchi su ${s.sameN}`) +
+    st("Componenti", state.phBusy ? "…" : !state.ph ? "—" : state.ph.ok ? state.ph.K : "—", state.phBusy ? "calcolo in corso" : !state.ph ? "servono frammenti con coordinate" : state.ph.ok ? `separazione ${fmtN(state.ph.pdi, 2)} · ${state.ph.crit.toUpperCase()}${state.ph.K > 1 && state.ph.coherence.tot ? ` · ${fmtN(100 * state.ph.coherence.pct, 0)}% attacchi interni` : ""}` : esc(state.ph.reason));
+}
+
+/* ---------- schede risultati ---------- */
+function esc(v) { return String(v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function renderTabs() {
+  const res = state.res;
+  $("#cntG").textContent = res ? res.clusters.length : "";
+  $("#cntL").textContent = res ? res.links.length + (state.show.pert ? res.pert.length : 0) : "";
+  $("#cntI").textContent = res ? res.issues.filter(i => i.level !== "info").length : "";
+  $("#cntD").textContent = state.headers.length ? state.rows.length : "";
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === state.tab));
+  const P = $("#tabpanel");
+  if (!res && state.tab !== "dati") { P.innerHTML = `<p class="hint">I risultati compaiono qui dopo il caricamento dei dati. Puoi anche compilare la tabella nella scheda Dati.</p>`; return; }
+  ({ dati: tabData, gruppi: tabGroups, collegamenti: tabLinks, matrice: tabMatrix, distanze: tabDist, fasi: tabPhases, palinsesto: tabPalimpsest, controlli: tabIssues })[state.tab](P, res);
+}
+document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => { state.tab = b.dataset.tab; renderTabs(); }));
+
+function sortable(P, name, cols, rows, rowAttr, onRow) {
+  const s = state.sort[name] || { k: cols[0].k, d: "asc" };
+  const sorted = [...rows].sort((a, b) => {
+    const A = a[s.k], B = b[s.k];
+    const r = (A === null || A === undefined) ? 1 : (B === null || B === undefined) ? -1 : (typeof A === "number" ? A - B : natCmp(A, B));
+    return s.d === "asc" ? r : -r;
+  });
+  P.innerHTML = `<div class="tablewrap"><table><thead><tr>${cols.map(c => `<th data-sort="${c.k}" class="${c.num ? "n" : ""}" ${s.k === c.k ? `data-dir="${s.d}"` : ""}>${c.l}</th>`).join("")}</tr></thead><tbody>${
+    sorted.map(r => `<tr ${rowAttr(r)}>${cols.map(c => `<td class="${c.num ? "n" : ""} ${c.cls || ""}">${c.f ? c.f(r) : esc(r[c.k] ?? "—")}</td>`).join("")}</tr>`).join("")
+  }</tbody></table></div>`;
+  P.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
+    const k = th.dataset.sort, cur = state.sort[name] || s;
+    state.sort[name] = { k, d: cur.k === k && cur.d === "desc" ? "asc" : (cur.k === k ? "desc" : (cols.find(c => c.k === k).num ? "desc" : "asc")) };
+    renderTabs();
+  }));
+  P.querySelectorAll("tbody tr").forEach(tr => tr.addEventListener("click", () => onRow(tr)));
+}
+function gchip(id) { return `<span class="gchip"><i style="background:${colorCache.group(id)}"></i>G${id}</span>`; }
+function tabGroups(P, res) {
+  if (!res.clusters.length) { P.innerHTML = `<p class="hint">Nessun attacco tra frammenti presenti in mappa.</p>`; return; }
+  const rows = res.clusters.map(c => ({ id: c.id, n: c.members.length, fr: c.members.join(", "), v: c.vessels.join(", ") || null, us: c.us.join(", ") || null, nus: c.us.length, span: c.span, dz: c.zRange, area: c.hullKind === "convex" ? c.area : null }));
+  sortable(P, "g", [
+    { k: "id", l: "Gruppo", num: true, f: r => gchip(r.id) },
+    { k: "n", l: "Fr.", num: true },
+    { k: "v", l: "Vaso" },
+    { k: "us", l: "US" },
+    { k: "span", l: "Estens. m", num: true, f: r => fmtN(r.span, 2) },
+    { k: "dz", l: "Diff. quota m", num: true, f: r => fmtN(r.dz, 3) },
+    { k: "area", l: "Area m²", num: true, f: r => r.area === null ? "—" : fmtN(r.area, 3) },
+    { k: "fr", l: "Frammenti", cls: "wrap mono" },
+  ], rows, r => `data-g="${r.id}" class="${state.sel && state.sel.type === "group" && state.sel.id === r.id ? "on" : ""}"`, tr => select({ type: "group", id: +tr.dataset.g }, true));
+  P.insertAdjacentHTML("beforeend", `<p class="note">I gruppi di rimontaggio riuniscono i frammenti collegati dagli attacchi${state.opt.pertInGroups ? " e dalle pertinenze" : ""}, anche indirettamente; sono numerati dal più grande. Clicca una riga per evidenziarla in mappa.</p>`);
+}
+function tabLinks(P, res) {
+  const all = res.links.concat(state.show.pert ? res.pert : []);
+  if (!all.length) { P.innerHTML = `<p class="hint">Nessun collegamento.</p>`; return; }
+  const rows = all.map((l, i) => ({ i, a: l.a, b: l.b, kind: l.kind, g: l.cluster, d2: l.d2, dz: l.dz, d3: l.d3, usA: l.usA, usB: l.usB, same: l.sameUS === null ? null : (l.sameUS ? "sì" : "no") }));
+  sortable(P, "l", [
+    { k: "a", l: "Da", cls: "mono" }, { k: "b", l: "A", cls: "mono" }, { k: "kind", l: "Tipo" },
+    { k: "g", l: "Gruppo", num: true, f: r => r.g ? gchip(r.g) : "—" },
+    { k: "d2", l: "Dist. 2D m", num: true, f: r => fmtN(r.d2, 3) },
+    { k: "dz", l: "Diff. quota m", num: true, f: r => fmtN(r.dz, 3) },
+    { k: "d3", l: "Dist. 3D m", num: true, f: r => fmtN(r.d3, 3) },
+    { k: "usA", l: "US da" }, { k: "usB", l: "US a" }, { k: "same", l: "Stessa US" },
+  ], rows, r => `data-a="${esc(r.a)}"`, tr => select({ type: "frag", id: tr.dataset.a }, true));
+  P.insertAdjacentHTML("beforeend", `<p class="note">La differenza di quota è la quota di "A" meno quella di "Da". La modalità "${{ diretti: "Attacchi", mst: "Albero min.", completi: "Tutte" }[state.opt.mode]}" cambia le linee per gruppo; distanze, matrice e controlli usano sempre gli attacchi dichiarati.</p>`);
+}
+function tabMatrix(P, res) {
+  const M = usMatrix(res);
+  if (!M.keys.length) { P.innerHTML = `<p class="hint">Serve il campo US per costruire la matrice.</p>`; return; }
+  const max = Math.max(1, ...M.pairs.values()), seq = colorCache.seq;
+  let html = `<div class="tablewrap"><table class="matrix"><thead><tr><th class="rowh">US</th>${M.keys.map(k => `<th>${esc(k)}</th>`).join("")}</tr></thead><tbody>`;
+  for (const a of M.keys) {
+    html += `<tr><th class="rowh">${esc(a)}</th>`;
+    for (const b of M.keys) {
+      const n = M.get(a, b);
+      if (!n) { html += `<td class="${a === b ? "diag" : ""}" style="color:var(--grid-strong)">·</td>`; continue; }
+      const step = Math.min(6, Math.ceil(n / max * 6));
+      html += `<td class="${a === b ? "diag" : ""}" style="background:${seq[step]};color:${step >= 3 ? "#ffffff" : "#16212a"}" title="US ${esc(a)} – US ${esc(b)}: ${n} attacchi">${n}</td>`;
+    }
+    html += `</tr>`;
+  }
+  html += `</tbody></table></div>`;
+  const s = summary(res);
+  html += `<p class="note">Numero di attacchi tra coppie di US (qualificatori come "base" e "tetto" sono raggruppati con la propria US). La diagonale riquadrata conta gli attacchi interni alla stessa US: ${s.sameN - s.crossUS} su ${s.sameN}. Valori fuori diagonale alti segnalano spostamenti verticali o US da accorpare.</p>`;
+  P.innerHTML = html;
+}
+function histogram(values, unit, scale, title, sub) {
+  if (!values.length) return `<div class="chart"><h3>${title}</h3><p>Dati non disponibili.</p></div>`;
+  const vmax = Math.max(...values) * scale;
+  const nb = Math.min(12, Math.max(5, Math.ceil(Math.sqrt(values.length)) + 2));
+  let w = vmax / nb; const p = Math.pow(10, Math.floor(Math.log10(w || 1))); w = [1, 2, 2.5, 5, 10].map(m => m * p).find(v => v >= w) || w;
+  const bins = Math.max(1, Math.ceil((vmax + 1e-9) / w)), counts = new Array(bins).fill(0);
+  values.forEach(v => counts[Math.min(bins - 1, Math.floor(v * scale / w))]++);
+  const cmax = Math.max(...counts), W = 360, H = 170, L = 30, B = 26, T = 8, R = 6, bw = (W - L - R) / bins;
+  const yStep = cmax <= 5 ? 1 : cmax <= 12 ? 2 : Math.ceil(cmax / 5);
+  const yTop = Math.ceil(cmax / yStep) * yStep;
+  const y = c => T + (H - T - B) * (1 - c / yTop);
+  let g = "";
+  for (let c = 0; c <= yTop; c += yStep) g += `<line class="gridl" x1="${L}" x2="${W - R}" y1="${y(c)}" y2="${y(c)}"/><text x="${L - 6}" y="${y(c) + 3.5}" text-anchor="end">${c}</text>`;
+  let bars = "";
+  counts.forEach((c, i) => {
+    const x = L + i * bw + 1, bwid = Math.max(1, bw - 2), top = y(c), base = y(0), r = Math.min(4, bwid / 2, base - top);
+    const lo = fmtN(i * w, decimalsFor(w)), hi = fmtN((i + 1) * w, decimalsFor(w));
+    const d = c ? `M${x},${base} V${top + r} Q${x},${top} ${x + r},${top} H${x + bwid - r} Q${x + bwid},${top} ${x + bwid},${top + r} V${base} Z` : "";
+    bars += `<g class="hit" data-tip="${lo}–${hi} ${unit}: ${c} attacchi"><rect x="${L + i * bw}" y="${T}" width="${bw}" height="${H - T - B}" fill="transparent"/>${d ? `<path class="bar" d="${d}"/>` : ""}</g>`;
+  });
+  let xl = "";
+  const every = Math.ceil(bins / 6);
+  for (let i = 0; i <= bins; i += every) xl += `<text x="${L + i * bw}" y="${H - B + 14}" text-anchor="middle">${fmtN(i * w, decimalsFor(w))}</text>`;
+  return `<div class="chart"><h3>${title}</h3><p>${sub}</p><svg viewBox="0 0 ${W} ${H + 4}" role="img" aria-label="${title}">${g}<line class="axis" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/>${bars}${xl}<text x="${W - R}" y="${H + 2}" text-anchor="end">${unit}</text></svg></div>`;
+}
+function tabDist(P, res) {
+  const d2 = res.direct.map(l => l.d2), dz = res.direct.filter(l => l.dz !== null).map(l => Math.abs(l.dz));
+  const s = summary(res);
+  P.innerHTML = `<div class="charts">${
+    histogram(d2, "m", 1, "Distanza orizzontale degli attacchi", d2.length ? `${d2.length} attacchi · media ${fmtN(s.d2mean, 2)} m · mediana ${fmtN(s.d2med, 2)} m` : "")
+  }${
+    histogram(dz, "cm", 100, "Differenza di quota degli attacchi", dz.length ? `${dz.length} attacchi con quota · mediana ${fmtN(s.dzmed * 100, 1)} cm · massimo ${fmtN(s.dzmax * 100, 1)} cm` : "Serve il campo quota.")
+  }</div><div class="tip" id="ctip" hidden style="position:fixed"></div>`;
+  const tip = P.querySelector("#ctip");
+  P.querySelectorAll(".hit").forEach(h => {
+    h.addEventListener("pointerenter", e => { h.querySelector(".bar")?.classList.add("hl"); tip.textContent = h.dataset.tip; tip.hidden = false; });
+    h.addEventListener("pointermove", e => { tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; });
+    h.addEventListener("pointerleave", () => { h.querySelector(".bar")?.classList.remove("hl"); tip.hidden = true; });
+  });
+}
+function tabIssues(P, res) {
+  const fixHtml = fixesBlock();
+  if (!res.issues.length) { P.innerHTML = fixHtml + `<p class="hint">Nessun problema rilevato nei dati.</p>`; bindFixes(P); return; }
+  const order = { errore: 0, avviso: 1, info: 2 }, icon = { errore: "!", avviso: "▲", info: "i" };
+  const list = [...res.issues].sort((a, b) => order[a.level] - order[b.level]);
+  P.innerHTML = fixHtml + `<div class="issues">${list.map(i => `<div class="issue"><span class="pill ${i.level}">${icon[i.level]} ${i.level}</span><div><p>${esc(i.message)}</p>${i.fragments.length ? `<div class="ids">${i.fragments.slice(0, 60).map(id => `<button class="idbtn" type="button" data-id="${esc(id)}">${esc(id)}</button>`).join("")}${i.fragments.length > 60 ? `<span class="hint">+${i.fragments.length - 60}</span>` : ""}</div>` : ""}</div></div>`).join("")}</div>`;
+  P.querySelectorAll(".idbtn").forEach(b => b.addEventListener("click", () => select({ type: "frag", id: b.dataset.id }, true)));
+  bindFixes(P);
+}
+
+/* ======================================================================
+   Fasi, palinsesto e vista 3D
+   ====================================================================== */
+let phTimer = null, phWorker = null, phWorkerOK = true;
+function phOptions() {
+  const o = state.phOpt, hasZ = [...state.res.frags.values()].some(f => f.z !== null);
+  return { useXY: o.wXY > 0, useZ: hasZ && o.wZ > 0, useUS: o.wUS > 0, wXY: o.wXY || .5, wZ: o.wZ || 1, wUS: o.wUS || 1,
+           constrained: o.constrained, k: o.k, crit: o.crit };
+}
+function slimPhases(ph) {
+  ph.n = ph.D ? ph.D.n : 0; ph.excluded = ph.D ? ph.D.excluded : 0;
+  delete ph.D;
+  if (ph.chosen) ph.chosen = { K: ph.chosen.K };
+  return ph;
+}
+function getPhWorker() {
+  if (phWorker || !phWorkerOK) return phWorker;
+  try {
+    const src = $("#core").textContent + "\n" + $("#strat").textContent + `
+self.onmessage = e => {
+  const m = e.data;
+  const res = { frags: new Map(m.frags.map(f => [f.id, f])), clusterOf: new Map(m.clusterOf), direct: m.direct };
+  const ph = phaseAnalysis(res, m.opt);
+  ph.n = ph.D ? ph.D.n : 0; ph.excluded = ph.D ? ph.D.excluded : 0; delete ph.D;
+  if (ph.chosen) ph.chosen = { K: ph.chosen.K };
+  self.postMessage({ job: m.job, ph });
+};`;
+    phWorker = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
+    phWorker.onmessage = e => applyPhases(e.data.job, e.data.ph);
+    phWorker.onerror = () => { phWorkerOK = false; phWorker = null; computePhases(state.phJob); };
+  } catch (e) { phWorkerOK = false; phWorker = null; }
+  return phWorker;
+}
+function schedulePhases() {
+  clearTimeout(phTimer);
+  const res = state.res;
+  if (!res || !res.frags.size) { state.ph = null; state.usr = null; setBusy(false); return; }
+  const job = ++state.phJob;
+  state.usr = usAnalysis(res, null);
+  setBusy(true);
+  phTimer = setTimeout(() => computePhases(job), 40);
+}
+function computePhases(job) {
+  if (job !== state.phJob || !state.res) return;
+  const res = state.res, opt = phOptions();
+  const w = getPhWorker();
+  if (w) {
+    w.postMessage({ job, opt, frags: [...res.frags.values()], clusterOf: [...res.clusterOf], direct: res.direct.map(l => ({ a: l.a, b: l.b })) });
+    return;
+  }
+  applyPhases(job, slimPhases(phaseAnalysis(res, opt)));
+}
+function applyPhases(job, ph) {
+  if (job !== state.phJob || !state.res) return;
+  state.ph = ph;
+  state.usr = usAnalysis(state.res, ph);
+  setBusy(false);
+  assignColors(); renderStats(); renderLegend(); renderTabs(); renderDetail(); draw();
+}
+function setBusy(on) {
+  state.phBusy = on;
+  $("#phBusy").textContent = on ? "calcolo…" : (state.ph && state.ph.ok ? `${state.ph.K} componenti · separazione ${fmtN(state.ph.pdi, 2)}` : "");
+}
+function phaseColor(p) {
+  const K = state.ph && state.ph.ok ? state.ph.K : 1;
+  const idx = K === 1 ? 3 : Math.round((p - 1) * 6 / (K - 1));
+  return colorCache.phaseRamp[idx];
+}
+
+/* ---------- vista 3D ---------- */
+const cam = { yaw: -0.65, pitch: 0.6, s: 100, px: 0, py: 0, c: [0, 0, 0] };
+const world = f => f.z === null ? null : [f.x, f.y, f.z * state.exag];
+function camBasis() { return { cy: Math.cos(cam.yaw), sy: Math.sin(cam.yaw), cp: Math.cos(cam.pitch), sp: Math.sin(cam.pitch) }; }
+function p3(w, B) {
+  const x = w[0] - cam.c[0], y = w[1] - cam.c[1], z = w[2] - cam.c[2];
+  const x1 = x * B.cy - y * B.sy, y1 = x * B.sy + y * B.cy;
+  const v = y1 * B.sp + z * B.cp, dep = -y1 * B.cp + z * B.sp;
+  return [view.W / 2 + cam.px + x1 * cam.s, view.H / 2 + cam.py - v * cam.s, dep];
+}
+function box3() {
+  const ws = visibleFrags().map(world).filter(Boolean);
+  if (!ws.length) return null;
+  const xs = ws.map(w => w[0]), ys = ws.map(w => w[1]), zs = ws.map(w => w[2]);
+  const b = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), z0: Math.min(...zs), z1: Math.max(...zs) };
+  const pad = 0.04 * Math.max(b.x1 - b.x0, b.y1 - b.y0, 1e-3);
+  b.x0 -= pad; b.x1 += pad; b.y0 -= pad; b.y1 += pad;
+  const zp = Math.max((b.z1 - b.z0) * 0.08, pad * 0.25);
+  b.z0 -= zp; b.z1 += zp;
+  return b;
+}
+function fit3D(ids) {
+  const b = box3(); if (!b) return;
+  let pts;
+  if (ids && ids.length) pts = ids.map(id => state.res.frags.get(id)).filter(f => f && f.z !== null).map(world);
+  else pts = [[b.x0, b.y0, b.z0], [b.x1, b.y0, b.z0], [b.x0, b.y1, b.z0], [b.x1, b.y1, b.z0], [b.x0, b.y0, b.z1], [b.x1, b.y0, b.z1], [b.x0, b.y1, b.z1], [b.x1, b.y1, b.z1]];
+  if (!pts.length) return;
+  cam.c = [0, 1, 2].map(i => (Math.min(...pts.map(p => p[i])) + Math.max(...pts.map(p => p[i]))) / 2);
+  cam.px = 0; cam.py = 0; cam.s = 1;
+  const B = camBasis(), pr = pts.map(p => p3(p, B));
+  const du = Math.max(...pr.map(p => p[0])) - Math.min(...pr.map(p => p[0])) || 1e-3;
+  const dv = Math.max(...pr.map(p => p[1])) - Math.min(...pr.map(p => p[1])) || 1e-3;
+  cam.s = Math.min((view.W - 150) / du, (view.H - 120) / dv);
+  if (ids && ids.length === 1) cam.s = Math.max(cam.s, 300);
+  if (!Number.isFinite(cam.s) || cam.s <= 0) cam.s = 100;
+}
+function draw3D() {
+  const W = view.W, H = view.H, res = state.res;
+  const ink = css("--ink"), ink2 = css("--ink-2"), muted = css("--muted"), surf = css("--surface"), gridc = css("--grid"), gridS = css("--grid-strong"), mark = css("--mark");
+  const b = box3();
+  if (!b) { ctx.fillStyle = muted; ctx.font = `500 13px ${css("--f-body")}`; ctx.textAlign = "center"; ctx.fillText("La vista 3D richiede il campo quota.", W / 2, H / 2); ctx.textAlign = "left"; return; }
+  const B = camBasis(), P = pt => p3(pt, B);
+  const line = (a, c) => { const p = P(a), q = P(c); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); };
+  // piano di base con griglia
+  const span = Math.max(b.x1 - b.x0, b.y1 - b.y0);
+  let step = Math.pow(10, Math.floor(Math.log10(span / 6)));
+  for (const m of [1, 2, 5, 10]) if (span / (m * step) <= 8) { step = m * step; break; }
+  ctx.lineWidth = 1; ctx.strokeStyle = gridc; ctx.beginPath();
+  for (let x = Math.ceil(b.x0 / step) * step; x <= b.x1; x += step) line([x, b.y0, b.z0], [x, b.y1, b.z0]);
+  for (let y = Math.ceil(b.y0 / step) * step; y <= b.y1; y += step) line([b.x0, y, b.z0], [b.x1, y, b.z0]);
+  ctx.stroke();
+  const corners = [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]];
+  ctx.strokeStyle = gridS; ctx.beginPath();
+  corners.forEach((c, i) => { const n = corners[(i + 1) % 4]; line([c[0], c[1], b.z0], [n[0], n[1], b.z0]); });
+  ctx.stroke();
+  // spigolo verticale più a sinistra sullo schermo: asse delle quote
+  const left = corners.map(c => ({ c, p: P([c[0], c[1], b.z0]) })).sort((a, c) => a.p[0] - c.p[0])[0].c;
+  ctx.beginPath(); line([left[0], left[1], b.z0], [left[0], left[1], b.z1]); ctx.stroke();
+  ctx.setLineDash([3, 4]); ctx.beginPath();
+  corners.forEach(c => { if (c !== left) line([c[0], c[1], b.z0], [c[0], c[1], b.z1]); });
+  ctx.stroke(); ctx.setLineDash([]);
+  // etichette di quota
+  const zr = (b.z1 - b.z0) / state.exag;
+  let zs = Math.pow(10, Math.floor(Math.log10(zr / 4)));
+  for (const m of [1, 2, 5, 10]) if (zr / (m * zs) <= 6) { zs = m * zs; break; }
+  ctx.font = `400 10px ${css("--f-mono")}`; ctx.textBaseline = "middle"; ctx.textAlign = "right";
+  for (let z = Math.ceil(b.z0 / state.exag / zs) * zs; z <= b.z1 / state.exag + 1e-9; z += zs) {
+    const p = P([left[0], left[1], z * state.exag]);
+    ctx.strokeStyle = gridS; ctx.beginPath(); ctx.moveTo(p[0] - 4, p[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+    ctx.fillStyle = muted; ctx.fillText(z.toFixed(decimalsFor(zs)), p[0] - 7, p[1]);
+  }
+  // etichette di est e nord sul bordo anteriore
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  const dX = decimalsFor(step);
+  const frontY = P([cam.c[0], b.y0, b.z0])[2] > P([cam.c[0], b.y1, b.z0])[2] ? b.y0 : b.y1;
+  const frontX = P([b.x0, cam.c[1], b.z0])[2] > P([b.x1, cam.c[1], b.z0])[2] ? b.x0 : b.x1;
+  for (let x = Math.ceil(b.x0 / step) * step; x <= b.x1; x += step) { const p = P([x, frontY, b.z0]); ctx.fillStyle = muted; ctx.fillText(x.toFixed(dX), p[0], p[1] + 5); }
+  for (let y = Math.ceil(b.y0 / step) * step; y <= b.y1; y += step) { const p = P([frontX, y, b.z0]); ctx.fillStyle = muted; ctx.fillText(y.toFixed(dX), p[0], p[1] + 5); }
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+
+  const hl = highlightSet();
+  const focusUS = state.strataA > 0 ? state.strataFocus : "";
+  const inFocus = id => { const f = res.frags.get(id); return !focusUS || (f && usKey(f.us) === focusUS); };
+  const alphaOf = ids => (!hl || ids.some(id => hl.has(id)) ? 1 : .14) * (ids.some(inFocus) ? 1 : .2);
+  const fs = visibleFrags().filter(f => f.z !== null);
+  const S = new Map(fs.map(f => [f.id, P(world(f))]));
+  // stratigrafia ricostruita
+  const strataLabels = [];
+  const strataOn = state.strataA > 0 && buildStrata(res);
+  if (strataOn) drawStrata(P, B, strataLabels);
+  // impronte dei gruppi sul piano
+  if (!strataOn && state.show.hulls && state.colorBy === "gruppo") for (const c of res.clusters) {
+    const mem = c.members.map(m => res.frags.get(m)).filter(f => f && f.z !== null);
+    if (!mem.length) continue;
+    const { ring } = hullRing(mem.map(f => [f.x, f.y]), span * 0.012);
+    const col = state.colorBy === "gruppo" ? colorCache.group(c.id) : ink2;
+    ctx.beginPath(); ring.forEach((p, i) => { const s = P([p[0], p[1], b.z0]); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); ctx.closePath();
+    ctx.globalAlpha = .12 * alphaOf(c.members); ctx.fillStyle = col; ctx.fill();
+    ctx.globalAlpha = .45 * alphaOf(c.members); ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // proiezioni verticali
+  if (state.show.drop) {
+    ctx.strokeStyle = gridS; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+    for (const f of fs) {
+      if (!res.clusterOf.has(f.id) && !state.show.unlinked) continue;
+      ctx.globalAlpha = .8 * alphaOf([f.id]);
+      const p = S.get(f.id), q = P([f.x, f.y, b.z0]);
+      ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+    }
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  }
+  // pertinenze e collegamenti
+  if (state.show.pert) {
+    ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = muted;
+    for (const l of res.pert) { const p = S.get(l.a), q = S.get(l.b); if (!p || !q) continue; ctx.globalAlpha = alphaOf([l.a, l.b]); ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); }
+    ctx.setLineDash([]);
+  }
+  ctx.lineWidth = 2; ctx.lineCap = "round";
+  for (const l of res.links) {
+    const p = S.get(l.a), q = S.get(l.b); if (!p || !q) continue;
+    ctx.strokeStyle = state.colorBy === "gruppo" ? colorCache.group(l.cluster) : ink2;
+    ctx.globalAlpha = alphaOf([l.a, l.b]) * (state.opt.mode === "completi" ? .7 : .95);
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // punti, dal più lontano al più vicino
+  const order = fs.filter(f => res.clusterOf.has(f.id) || state.show.unlinked || (hl && hl.has(f.id))).sort((a, c) => S.get(a.id)[2] - S.get(c.id)[2]);
+  for (const f of order) {
+    const p = S.get(f.id), linked = res.clusterOf.has(f.id);
+    ctx.globalAlpha = alphaOf([f.id]);
+    ctx.beginPath(); ctx.arc(p[0], p[1], linked ? 5 : 3.5, 0, Math.PI * 2);
+    if (linked || state.colorBy === "fase") { ctx.fillStyle = fragColor(f); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = surf; ctx.stroke(); }
+    else { ctx.fillStyle = surf; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = state.colorBy === "gruppo" ? muted : fragColor(f); ctx.stroke(); }
+  }
+  ctx.globalAlpha = 1;
+  if (state.show.labels) {
+    ctx.font = `500 10.5px ${css("--f-mono")}`; ctx.textBaseline = "middle";
+    for (const f of order) { const p = S.get(f.id); ctx.globalAlpha = alphaOf([f.id]); ctx.lineWidth = 3; ctx.strokeStyle = surf; ctx.strokeText(f.id, p[0] + 7, p[1] - 6); ctx.fillStyle = ink2; ctx.fillText(f.id, p[0] + 7, p[1] - 6); }
+    ctx.globalAlpha = 1;
+  }
+  if (state.sel && state.sel.type === "frag" && S.has(state.sel.id)) {
+    const p = S.get(state.sel.id);
+    ctx.beginPath(); ctx.arc(p[0], p[1], 9, 0, Math.PI * 2); ctx.lineWidth = 2.5; ctx.strokeStyle = mark; ctx.stroke();
+  }
+  drawStrataLabels(strataLabels);
+  // freccia del nord nel piano
+  const o = P([cam.c[0], cam.c[1], b.z0]), nq = P([cam.c[0], cam.c[1] + span * 0.1, b.z0]);
+  let dx = nq[0] - o[0], dy = nq[1] - o[1]; const len = Math.hypot(dx, dy);
+  const ax = W - 92, ay = 40;
+  if (len > 2) {
+    dx /= len; dy /= len;
+    const L = 16 * Math.max(.35, len / (span * 0.1 * cam.s));
+    ctx.strokeStyle = ink; ctx.fillStyle = ink; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(ax - dx * L, ay - dy * L); ctx.lineTo(ax + dx * L, ay + dy * L); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ax + dx * L, ay + dy * L); ctx.lineTo(ax + dx * (L - 7) - dy * 4, ay + dy * (L - 7) + dx * 4); ctx.lineTo(ax + dx * (L - 7) + dy * 4, ay + dy * (L - 7) - dx * 4); ctx.closePath(); ctx.fill();
+    ctx.font = `600 12px ${css("--f-display")}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("N", ax + dx * (L + 9), ay + dy * (L + 9));
+  }
+  ctx.font = `600 12px ${css("--f-display")}`; ctx.fillStyle = muted; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.fillText(`3D · QUOTA ×${state.exag} · TRASCINA PER RUOTARE, MAIUSC + TRASCINA PER SPOSTARE`, 12, H - 12);
+  if (strataOn) ctx.fillText("VOLUMI US: MODELLO INDICATIVO RICOSTRUITO DALLE QUOTE DEI FRAMMENTI", 12, H - 28);
+}
+
+/* ---------- stratigrafia ricostruita (vista 3D) ----------
+   Modello indicativo: per ogni US una superficie centrale dalle quote dei
+   frammenti (piano inclinato se i punti bastano, altrimenti orizzontale),
+   limitata all'area in cui la US è documentata. Le US sono impilate nella
+   sequenza (quota mediana): interfacce a metà tra US contigue, senza incroci. */
+let strataCache = null, strataCanvas = null;
+function pointSegDist(px, py, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
+  let t = L2 ? ((px - a[0]) * dx + (py - a[1]) * dy) / L2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - a[0] - t * dx, py - a[1] - t * dy);
+}
+function inHullOrNear(px, py, hull, r) {
+  if (hull.length === 1) return Math.hypot(px - hull[0][0], py - hull[0][1]) <= r;
+  if (hull.length === 2) return pointSegDist(px, py, hull[0], hull[1]) <= r;
+  let inside = true;
+  for (let i = 0; i < hull.length; i++) { const a = hull[i], b = hull[(i + 1) % hull.length]; if (cross(a, b, [px, py]) < 0) { inside = false; break; } }
+  if (inside) return true;
+  for (let i = 0; i < hull.length; i++) if (pointSegDist(px, py, hull[i], hull[(i + 1) % hull.length]) <= r) return true;
+  return false;
+}
+function buildStrata(res) {
+  if (strataCache && strataCache.res === res) return strataCache.data;
+  const fs = [...res.frags.values()].filter(f => f.z !== null);
+  const byUS = new Map();
+  for (const f of fs) { const u = usKey(f.us); if (u === null) continue; if (!byUS.has(u)) byUS.set(u, []); byUS.get(u).push(f); }
+  let data = null;
+  if (byUS.size && fs.length) {
+    const xs = fs.map(f => f.x), ys = fs.map(f => f.y), zs = fs.map(f => f.z);
+    let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const span = Math.max(x1 - x0, y1 - y0, 1e-3), pad = 0.04 * span;
+    x0 -= pad; x1 += pad; y0 -= pad; y1 += pad;
+    const zSpan = Math.max(Math.max(...zs) - Math.min(...zs), 1e-3), minT = Math.max(0.02 * zSpan, 0.004);
+    const N = 40, nx = (x1 - x0) >= (y1 - y0) ? N : Math.max(8, Math.round(N * (x1 - x0) / (y1 - y0)));
+    const ny = (y1 - y0) > (x1 - x0) ? N : Math.max(8, Math.round(N * (y1 - y0) / (x1 - x0)));
+    const gx = Array.from({ length: nx }, (_, i) => x0 + (x1 - x0) * i / (nx - 1));
+    const gy = Array.from({ length: ny }, (_, j) => y0 + (y1 - y0) * j / (ny - 1));
+    const r = 0.1 * span;
+    const layers = [...byUS.entries()].map(([us, pts]) => {
+      const z = pts.map(p => p.z).sort((a, b) => a - b), med = quantile(z, .5);
+      const mx = mean(pts.map(p => p.x)), my = mean(pts.map(p => p.y));
+      const spread = Math.max(Math.max(...pts.map(p => p.x)) - Math.min(...pts.map(p => p.x)), Math.max(...pts.map(p => p.y)) - Math.min(...pts.map(p => p.y)));
+      let a = med, b = 0, c = 0;
+      if (pts.length >= 5 && spread >= 0.2 * span) {
+        // piano ai minimi quadrati, pendenze ridotte verso l'orizzontale
+        let sxx = 0, sxy = 0, syy = 0, sxz = 0, syz = 0, mz = mean(pts.map(p => p.z));
+        for (const p of pts) { const dx = p.x - mx, dy = p.y - my, dz = p.z - mz; sxx += dx * dx; sxy += dx * dy; syy += dy * dy; sxz += dx * dz; syz += dy * dz; }
+        const det = sxx * syy - sxy * sxy;
+        if (det > 1e-12) {
+          const k = pts.length / (pts.length + 5);
+          b = k * (syy * sxz - sxy * syz) / det; c = k * (sxx * syz - sxy * sxz) / det; a = mz;
+        }
+      }
+      const C = (x, y) => a + b * (x - mx) + c * (y - my);
+      const resid = pts.map(p => Math.abs(p.z - C(p.x, p.y))).sort((u, v) => u - v);
+      const t = Math.max(minT, quantile(resid, .9) + minT / 2);
+      const hull = convexHull(pts.map(p => [p.x, p.y]));
+      return { us, n: pts.length, med, C, t, hull };
+    }).sort((p, q) => q.med - p.med || natCmp(p.us, q.us));
+    const NN = nx * ny;
+    layers.forEach(L => { L.top = new Float64Array(NN).fill(NaN); L.bot = new Float64Array(NN).fill(NaN); L.on = new Uint8Array(NN); });
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const id = j * nx + i, x = gx[i], y = gy[j];
+      const pres = layers.filter(L => inHullOrNear(x, y, L.hull, r));
+      if (!pres.length) continue;
+      const c = [];
+      pres.forEach((L, k) => { let v = L.C(x, y); if (k && v > c[k - 1] - minT) v = c[k - 1] - minT; c.push(v); });
+      pres.forEach((L, k) => {
+        L.on[id] = 1;
+        L.top[id] = k === 0 ? c[0] + L.t : (c[k - 1] + c[k]) / 2;
+        L.bot[id] = k === pres.length - 1 ? c[k] - L.t : (c[k] + c[k + 1]) / 2;
+      });
+    }
+    for (const L of layers) {
+      const tris = [], edge = new Map();
+      for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+        const a = j * nx + i, b = a + 1, c = a + nx + 1, d = a + nx;
+        const on = [a, b, c, d].filter(v => L.on[v]);
+        if (on.length === 4) tris.push([a, b, c], [a, c, d]);
+        else if (on.length === 3) tris.push(on);
+      }
+      for (const tr of tris) for (let k = 0; k < 3; k++) {
+        const p = tr[k], q = tr[(k + 1) % 3], key = p < q ? p + "," + q : q + "," + p;
+        edge.set(key, (edge.get(key) || 0) + 1);
+      }
+      L.tris = tris;
+      L.walls = [...edge.entries()].filter(([, n]) => n === 1).map(([k]) => k.split(",").map(Number));
+    }
+    data = { nx, ny, gx, gy, layers: layers.filter(L => L.tris.length) };
+  }
+  strataCache = { res, data };
+  return data;
+}
+function hexRgb(h) { h = h.replace("#", ""); if (h.length === 3) h = [...h].map(c => c + c).join(""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); }
+function rgbStr(c) { return `rgb(${c.map(v => Math.round(Math.max(0, Math.min(255, v)))).join(",")})`; }
+function strataColor(k, n) {
+  const ramp = [1, 2, 3, 4, 5, 6, 7].map(i => hexRgb(css("--l" + i)));
+  const t = n === 1 ? 3 : k * 6 / (n - 1), lo = Math.floor(t), hi = Math.min(6, lo + 1), f = t - lo;
+  const c = ramp[lo].map((v, i) => v + (ramp[hi][i] - v) * f);
+  const alt = n > 7 ? (k % 2 ? 0.93 : 1.05) : 1;
+  return c.map(v => v * alt);
+}
+function drawStrata(P, B, labels) {
+  const S = buildStrata(state.res);
+  if (!S || state.strataA <= 0) return;
+  // gli strati sono volumi sfumati: si disegnano a risoluzione CSS e solo nel loro riquadro
+  const W = view.W, H = view.H, sc = 1;
+  if (!strataCanvas) strataCanvas = document.createElement("canvas");
+  const cw = Math.ceil(W * sc), ch = Math.ceil(H * sc);
+  if (strataCanvas.width !== cw || strataCanvas.height !== ch) { strataCanvas.width = cw; strataCanvas.height = ch; }
+  const oc = strataCanvas.getContext("2d");
+  const { nx, gx, gy, layers } = S, n = layers.length, ex = state.exag;
+  const order = layers.map((L, k) => {
+    const top = new Array(L.top.length), bot = new Array(L.bot.length);
+    let dsum = 0, dn = 0, bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    for (let id = 0; id < L.top.length; id++) if (L.on[id]) {
+      const x = gx[id % nx], y = gy[Math.floor(id / nx)];
+      const t = top[id] = P([x, y, L.top[id] * ex]), b = bot[id] = P([x, y, L.bot[id] * ex]);
+      dsum += t[2] + b[2]; dn += 2;
+      bx0 = Math.min(bx0, t[0], b[0]); bx1 = Math.max(bx1, t[0], b[0]); by0 = Math.min(by0, t[1], b[1]); by1 = Math.max(by1, t[1], b[1]);
+    }
+    const box = [Math.max(0, Math.floor(bx0) - 2), Math.max(0, Math.floor(by0) - 2), Math.min(W, Math.ceil(bx1) + 2), Math.min(H, Math.ceil(by1) + 2)];
+    return { L, k, top, bot, depth: dn ? dsum / dn : 0, box };
+  }).sort((a, b) => a.depth - b.depth);
+  const focus = state.strataFocus;
+  for (const o of order) {
+    const base = strataColor(o.k, n), col = { top: rgbStr(base), wall: rgbStr(base.map(v => v * .86)), bot: rgbStr(base.map(v => v * .74)) };
+    // la camera guarda sempre dall'alto: la faccia inferiore resta nascosta.
+    // Pareti lontane, superficie superiore in un solo tracciato, pareti vicine.
+    const walls = o.L.walls.map(([p, q]) => { const pts = [o.top[p], o.top[q], o.bot[q], o.bot[p]]; return { pts, d: (pts[0][2] + pts[1][2] + pts[2][2] + pts[3][2]) / 4 }; }).sort((a, b) => a.d - b.d);
+    const [b0, b1, b2, b3] = o.box;
+    if (b2 <= b0 || b3 <= b1) continue;
+    oc.setTransform(1, 0, 0, 1, 0, 0); oc.clearRect(b0 * sc, b1 * sc, (b2 - b0) * sc, (b3 - b1) * sc);
+    oc.setTransform(sc, 0, 0, sc, 0, 0); oc.lineJoin = "round"; oc.lineWidth = 0.8;
+    const quad = f => { oc.beginPath(); f.pts.forEach((p, i) => i ? oc.lineTo(p[0], p[1]) : oc.moveTo(p[0], p[1])); oc.closePath(); oc.fill(); oc.stroke(); };
+    oc.fillStyle = col.wall; oc.strokeStyle = col.wall;
+    for (const f of walls) if (f.d < o.depth) quad(f);
+    oc.fillStyle = col.top; oc.strokeStyle = col.top;
+    oc.beginPath();
+    for (const t of o.L.tris) { const a = o.top[t[0]], b = o.top[t[1]], c = o.top[t[2]]; oc.moveTo(a[0], a[1]); oc.lineTo(b[0], b[1]); oc.lineTo(c[0], c[1]); oc.closePath(); }
+    oc.fill(); oc.lineWidth = 0.6; oc.stroke(); oc.lineWidth = 0.8;
+    oc.fillStyle = col.wall; oc.strokeStyle = col.wall;
+    for (const f of walls) if (f.d >= o.depth) quad(f);
+    const a = state.strataA * (focus && focus !== o.L.us ? 0.22 : 1);
+    ctx.globalAlpha = a; ctx.drawImage(strataCanvas, b0 * sc, b1 * sc, (b2 - b0) * sc, (b3 - b1) * sc, b0, b1, b2 - b0, b3 - b1); ctx.globalAlpha = 1;
+    // contorni della superficie superiore e inferiore
+    ctx.globalAlpha = Math.min(1, a * 1.6); ctx.strokeStyle = rgbStr(base.map(v => v * .6)); ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const [p, q] of o.L.walls) { ctx.moveTo(o.top[p][0], o.top[p][1]); ctx.lineTo(o.top[q][0], o.top[q][1]); ctx.moveTo(o.bot[p][0], o.bot[p][1]); ctx.lineTo(o.bot[q][0], o.bot[q][1]); }
+    ctx.stroke(); ctx.globalAlpha = 1;
+    // etichetta sul bordo più a sinistra dello strato
+    let best = null;
+    for (const [p] of o.L.walls) { const tp = o.top[p], bp = o.bot[p]; const sx = (tp[0] + bp[0]) / 2; if (!best || sx < best[0]) best = [sx, (tp[1] + bp[1]) / 2]; }
+    if (best) labels.push({ x: best[0], y: best[1], t: "US " + o.L.us, us: o.L.us, c: rgbStr(base.map(v => v * .55)) });
+  }
+}
+function drawStrataLabels(labels) {
+  if (!labels.length) return;
+  const surf = css("--surface"), ink2 = css("--ink-2");
+  ctx.font = `600 11.5px ${css("--f-display")}`; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  labels.sort((a, b) => a.y - b.y);
+  let lastY = -Infinity;
+  for (const l of labels) {
+    const y = Math.max(l.y, lastY + 13); lastY = y;
+    const x = l.x - 10, w = ctx.measureText(l.t).width;
+    ctx.globalAlpha = state.strataFocus && state.strataFocus !== l.us ? .45 : 1;
+    ctx.strokeStyle = ink2; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(l.x - 2, l.y); ctx.lineTo(x + 2, y); ctx.stroke();
+    ctx.fillStyle = surf; ctx.fillRect(x - w - 4, y - 7, w + 8, 14);
+    ctx.fillStyle = ink2; ctx.fillText(l.t, x, y);
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+}
+
+/* ---------- grafici SVG condivisi ---------- */
+function niceTicks(lo, hi, n = 5) {
+  if (!(hi > lo)) { hi = lo + 1; }
+  const raw = (hi - lo) / n, p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * p).find(v => v >= raw);
+  const t0 = Math.floor(lo / step) * step, out = [];
+  for (let t = t0; t <= hi + step * 1e-9; t += step) out.push(+t.toFixed(10));
+  if (out[out.length - 1] < hi) out.push(+(out[out.length - 1] + step).toFixed(10));
+  return { ticks: out, step };
+}
+function chartTip(P) {
+  let tip = P.querySelector(".ctip");
+  if (!tip) { tip = document.createElement("div"); tip.className = "tip ctip"; tip.hidden = true; tip.style.position = "fixed"; P.append(tip); }
+  P.querySelectorAll("[data-tip]").forEach(h => {
+    h.addEventListener("pointerenter", () => { h.classList.add("hl"); tip.textContent = h.dataset.tip; tip.hidden = false; });
+    h.addEventListener("pointermove", e => { tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; });
+    h.addEventListener("pointerleave", () => { h.classList.remove("hl"); tip.hidden = true; });
+  });
+}
+
+function bicChart(ph) {
+  const sc = ph.scan, W = 380, H = 200, L = 46, R = 46, T = 14, Bm = 28;
+  const vals = sc.flatMap(s => [s.bic, s.icl]);
+  const { ticks } = niceTicks(Math.min(...vals), Math.max(...vals), 4);
+  const y0 = ticks[0], y1 = ticks[ticks.length - 1];
+  const x = k => L + (sc.length === 1 ? (W - L - R) / 2 : (k - 1) * (W - L - R) / (sc.length - 1));
+  const y = v => T + (H - T - Bm) * (1 - (v - y0) / (y1 - y0 || 1));
+  let g = ticks.map(t => `<line class="gridl" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text x="${L - 6}" y="${y(t) + 3.5}" text-anchor="end">${fmtN(t, 0)}</text>`).join("");
+  g += sc.map(s => `<text x="${x(s.K)}" y="${H - Bm + 15}" text-anchor="middle">${s.K}</text>`).join("");
+  g += `<text x="${W - R}" y="${H + 2}" text-anchor="end">numero di componenti K</text>`;
+  const series = [["icl", "var(--c1)", "ICL"], ["bic", "var(--c2)", "BIC"]];
+  const last = sc[sc.length - 1];
+  let ly = { icl: y(last.icl), bic: y(last.bic) };
+  if (Math.abs(ly.icl - ly.bic) < 13) { const m = (ly.icl + ly.bic) / 2, up = ly.icl <= ly.bic ? "icl" : "bic"; ly[up] = m - 6.5; ly[up === "icl" ? "bic" : "icl"] = m + 6.5; }
+  let lines = "";
+  for (const [k, col, lab] of series) {
+    lines += `<path d="${sc.map((s, i) => `${i ? "L" : "M"}${x(s.K)},${y(s[k])}`).join("")}" fill="none" stroke="${col}" stroke-width="2"/>`;
+    lines += sc.map(s => `<circle cx="${x(s.K)}" cy="${y(s[k])}" r="4" fill="${col}" stroke="var(--surface)" stroke-width="2"/>`).join("");
+    lines += `<text x="${x(last.K) + 8}" y="${ly[k] + 3.5}" class="dl">${lab}</text>`;
+  }
+  const ch = sc.find(s => s.K === ph.K);
+  if (ch) lines += `<circle cx="${x(ch.K)}" cy="${y(ch[ph.crit])}" r="8.5" fill="none" stroke="var(--ink)" stroke-width="1.5"/><text x="${x(ch.K)}" y="${y(ch[ph.crit]) - 14}" text-anchor="middle" class="dl">scelto</text>`;
+  const hits = sc.map(s => `<rect x="${x(s.K) - 14}" y="${T}" width="28" height="${H - T - Bm}" fill="transparent" data-tip="K = ${s.K} · ICL ${fmtN(s.icl, 1)} · BIC ${fmtN(s.bic, 1)} · PDI ${fmtN(s.pdi, 2)}"/>`).join("");
+  return `<div class="chart"><h3>Scelta del numero di componenti</h3><p>Valori più bassi indicano un modello migliore. Criterio usato: ${ph.crit.toUpperCase()}.</p>
+    <div class="lg"><span><i style="background:var(--c1)"></i>ICL</span><span><i style="background:var(--c2)"></i>BIC</span></div>
+    <svg viewBox="0 0 ${W} ${H + 6}" role="img" aria-label="ICL e BIC per numero di componenti">${g}<line class="axis" x1="${L}" x2="${W - R}" y1="${H - Bm}" y2="${H - Bm}"/>${lines}${hits}</svg></div>`;
+}
+
+function profileChart(res, ph, usr) {
+  const units = usr.units.filter(u => u.nz > 0);
+  if (!units.length) return `<div class="chart"><h3>Profilo di quota per US</h3><p>Servono quota e US.</p></div>`;
+  const fs = [...res.frags.values()].filter(f => f.z !== null && usKey(f.us) !== null);
+  const zsAll = fs.map(f => f.z);
+  const { ticks } = niceTicks(Math.min(...zsAll), Math.max(...zsAll), 5);
+  const W = Math.max(380, 60 + units.length * 52), H = 240, L = 50, R = 34, T = 12, Bm = 30;
+  const z0 = ticks[0], z1 = ticks[ticks.length - 1], cw = (W - L - R) / units.length;
+  const y = z => T + (H - T - Bm) * (1 - (z - z0) / (z1 - z0 || 1));
+  const col = new Map(units.map((u, i) => [u.us, L + cw * (i + .5)]));
+  const dz = decimalsFor(ticks[1] - ticks[0]);
+  let g = ticks.map(t => `<line class="gridl" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text x="${L - 6}" y="${y(t) + 3.5}" text-anchor="end">${fmtN(t, dz)}</text>`).join("");
+  g += units.map(u => `<text x="${col.get(u.us)}" y="${H - Bm + 15}" text-anchor="middle">${esc(u.us)}</text>`).join("");
+  g += `<text x="${L}" y="${H + 4}">US in ordine di quota mediana, dall'alto →</text>`;
+  let marks = "";
+  if (ph && ph.ok) for (const f of ph.phases) {
+    if (f.zMean === null) continue;
+    marks += `<line x1="${L}" x2="${W - R}" y1="${y(f.zMean)}" y2="${y(f.zMean)}" stroke="${phaseColor(f.id)}" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W - R + 4}" y="${y(f.zMean) + 3.5}" class="dl">C${f.id}</text>`;
+  }
+  const hash = s => { let h = 2166136261; for (const ch of String(s)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) % 1000) / 1000 - .5; };
+  for (const u of units) marks += `<line x1="${col.get(u.us) - cw * .32}" x2="${col.get(u.us) + cw * .32}" y1="${y(u.zMed)}" y2="${y(u.zMed)}" stroke="var(--ink-2)" stroke-width="2"/>`;
+  for (const f of fs) {
+    const cx = col.get(usKey(f.us)) + hash(f.id) * cw * .55, v = ph && ph.ok ? ph.frag.get(f.id) : null;
+    const fill = v ? phaseColor(v.phase) : "var(--other)";
+    marks += `<circle class="dot" cx="${cx.toFixed(1)}" cy="${y(f.z).toFixed(1)}" r="4" fill="${fill}" stroke="var(--surface)" stroke-width="1.5" data-id="${esc(f.id)}" data-tip="Frammento ${esc(f.id)} · US ${esc(f.us)} · q. ${fmtN(f.z)}${v ? ` · F${v.phase} (p ${fmtN(v.p, 2)})` : ""}"/>`;
+  }
+  const lg = ph && ph.ok ? `<div class="lg">${ph.phases.map(f => `<span><i style="background:${phaseColor(f.id)}"></i>C${f.id}</span>`).join("")}<span><i style="background:var(--ink-2);height:2px;border-radius:0"></i>mediana US</span></div>` : "";
+  return `<div class="chart"><h3>Profilo di quota per US</h3><p>Ogni punto è un frammento, colorato per componente; le linee tratteggiate sono le quote medie delle componenti.</p>${lg}
+    <div class="svgscroll"><svg viewBox="0 0 ${W} ${H + 8}" style="min-width:${Math.min(W, 640)}px" role="img" aria-label="Quote dei frammenti per US">${g}<line class="axis" x1="${L}" x2="${W - R}" y1="${H - Bm}" y2="${H - Bm}"/>${marks}</svg></div></div>`;
+}
+
+function tabPhases(P, res) {
+  const ph = state.ph;
+  if (state.phBusy || !ph) { P.innerHTML = `<p class="hint">Calcolo delle componenti in corso…</p>`; return; }
+  if (!ph.ok) { P.innerHTML = `<p class="hint">${esc(ph.reason)}</p>`; return; }
+  const c = ph.coherence, pct = v => v === null ? "—" : fmtN(100 * v, 0) + "%";
+  const lift = c.tot && c.expected ? c.pct / c.expected : null;
+  let verdict = "";
+  if (ph.constrained) verdict = "I gruppi di rimontaggio sono usati come vincolo, quindi questa percentuale non è una verifica indipendente.";
+  else if (c.tot && ph.K > 1) verdict = lift >= 1.3 ? "I rimontaggi sono coerenti con la separazione in componenti, più di quanto ci si aspetterebbe per caso: le componenti sono candidate a episodi deposizionali distinti. Gli attacchi tra componenti diverse indicano spostamenti o rimescolamento."
+    : lift >= 1.05 ? "I rimontaggi sostengono solo debolmente la separazione in componenti: il deposito è probabilmente rimescolato."
+    : "I rimontaggi non sostengono la separazione in componenti: le componenti potrebbero non corrispondere a episodi deposizionali distinti.";
+  const split = (state.usr ? state.usr.units : []).filter(u => { const t = [...u.phases.values()].reduce((a, b) => a + b, 0); const mx = Math.max(0, ...u.phases.values()); return t >= 4 && mx / t <= 0.8; });
+  const amb = [...ph.frag.entries()].filter(([, v]) => v.p < 0.7).sort((a, b) => a[1].p - b[1].p);
+  P.innerHTML = `<div class="summary">
+      <p><b>${ph.K} ${ph.K === 1 ? "componente" : "componenti"}</b> su ${ph.n} frammenti (criterio ${ph.crit.toUpperCase()}${state.phOpt.k !== "auto" ? ", K fissato" : ""}); separazione (PDI) ${fmtN(ph.pdi, 2)}${ph.excluded ? `; ${ph.excluded} frammenti senza i campi necessari esclusi` : ""}.
+      ${ph.K > 1 ? `Il <b>${pct(c.pct)}</b> degli attacchi (${c.same} su ${c.tot}) unisce frammenti della stessa componente, contro il ${pct(c.expected)} atteso se gli attacchi fossero distribuiti a caso.` : ""}</p>
+      ${verdict ? `<p>${verdict}</p>` : ""}
+      ${split.length ? `<p>US divise tra più componenti (possibili palinsesti o US da rivedere): ${split.map(u => `<b>US ${esc(u.us)}</b> (${[...u.phases.entries()].sort((a, b) => a[0] - b[0]).map(([k, n]) => `C${k} ${n}`).join(", ")})`).join("; ")}.</p>` : ""}
+    </div>
+    <div class="charts">${bicChart(ph)}${profileChart(res, ph, state.usr)}</div>
+    <h3 class="sub">Componenti</h3>
+    <div class="tablewrap"><table><thead><tr><th>Componente</th><th class="n">Fr.</th><th class="n">Quota media</th><th class="n">Dev. st.</th><th class="n">Intervallo</th><th>US (frammenti)</th><th class="n">Appartenenza media</th><th class="n">Incerti</th></tr></thead><tbody>
+    ${ph.phases.map(f => `<tr data-ph="${f.id}"><td><span class="gchip"><i style="background:${phaseColor(f.id)}"></i>C${f.id}</span></td><td class="n">${f.n}</td><td class="n">${fmtN(f.zMean, 3)}</td><td class="n">${fmtN(f.zSd, 3)}</td><td class="n">${f.zMin === null ? "—" : fmtN(f.zMin, 3) + " – " + fmtN(f.zMax, 3)}</td><td class="wrap">${f.us.map(([u, n]) => `${esc(u)} (${n})`).join(", ") || "—"}</td><td class="n">${fmtN(f.meanP, 2)}</td><td class="n">${f.ambiguous}</td></tr>`).join("")}
+    </tbody></table></div>
+    ${ph.K > 1 && c.tot ? `<h3 class="sub">Attacchi tra componenti</h3><div class="tablewrap" style="max-width:${120 + ph.K * 70}px"><table class="matrix"><thead><tr><th class="rowh"></th>${ph.phases.map(f => `<th>C${f.id}</th>`).join("")}</tr></thead><tbody>${
+      ph.phases.map((f, i) => `<tr><th class="rowh">C${f.id}</th>${ph.phases.map((g, j) => { const v = j >= i ? c.matrix[i][j] : c.matrix[j][i]; return `<td class="${i === j ? "diag" : ""}">${v || "·"}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>` : ""}
+    ${amb.length ? `<h3 class="sub">Frammenti incerti (appartenenza alla componente &lt; 0,70)</h3><div class="ids">${amb.slice(0, 80).map(([id, v]) => `<button class="idbtn" type="button" data-id="${esc(id)}" title="F${v.phase}, p ${fmtN(v.p, 2)}">${esc(id)}</button>`).join("")}</div>` : ""}
+    <p class="note">Modello a miscela gaussiana stimato con EM (5 inizializzazioni), con le diagnostiche di palimpsestr: BIC, ICL, entropia, PDI = 1 − entropia media / log K. I pesi delle variabili agiscono sulla verosimiglianza. Le componenti sono numerate dall'alto (C1 è la più alta): sono raggruppamenti statistici per posizione, non fasi cronologiche, e la numerazione non indica un ordine di tempo. palimpsestr le chiama «phases». Gli stessi risultati si ottengono con <span class="mono">refitting.py</span>.</p>`;
+  chartTip(P);
+  P.querySelectorAll(".dot, .idbtn").forEach(b => b.addEventListener("click", () => select({ type: "frag", id: b.dataset.id }, true)));
+  P.querySelectorAll("tr[data-ph]").forEach(tr => tr.addEventListener("click", () => { state.colorBy = "fase"; $("#colorBy").value = "fase"; renderLegend(); draw(); }));
+}
+
+function arcDiagram(usr) {
+  const units = usr.units, n = units.length;
+  if (!n) return "";
+  const rowH = 30, T = 16, nodeX = 210, W = 520, H = T * 2 + rowH * (n - 1) + 10;
+  const y = r => T + r * rowH;
+  const setCol = id => id ? (id <= 8 ? `var(--c${id})` : "var(--other)") : "var(--grid-strong)";
+  let arcs = "";
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const o = usr.O[i][j]; if (!o) continue;
+    const same = units[i].set && units[i].set === units[j].set;
+    const r = 18 + 26 * (j - i), w = Math.min(9, 1.2 + 1.3 * o);
+    const tip = `US ${units[i].us} – US ${units[j].us}: ${o} attacchi (attesi ${fmtN(usr.E[i][j], 1)})`;
+    arcs += `<path d="M${nodeX},${y(i)} C${nodeX + r},${y(i)} ${nodeX + r},${y(j)} ${nodeX},${y(j)}" fill="none" stroke="${same ? setCol(units[i].set) : "var(--muted)"}" stroke-opacity="${same ? .85 : .5}" stroke-width="${w}" data-tip="${tip}"/>`;
+    arcs += `<text x="${nodeX + r * .75 + 4}" y="${(y(i) + y(j)) / 2 + 3.5}" class="al">${o}</text>`;
+  }
+  let nodes = "";
+  units.forEach((u, i) => {
+    const rad = 5 + Math.sqrt(u.internal) * 3;
+    nodes += `<rect x="0" y="${y(i) - 11}" width="4" height="22" fill="${setCol(u.set)}"/>`;
+    nodes += `<text x="12" y="${y(i) + 4}" class="ul">US ${esc(u.us)}</text>`;
+    nodes += `<text x="78" y="${y(i) + 4}">${u.zMed === null ? "—" : "q. " + fmtN(u.zMed, 3)} · ${u.n} fr.</text>`;
+    nodes += `<circle cx="${nodeX}" cy="${y(i)}" r="${rad}" fill="${setCol(u.set)}" stroke="var(--surface)" stroke-width="2" data-tip="US ${esc(u.us)}: ${u.internal} attacchi interni, ${u.external} verso altre US"/>`;
+    if (u.internal) nodes += `<text x="${nodeX}" y="${y(i) + 3.5}" text-anchor="middle" class="in">${u.internal}</text>`;
+  });
+  return `<div class="chart"><h3>US in ordine di quota e attacchi</h3><p>US dall'alto in basso per quota mediana. Il numero nel cerchio conta gli attacchi interni; gli archi collegano US diverse (spessore = numero di attacchi). Colore = insieme di US connesse.</p>
+    <div class="svgscroll"><svg viewBox="0 0 ${W} ${H}" style="min-width:440px" role="img" aria-label="Diagramma ad archi degli attacchi tra US">${arcs}${nodes}</svg></div></div>`;
+}
+
+function tabPalimpsest(P, res) {
+  const usr = state.usr;
+  if (!usr || !usr.units.length) { P.innerHTML = `<p class="hint">Serve il campo US per l'analisi del palinsesto.</p>`; return; }
+  if (!usr.L) { P.innerHTML = `<p class="hint">Nessun attacco tra frammenti con US: non ci sono connessioni da analizzare.</p>`; return; }
+  const j = usr.jumps, L = usr.L, pc = v => fmtN(100 * v / L, 0) + "%";
+  const open = usr.units.filter(u => u.open !== null && u.internal + u.external >= 3).sort((a, b) => b.open - a.open).slice(0, 3);
+  const qTxt = usr.Q >= 0.3 ? "La separazione tra gli insiemi è netta" : usr.Q >= 0.15 ? "La separazione tra gli insiemi è moderata" : "La separazione tra gli insiemi è debole";
+  const sets = usr.sets.filter(s => s.us.length);
+  const multi = sets.filter(s => s.us.length > 1);
+  P.innerHTML = `<div class="summary">
+      <p>Su <b>${L}</b> attacchi tra frammenti con US: <b>${pc(j[0])}</b> interni alla stessa US, <b>${pc(j[1])}</b> tra US vicine nell'ordine di quota, <b>${pc(j[2] + j[3])}</b> saltano una o più US.</p>
+      <p>La rete dei rimontaggi divide le US in <b>${sets.length} ${sets.length === 1 ? "insieme" : "insiemi"}</b>: ${sets.map(s => `<span class="gchip"><i style="background:${s.id <= 8 ? `var(--c${s.id})` : "var(--other)"}"></i>${s.us.map(esc).join(" + ")}</span>`).join(" · ")} (modularità ${fmtN(usr.Q, 2)}). ${qTxt}.
+      ${multi.length ? "Le US di uno stesso insieme sono legate da attacchi più di quanto atteso: possono appartenere a uno stesso evento deposizionale (un palinsesto) oppure essere state rimescolate dopo la deposizione." : ""}</p>
+      ${open.length ? `<p>US più aperte verso le altre: ${open.map(u => `<b>US ${esc(u.us)}</b> (${fmtN(100 * u.open, 0)}% degli attacchi esce dalla US)`).join(", ")}.</p>` : ""}
+      ${usr.isolated.length ? `<p>US senza attacchi: ${usr.isolated.map(esc).join(", ")}.</p>` : ""}
+    </div>
+    <div class="charts">${arcDiagram(usr)}
+      <div class="chart"><h3>Salti nell'ordine di quota</h3><p>Di quante posizioni nell'ordine di quota delle US si sposta ogni attacco. Non è la sequenza stratigrafica.</p>
+        <div class="hbars">${[["Stessa US", j[0]], ["US vicine in quota", j[1]], ["Salta 1 US", j[2]], ["Salta 2 o più US", j[3]]].map(([t, v]) => `<div class="hb"><span>${t}</span><div><i style="width:${(100 * v / Math.max(...j, 1)).toFixed(1)}%"></i></div><b>${v}</b></div>`).join("")}</div>
+      </div>
+    </div>
+    <h3 class="sub">Osservati e attesi tra US</h3>
+    ${oeMatrix(usr)}
+    <h3 class="sub">US</h3>
+    <div class="tablewrap"><table><thead><tr><th class="n">Ordine</th><th>US</th><th class="n">Fr.</th><th class="n">Quota mediana</th><th class="n">Quota 5–95%</th><th class="n">Interni</th><th class="n">Verso altre US</th><th class="n">Apertura</th><th class="n">Diff. quota mediana</th><th>Insieme</th><th>Componenti</th></tr></thead><tbody>
+    ${usr.units.map(u => `<tr><td class="n">${u.rank + 1}</td><td class="mono">${esc(u.us)}</td><td class="n">${u.n}</td><td class="n">${fmtN(u.zMed, 3)}</td><td class="n">${u.z05 === null ? "—" : fmtN(u.z05, 3) + " – " + fmtN(u.z95, 3)}</td><td class="n">${u.internal}</td><td class="n">${u.external}</td><td class="n">${u.open === null ? "—" : fmtN(100 * u.open, 0) + "%"}</td><td class="n">${u.dzMed === null ? "—" : fmtN(u.dzMed * 100, 1) + " cm"}</td><td>${u.set ? `<span class="gchip"><i style="background:${u.set <= 8 ? `var(--c${u.set})` : "var(--other)"}"></i>${u.set}</span>` : "—"}</td><td class="mono">${[...u.phases.entries()].sort((a, b) => a[0] - b[0]).map(([k, c]) => `C${k}:${c}`).join(" ") || "—"}</td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="note">L'ordine delle US segue la quota mediana dei frammenti: è un'approssimazione e non sostituisce la sequenza stratigrafica del diagramma di Harris. Atteso = numero di attacchi previsto se gli attacchi si distribuissero a caso mantenendo il numero di attacchi di ogni US (modello di configurazione). Gli insiemi massimizzano la modularità (aggregazione di Clauset–Newman–Moore). Apertura = quota degli attacchi di una US che la collega ad altre US.</p>`;
+  chartTip(P);
+}
+function oeMatrix(usr) {
+  const U = usr.units;
+  let h = `<div class="tablewrap"><table class="matrix oe"><thead><tr><th class="rowh">US</th>${U.map(u => `<th>${esc(u.us)}</th>`).join("")}</tr></thead><tbody>`;
+  U.forEach((a, i) => {
+    h += `<tr><th class="rowh">${esc(a.us)}</th>`;
+    U.forEach((b, j) => {
+      const o = usr.O[i][j], e = usr.E[i][j];
+      if (!o && e < 0.5) { h += `<td class="${i === j ? "diag" : ""}" style="color:var(--grid-strong)">·</td>`; return; }
+      const r = Math.log2((o + 0.5) / (e + 0.5)), t = Math.min(1, Math.abs(r) / 2);
+      const bg = `color-mix(in srgb, ${r >= 0 ? "var(--div-pos)" : "var(--div-neg)"} ${Math.round(t * 55)}%, var(--div-mid))`;
+      h += `<td class="${i === j ? "diag" : ""}" style="background:${bg}" title="US ${esc(a.us)} – US ${esc(b.us)}: ${o} osservati, ${fmtN(e, 2)} attesi">${o}<small>${fmtN(e, 1)}</small></td>`;
+    });
+    h += `</tr>`;
+  });
+  return h + `</tbody></table></div><div class="lg" style="margin-top:6px"><span><i style="background:color-mix(in srgb, var(--div-pos) 55%, var(--div-mid))"></i>più attacchi del previsto</span><span><i style="background:var(--div-mid)"></i>come previsto</span><span><i style="background:color-mix(in srgb, var(--div-neg) 55%, var(--div-mid))"></i>meno del previsto</span><span class="mono" style="color:var(--muted)">cella: osservati, attesi in piccolo</span></div>`;
+}
+
+/* ---------- comandi ---------- */
+document.querySelectorAll("#modeSeg button").forEach(b => b.addEventListener("click", () => {
+  state.opt.mode = b.dataset.mode;
+  document.querySelectorAll("#modeSeg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  run(false);
+}));
+function setView(v, refit = true) {
+  state.view = v;
+  document.querySelectorAll("#viewSeg button").forEach(x => x.setAttribute("aria-pressed", x.dataset.view === v));
+  $("#exagGrp").hidden = v === "pianta";
+  $("#strataGrp").hidden = v !== "3d" || !(state.res && buildStrata(state.res));
+  renderLegend();
+  $("#zfit").title = v === "3d" ? "Vista iniziale" : "Adatta alla vista";
+  if (refit) { fit(); draw(); }
+}
+document.querySelectorAll("#viewSeg button").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
+$("#exag").addEventListener("change", e => { state.exag = +e.target.value; fit(); draw(); });
+$("#strataA").addEventListener("input", e => { state.strataA = +e.target.value; renderLegend(); draw(); });
+$("#strataFocus").addEventListener("change", e => { state.strataFocus = e.target.value; draw(); });
+function fillStrataFocus() {
+  const sel = $("#strataFocus"), S = state.res ? buildStrata(state.res) : null;
+  const keep = state.strataFocus;
+  sel.innerHTML = `<option value="">tutte le US</option>` + (S ? S.layers.map(L => `<option value="${esc(L.us)}">US ${esc(L.us)}</option>`).join("") : "");
+  state.strataFocus = S && S.layers.some(L => L.us === keep) ? keep : "";
+  sel.value = state.strataFocus;
+  $("#strataGrp").hidden = state.view !== "3d" || !S;
+}
+for (const [id, k] of [["wXY", "wXY"], ["wZ", "wZ"], ["wUS", "wUS"]]) $("#" + id).addEventListener("change", e => { state.phOpt[k] = +e.target.value; schedulePhases(); renderStats(); renderTabs(); });
+$("#kSel").addEventListener("change", e => { state.phOpt.k = e.target.value === "auto" ? "auto" : +e.target.value; schedulePhases(); renderStats(); renderTabs(); });
+$("#optConstr").addEventListener("change", e => { state.phOpt.constrained = e.target.checked; schedulePhases(); renderStats(); renderTabs(); });
+document.querySelectorAll("#critSeg button").forEach(b => b.addEventListener("click", () => {
+  state.phOpt.crit = b.dataset.crit;
+  document.querySelectorAll("#critSeg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  schedulePhases(); renderStats(); renderTabs();
+}));
+$("#colorBy").addEventListener("change", e => { state.colorBy = e.target.value; renderLegend(); draw(); });
+$("#optOutliers").addEventListener("change", e => { state.opt.excludeOutliers = e.target.checked; state.sel = null; run(true); });
+$("#optPertGroups").addEventListener("change", e => { state.opt.pertInGroups = e.target.checked; state.sel = null; run(false); });
+for (const [id, k] of [["optHulls", "hulls"], ["optPert", "pert"], ["optUnlinked", "unlinked"], ["optLabels", "labels"], ["optDrop", "drop"]])
+  $("#" + id).addEventListener("change", e => { state.show[k] = e.target.checked; renderLegend(); renderTabs(); draw(); });
+$("#file").addEventListener("change", e => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value = ""; });
+const drop = $("#drop");
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) readFile(f); });
+$("#demoBtn").addEventListener("click", () => loadData(demoCSV(), "esempio_rimontaggi.csv", true));
+
+/* tema: ricolora quando cambia */
+const reTheme = () => { assignColors(); renderLegend(); renderTabs(); draw(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", reTheme);
+new MutationObserver(reTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+document.fonts && document.fonts.ready.then(draw);
+
+/* ---------- esportazione ---------- */
+const csvCell = v => { const s = v === null || v === undefined ? "" : String(v); return /[",;\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+const csvOf = (head, rows) => [head, ...rows].map(r => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
+const r4 = v => v === null ? null : Math.round(v * 1e4) / 1e4;
+function linkFeature(l, res) {
+  const a = res.frags.get(l.a), b = res.frags.get(l.b);
+  return { type: "Feature", geometry: { type: "LineString", coordinates: [[a.x, a.y], [b.x, b.y]] },
+    properties: { fr_a: l.a, fr_b: l.b, tipo: l.kind, gruppo: l.cluster, dist_2d: r4(l.d2), dz: r4(l.dz), dist_3d: r4(l.d3), us_a: l.usA, us_b: l.usB, stessa_us: l.sameUS, vaso_a: l.vA, vaso_b: l.vB } };
+}
+function exportData(kind) {
+  if (kind === "datacsv") return dataCSV();
+  const res = state.res; if (!res) { toast("Carica prima i dati."); return null; }
+  const base = state.source.replace(/\.[^.]+$/, "") || "rimontaggi";
+  const fc = features => JSON.stringify({ type: "FeatureCollection", features }, null, 1);
+  switch (kind) {
+    case "links": return { name: `${base}_collegamenti.json`, data: fc(res.links.concat(res.pert).map(l => linkFeature(l, res))) };
+    case "groups": return { name: `${base}_gruppi.json`, data: fc(res.clusters.map(c => ({ type: "Feature", geometry: { type: "Polygon", coordinates: [c.hull] },
+      properties: { gruppo: c.id, n_frammenti: c.members.length, frammenti: c.members.join(";"), vasi: c.vessels.join(";"), vasi_misti: c.vessels.length > 1, us: c.us.join(";"), n_us: c.us.length, area: r4(c.area), estensione_max: r4(c.span), diff_quota: r4(c.zRange), tipo_inviluppo: c.hullKind } }))) };
+    case "frags": return { name: `${base}_frammenti.json`, data: fc([...res.frags.values()].map(f => ({ type: "Feature", geometry: { type: "Point", coordinates: f.z !== null ? [f.x, f.y, f.z] : [f.x, f.y] },
+      properties: { frammento: f.id, vaso: f.vessel, us: f.us, quota: f.z, gruppo: res.clusterOf.get(f.id) ?? null, attacca_con: f.refits.join(";"), pertinente_a: f.pert.join(";") } }))) };
+    case "linkscsv": return { name: `${base}_collegamenti.csv`, data: csvOf(["wkt", "fr_a", "fr_b", "tipo", "gruppo", "dist_2d", "dz", "dist_3d", "us_a", "us_b", "stessa_us"],
+      res.links.concat(res.pert).map(l => { const a = res.frags.get(l.a), b = res.frags.get(l.b); return [`LINESTRING(${a.x} ${a.y}, ${b.x} ${b.y})`, l.a, l.b, l.kind, l.cluster, r4(l.d2), r4(l.dz), r4(l.d3), l.usA, l.usB, l.sameUS === null ? "" : (l.sameUS ? "si" : "no")]; })) };
+    case "matrix": { const M = usMatrix(res); return { name: `${base}_matrice_us.csv`, data: csvOf(["US", ...M.keys], M.keys.map(a => [a, ...M.keys.map(b => M.get(a, b))])) }; }
+    case "issues": return { name: `${base}_controlli.csv`, data: csvOf(["livello", "codice", "messaggio", "frammenti"], res.issues.map(i => [i.level, i.code, i.message, i.fragments.join(";")])) };
+    case "phases": {
+      const ph = state.ph;
+      if (!ph || !ph.ok) { toast(ph ? ph.reason : "Le componenti sono ancora in calcolo."); return null; }
+      return { name: `${base}_componenti.csv`, data: csvOf(["frammento", "componente", "appartenenza", "entropia", "us", "quota", "gruppo", ...ph.phases.map(f => "appartenenza_C" + f.id)],
+        [...ph.frag.entries()].map(([id, v]) => { const f = res.frags.get(id); return [id, v.phase, r4(v.p), r4(v.H), f.us, f.z, res.clusterOf.get(id) ?? "", ...v.probs.map(r4)]; })) };
+    }
+    case "ussum": {
+      const u = state.usr; if (!u) { toast("Serve il campo US."); return null; }
+      return { name: `${base}_us_sintesi.csv`, data: csvOf(["ordine", "us", "n", "quota_mediana", "quota_p05", "quota_p95", "attacchi_interni", "attacchi_esterni", "apertura", "dz_mediano", "insieme", "componenti"],
+        u.units.map(x => [x.rank + 1, x.us, x.n, x.zMed, x.z05, x.z95, x.internal, x.external, x.open === null ? "" : Math.round(x.open * 1000) / 1000, x.dzMed === null ? "" : r4(x.dzMed), x.set ?? "", [...x.phases.entries()].sort((a, b) => a[0] - b[0]).map(([k, c]) => `C${k}:${c}`).join(";")])) };
+    }
+    case "oe": {
+      const u = state.usr; if (!u) { toast("Serve il campo US."); return null; }
+      const rows = [];
+      u.units.forEach((a, i) => u.units.forEach((b, j) => { if (j < i) return; const o = u.O[i][j], e = u.E[i][j]; if (o || e > 0) rows.push([a.us, b.us, o, r4(e), e ? r4(o / e) : ""]); }));
+      return { name: `${base}_us_osservati_attesi.csv`, data: csvOf(["us_a", "us_b", "osservati", "attesi", "o_su_e"], rows) };
+    }
+    case "palimpsestr": {
+      const ph = state.ph && state.ph.ok ? state.ph : null;
+      return { name: `${base}_palimpsestr.csv`, data: csvOf(["id", "x", "y", "z", "context", "date_min", "date_max", "class", "taf_score", "vaso", "gruppo_rimontaggio", "componente", "appartenenza"],
+        [...res.frags.values()].map(f => { const v = ph ? ph.frag.get(f.id) : null; return [f.id, f.x, f.y, f.z, usKey(f.us), "", "", "ceramica", "", f.vessel, res.clusterOf.get(f.id) ?? "", v ? v.phase : "", v ? r4(v.p) : ""]; })) };
+    }
+  }
+}
+let downloadsNs = null;
+if (window.claude && window.claude.use) window.claude.use("downloads").then(ns => { downloadsNs = ns; }).catch(() => {});
+async function deliver(out) {
+  if (downloadsNs) {
+    try { await downloadsNs.save({ filename: out.name, data: out.data }); toast(`Salvato ${out.name}`); return; }
+    catch (e) { if (e && e.code === "declined") { toast("Salvataggio annullato."); return; } }
+  }
+  if (!window.claude) {            // pagina aperta come file locale: download normale
+    const url = URL.createObjectURL(new Blob([out.data], { type: out.name.endsWith(".csv") ? "text/csv" : "application/geo+json" }));
+    const a = document.createElement("a"); a.href = url; a.download = out.keepName ? out.name : out.name.replace(/\.json$/, ".geojson");
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast(`Scaricato ${a.download}`); return;
+  }
+  try { await navigator.clipboard.writeText(out.data); toast(`${out.name}: contenuto copiato negli appunti. Incollalo in un file con questo nome.`); }
+  catch { showFallback(out); }
+}
+document.querySelectorAll("[data-exp]").forEach(b => b.addEventListener("click", () => { const out = exportData(b.dataset.exp); if (out) deliver(out); }));
+function showFallback(out) {
+  const P = $("#tabpanel");
+  P.innerHTML = `<p class="hint">Il salvataggio diretto non è disponibile qui. Seleziona il testo, copialo e salvalo come <span class="mono">${esc(out.name)}</span>.</p><textarea class="fallback" id="fb" readonly>${esc(out.data)}</textarea>`;
+  const t = $("#fb"); t.focus(); t.select();
+}
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4200); }
+
+/* ---------- dati: modifica diretta, nuova tabella, correzioni proposte ---------- */
+const STD_HEADERS = ["RR", "est", "nord", "quota", "US", "Attacca_con", "pertinente_a", "Vaso_ID"];
+const GEOM_NAME = { __geom_x: "est (geometria)", __geom_y: "nord (geometria)", __geom_z: "quota (geometria)" };
+const colLabel = h => GEOM_NAME[h] || h;
+function remember() {
+  state.history.push(JSON.stringify({ rows: state.rows, headers: state.headers, log: state.fixLog.length }));
+  if (state.history.length > 40) state.history.shift();
+}
+function undoEdit() {
+  const h = state.history.pop(); if (!h) { toast("Niente da annullare."); return; }
+  const s = JSON.parse(h); state.rows = s.rows; state.headers = s.headers; state.fixLog.length = Math.min(state.fixLog.length, s.log);
+  dataChanged(true); toast("Ultima modifica annullata.");
+}
+let rerunT = null;
+function dataChanged(now) {
+  state.dirty = true; $("#rowCount").textContent = `${state.rows.length} righe`; renderProjects();
+  clearTimeout(rerunT);
+  if (now) run(false); else rerunT = setTimeout(() => run(false), 350);
+}
+function newDataset() {
+  loadData({ headers: [...STD_HEADERS], rows: [] }, "nuovo_dataset.csv", false);
+  state.tab = "dati"; renderTabs();
+  toast("Tabella vuota creata: aggiungi i frammenti nella scheda Dati.");
+}
+function nextId() {
+  const col = state.map.id; if (!col) return "";
+  const nums = state.rows.map(r => Number(normaliseId(r[col]))).filter(Number.isInteger);
+  return nums.length ? String(Math.max(...nums) + 1) : (state.rows.length ? "" : "1");
+}
+function tabData(P) {
+  const H = state.headers, R = state.rows, idCol = state.map.id;
+  const act = document.activeElement;
+  const keep = state.focusCell || (act && P.contains(act) ? (act.id === "dFind" ? { find: true } : act.dataset.r !== undefined ? { r: act.dataset.r, c: act.dataset.c } : null) : null);
+  state.focusCell = null;
+  const bad = new Set(state.res ? state.res.issues.filter(i => i.level !== "info").flatMap(i => i.fragments) : []);
+  const q = state.dataFilter.trim().toLowerCase();
+  let idx = R.map((_, i) => i);
+  if (q) idx = idx.filter(i => H.some(h => String(R[i][h] ?? "").toLowerCase().includes(q)));
+  if (state.dataOnlyBad) idx = idx.filter(i => bad.has(normaliseId(R[i][idCol])));
+  const MAX = 600, shown = idx.slice(0, MAX);
+  P.innerHTML = `<div class="datatools">
+      <button class="btn primary" type="button" id="dAdd" ${H.length ? "" : "disabled"}>Aggiungi riga</button>
+      <button class="btn" type="button" id="dUndo" ${state.history.length ? "" : "disabled"}>Annulla</button>
+      <input type="search" id="dFind" placeholder="Cerca nella tabella" value="${esc(state.dataFilter)}" aria-label="Cerca nella tabella">
+      <label><input type="checkbox" id="dBad" ${state.dataOnlyBad ? "checked" : ""}> solo righe segnalate</label>
+      <span class="hint">${idx.length} di ${R.length} righe${idx.length > MAX ? `, mostrate le prime ${MAX}` : ""}</span>
+    </div>
+    ${H.length ? `<div class="tablewrap"><table class="grid"><thead><tr><th>#</th>${H.map(h => `<th>${esc(colLabel(h))}</th>`).join("")}<th></th></tr></thead><tbody>${
+      shown.map(i => `<tr class="${bad.has(normaliseId(R[i][idCol])) ? "bad" : ""}"><td class="rn">${i + 1}</td>${H.map((h, c) => `<td><input data-r="${i}" data-c="${c}" value="${esc(R[i][h] ?? "")}" aria-label="${esc(colLabel(h))}, riga ${i + 1}" spellcheck="false"></td>`).join("")}<td><button class="del" type="button" data-del="${i}" title="Elimina la riga" aria-label="Elimina la riga ${i + 1}">×</button></td></tr>`).join("")
+    }</tbody></table></div>` : `<p class="hint">Nessuna colonna: usa "Nuovo dataset" nel pannello Dati o carica un file.</p>`}
+    <p class="note">Ogni modifica si applica quando esci dalla cella e l'analisi si aggiorna da sola. Le righe evidenziate compaiono tra i Controlli. Per conservare le modifiche salva il progetto o scarica "Dati modificati" da Esporta.</p>`;
+  P.querySelectorAll(".grid input").forEach(inp => inp.addEventListener("change", () => {
+    const r = +inp.dataset.r, h = H[+inp.dataset.c];
+    if (String(R[r][h] ?? "") === inp.value) return;
+    remember(); R[r][h] = inp.value; dataChanged();
+  }));
+  P.querySelectorAll(".del").forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.del; remember(); state.rows.splice(i, 1); dataChanged(true);
+    toast(`Riga ${i + 1} eliminata. "Annulla" la ripristina.`);
+  }));
+  const add = $("#dAdd"); if (add) add.addEventListener("click", () => {
+    remember();
+    const row = Object.fromEntries(H.map(h => [h, ""])); if (idCol) row[idCol] = nextId();
+    state.rows.push(row); state.dataFilter = ""; state.dataOnlyBad = false;
+    state.focusCell = { r: String(state.rows.length - 1), c: String(Math.min(1, H.length - 1)) };
+    dataChanged(true);
+  });
+  $("#dUndo").addEventListener("click", undoEdit);
+  $("#dFind").addEventListener("input", e => { state.dataFilter = e.target.value; renderTabs(); });
+  $("#dBad").addEventListener("change", e => { state.dataOnlyBad = e.target.checked; renderTabs(); });
+  if (keep && keep.find) { const f = $("#dFind"); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+  else if (keep) { const el = P.querySelector(`.grid input[data-r="${keep.r}"][data-c="${keep.c}"]`); if (el) { el.focus(); el.scrollIntoView({ block: "nearest" }); } }
+}
+function dataCSV() {
+  if (!state.headers.length) { toast("Non ci sono dati."); return null; }
+  const H = state.headers.filter(h => !(h.startsWith("__geom_") && state.rows.every(r => r[h] === "" || r[h] === undefined || r[h] === null)));
+  const name = h => { const n = { __geom_x: "est", __geom_y: "nord", __geom_z: "quota" }[h]; return n ? (H.includes(n) ? n + "_geometria" : n) : h; };
+  const base = state.source.replace(/\.[^.]+$/, "") || "rimontaggi";
+  return { name: `${base}_dati.csv`, data: csvOf(H.map(name), state.rows.map(r => H.map(h => r[h] ?? ""))) };
+}
+
+/* correzioni: "sicura" quando il dato errato si riconosce senza ambiguità, "da verificare" quando è una proposta */
+function fixPreview(list, n = 10) { return list.slice(0, n).join(", ") + (list.length > n ? "…" : ""); }
+function proposeFixes() {
+  const m = state.map, R = state.rows, H = state.headers, out = [];
+  if (!R.length || !m.id) return out;
+  const idOf = r => normaliseId(r[m.id]);
+  const rowsOf = id => R.filter(r => idOf(r) === id);
+  // righe vuote
+  const empty = R.map((r, i) => H.every(h => String(r[h] ?? "").trim() === "") ? i : -1).filter(i => i >= 0);
+  if (empty.length) out.push({ safe: true, title: pl(empty.length, "riga vuota", "righe vuote"), detail: "Si eliminano.",
+    apply: () => { const s = new Set(empty); state.rows = R.filter((_, i) => !s.has(i)); return `Eliminate ${pl(empty.length, "riga vuota", "righe vuote")}`; } });
+  // righe identiche
+  const seen = new Set(), dup = [];
+  R.forEach((r, i) => { if (empty.includes(i)) return; const k = JSON.stringify(H.map(h => String(r[h] ?? "").trim())); if (seen.has(k)) dup.push(i); else seen.add(k); });
+  if (dup.length) { const ids = [...new Set(dup.map(i => idOf(R[i])))]; out.push({ safe: true, title: `${pl(dup.length, "riga identica", "righe identiche")} a un'altra`, detail: `${ids.length === 1 ? "Frammento" : "Frammenti"} ${fixPreview(ids)}: si tiene una sola copia.`,
+    apply: () => { const s = new Set(dup); state.rows = R.filter((_, i) => !s.has(i)); return `Eliminate ${pl(dup.length, "riga duplicata", "righe duplicate")} (${fixPreview(ids, 6)})`; } }); }
+  // frammento collegato a sé stesso
+  const self = [];
+  for (const r of R) { const id = idOf(r); if (id === null) continue; for (const k of [m.refit, m.pert]) if (k && parseRefits(r[k]).includes(id)) self.push([r, k, id]); }
+  if (self.length) out.push({ safe: true, title: pl(self.length, "frammento collegato a sé stesso", "frammenti collegati a sé stessi"), detail: `${new Set(self.map(x => x[2])).size === 1 ? "Frammento" : "Frammenti"} ${fixPreview([...new Set(self.map(x => x[2]))])}: si toglie l'ID dalla propria cella.`,
+    apply: () => { for (const [r, k, id] of self) r[k] = parseRefits(r[k]).filter(x => x !== id).join("; "); return `Tolti gli auto-riferimenti (${fixPreview(self.map(x => x[2]), 6)})`; } });
+  // est e nord invertiti
+  if (m.x && m.y) {
+    const first = new Map(); for (const f of buildFragments(R, m)) if (f.x !== null && f.y !== null && !first.has(f.id)) first.set(f.id, f);
+    const sw = [...coordinateOutliers(first).entries()].filter(([, o]) => o.swapped).map(([id]) => id);
+    for (const id of sw) { const f = first.get(id); out.push({ safe: true, title: `Frammento ${id}: est e nord invertiti`, detail: `(${fmtN(f.x)}, ${fmtN(f.y)}) diventa (${fmtN(f.y)}, ${fmtN(f.x)}): scambiate, il punto cade vicino agli altri.`,
+      apply: () => { for (const r of rowsOf(id)) { const t = r[m.x]; r[m.x] = r[m.y]; r[m.y] = t; } return `Frammento ${id}: scambiati est e nord`; } }); }
+  }
+  // quote anomale: proposta di errore di battitura (una cifra) quando un solo valore rientra nell'intervallo plausibile
+  if (m.z) {
+    const fr = new Map(); for (const f of buildFragments(R, m)) if (f.z !== null && !fr.has(f.id)) fr.set(f.id, f);
+    const all = [...fr.values()];
+    if (all.length >= 8) {
+      const zs = all.map(f => f.z), [gm, gs0] = robustScale(zs), gs = Math.max(gs0, 0.02);
+      const byUS = new Map(); for (const f of all) { const u = usKey(f.us); if (u) { if (!byUS.has(u)) byUS.set(u, []); byUS.get(u).push(f.z); } }
+      const usStat = new Map([...byUS].filter(([, v]) => v.length >= 5).map(([u, v]) => { const [a, b] = robustScale(v); return [u, [a, Math.max(b, 0.02)]]; }));
+      const partners = new Map(); for (const f of all) for (const t of f.refits) if (fr.has(t)) { for (const [a, b] of [[f.id, t], [t, f.id]]) { if (!partners.has(a)) partners.set(a, []); partners.get(a).push(fr.get(b).z); } }
+      for (const f of all) {
+        const us = usKey(f.us), st = us && usStat.get(us);
+        const farAll = Math.abs(f.z - gm) > Math.max(6 * gs, 0.5), farUS = st && Math.abs(f.z - st[0]) > Math.max(5 * st[1], 0.3);
+        if (!farAll && !farUS) continue;
+        const [lo, hi] = st ? [st[0] - 4 * st[1], st[0] + 4 * st[1]] : [gm - 4 * gs, gm + 4 * gs];
+        const raw = String(rowsOf(f.id)[0][m.z]).trim(), cands = new Set();
+        for (let i = 0; i < raw.length; i++) if (/\d/.test(raw[i])) for (let d = 0; d <= 9; d++) cands.add(raw.slice(0, i) + d + raw.slice(i + 1));
+        for (let i = 0; i + 1 < raw.length; i++) if (/\d/.test(raw[i]) && /\d/.test(raw[i + 1])) cands.add(raw.slice(0, i) + raw[i + 1] + raw[i] + raw.slice(i + 2));
+        const ref = partners.has(f.id) ? median(partners.get(f.id)) : st ? st[0] : gm;
+        const ok = [...cands].map(c => [c, toFloat(c)]).filter(([c, v]) => c !== raw && v !== null && v >= lo && v <= hi).sort((a, b) => Math.abs(a[1] - ref) - Math.abs(b[1] - ref));
+        const where = st ? `la US ${us} sta tra ${fmtN(lo, 2)} e ${fmtN(hi, 2)}` : `quasi tutte le quote stanno tra ${fmtN(lo, 2)} e ${fmtN(hi, 2)}`;
+        if (ok.length) { const [c] = ok[0]; out.push({ safe: false, title: `Frammento ${f.id}: quota ${raw} fuori scala, forse ${c}`, detail: `${where[0].toUpperCase() + where.slice(1)}${partners.has(f.id) ? `; i frammenti che attaccano con lui stanno attorno a ${fmtN(ref, 2)}` : ""}. Probabile errore di battitura: controlla la scheda.`,
+          apply: () => { for (const r of rowsOf(f.id)) r[m.z] = c; return `Frammento ${f.id}: quota ${raw} corretta in ${c}`; } }); }
+        else out.push({ safe: false, title: `Frammento ${f.id}: quota ${raw} fuori scala`, detail: `${where[0].toUpperCase() + where.slice(1)}. Nessuna correzione evidente: si può svuotare la quota finché non si controlla la scheda.`,
+          apply: () => { for (const r of rowsOf(f.id)) r[m.z] = ""; return `Frammento ${f.id}: quota ${raw} svuotata`; } });
+      }
+    }
+  }
+  // vasi: codici diversi sullo stesso frammento o uniti da attacchi
+  if (m.vessel) {
+    const vOf = r => normaliseId(r[m.vessel]);
+    const par = new Map(), find = x => { while (par.get(x) !== x) x = par.get(x); return x; };
+    const join = (a, b, why) => { for (const v of [a, b]) if (!par.has(v)) par.set(v, v); const ra = find(a), rb = find(b); if (ra !== rb) par.set(rb, ra); ev.push([a, b, why]); };
+    const ev = [], cnt = new Map();
+    for (const r of R) { const v = vOf(r); if (v) cnt.set(v, (cnt.get(v) || 0) + 1); }
+    const vesselsOf = new Map(); for (const r of R) { const id = idOf(r), v = vOf(r); if (id && v) { if (!vesselsOf.has(id)) vesselsOf.set(id, new Set()); vesselsOf.get(id).add(v); } }
+    for (const [id, vs] of vesselsOf) { const a = [...vs]; for (let i = 1; i < a.length; i++) join(a[0], a[i], id); }
+    for (const r of R) { const id = idOf(r); const va = vesselsOf.get(id); if (!va || !m.refit) continue; for (const t of parseRefits(r[m.refit])) { const vb = vesselsOf.get(t); if (vb && vb.size === 1 && va.size === 1) { const [x] = va, [y] = vb; if (x !== y) join(x, y, [id, t].sort(natCmp).join("–")); } } }
+    const comps = new Map(); for (const v of par.keys()) { const r = find(v); if (!comps.has(r)) comps.set(r, []); comps.get(r).push(v); }
+    for (const vs of comps.values()) {
+      if (vs.length < 2) continue;
+      const keepV = [...vs].sort((a, b) => (/^\d+$/.test(b) - /^\d+$/.test(a)) || (cnt.get(b) - cnt.get(a)) || natCmp(a, b))[0];
+      const others = vs.filter(v => v !== keepV), proof = ev.filter(([a, b]) => vs.includes(a) && vs.includes(b)).map(x => x[2]);
+      out.push({ safe: false, title: `Vasi ${vs.sort(natCmp).join(" e ")}: forse lo stesso vaso`, detail: `Compaiono sullo stesso frammento o sono uniti da attacchi (${fixPreview([...new Set(proof)], 6)}). Si unificano come vaso ${keepV}; se invece è sbagliato un attacco, correggilo nella scheda Dati.`,
+        apply: () => { for (const r of state.rows) if (others.includes(vOf(r))) r[m.vessel] = keepV; return `Vasi ${others.join(", ")} unificati nel vaso ${keepV}`; } });
+    }
+  }
+  return out;
+}
+let fixList = [];
+function fixesBlock() {
+  fixList = proposeFixes();
+  const res = state.res, manual = res ? res.issues.filter(i => /verso_assente|id_duplicato|senza_coordinate/.test(i.code)) : [];
+  const safeN = fixList.filter(f => f.safe).length;
+  let h = `<div class="fixhead"><h3>Correzioni proposte${fixList.length ? ` · ${fixList.length}` : ""}</h3><div class="row">
+      ${safeN ? `<button class="btn primary" type="button" id="fixSafe">${safeN === 1 ? "Applica la correzione sicura" : `Applica le ${safeN} sicure`}</button>` : ""}
+      <button class="btn" type="button" id="fixUndo" ${state.history.length ? "" : "disabled"}>Annulla</button></div></div>`;
+  h += fixList.length ? `<div class="fixes">${fixList.map((f, i) => `<div class="fix"><span class="pill ${f.safe ? "sicura" : "verifica"}">${f.safe ? "sicura" : "da verificare"}</span><div><p>${esc(f.title)}</p><small>${esc(f.detail)}</small></div><button class="btn" type="button" data-fix="${i}">Applica</button></div>`).join("")}</div>`
+    : `<p class="hint">Nessuna correzione automatica da proporre.</p>`;
+  if (fixList.length) h += `<p class="hint">Sicura vuol dire che l'errore di trascrizione è evidente, non che il dato archeologico sia certo. Da verificare vuol dire: controlla la scheda prima di applicare.</p>`;
+  if (manual.length) h += `<p class="hint">Da sistemare a mano: ${manual.map(i => esc(i.message.replace(/\s*\(.*$/, "").replace(/:.*/, ""))).join("; ")}. Puoi farlo nella scheda Dati.</p>`;
+  if (state.fixLog.length) h += `<ol class="fixlog">${state.fixLog.map(x => `<li>${esc(x.msg)}</li>`).join("")}</ol>`;
+  return h + `<h3 class="sub">Controlli</h3>`;
+}
+function applyFix(f) {
+  remember(); const msg = f.apply(); state.fixLog.push({ t: new Date().toISOString(), msg }); return msg;
+}
+function bindFixes(P) {
+  P.querySelectorAll("[data-fix]").forEach(b => b.addEventListener("click", () => { const f = fixList[+b.dataset.fix]; if (!f) return; const msg = applyFix(f); dataChanged(true); toast(msg + "."); }));
+  const all = P.querySelector("#fixSafe");
+  if (all) all.addEventListener("click", () => {
+    let n = 0, f;
+    while (n < 200 && (f = proposeFixes().find(x => x.safe))) { applyFix(f); n++; }
+    dataChanged(true); toast(`${pl(n, "correzione sicura applicata", "correzioni sicure applicate")}.`);
+  });
+  const u = P.querySelector("#fixUndo"); if (u) u.addEventListener("click", undoEdit);
+}
+$("#newBtn").addEventListener("click", newDataset);
+
+/* ---------- progetti: salvati nel browser, si riprendono o si eliminano ---------- */
+const PROJ_KEY = "rete-rimontaggi.progetti.v1", PROJ_FMT = "rete-rimontaggi-progetto";
+const VIEWS = ["pianta", "eo", "ns", "3d"], TABS = ["gruppi", "collegamenti", "matrice", "distanze", "fasi", "palinsesto", "controlli", "dati"];
+let projMem = null;   // ripiego se l'archivio del browser non è disponibile
+function projAll() {
+  if (projMem) return projMem;
+  try { const d = JSON.parse(localStorage.getItem(PROJ_KEY) || "{}"); return d && typeof d === "object" ? d : {}; } catch { return {}; }
+}
+function projStore(all) {
+  try { localStorage.setItem(PROJ_KEY, JSON.stringify(all)); projMem = null; return true; }
+  catch { projMem = all; return false; }
+}
+function projSnapshot(nome, id) {
+  return { formato: PROJ_FMT, versione: 1, id, nome, salvato: new Date().toISOString(),
+    source: state.source, demo: state.demo, headers: state.headers, rows: state.rows, map: state.map,
+    opt: state.opt, show: state.show, phOpt: state.phOpt, correzioni: state.fixLog,
+    vista: { colorBy: state.colorBy, view: state.view, exag: state.exag, strataA: state.strataA, tab: state.tab } };
+}
+/* riporta lo stato sui comandi del pannello */
+function syncControls() {
+  const press = (sel, key, v) => document.querySelectorAll(sel + " button").forEach(b => b.setAttribute("aria-pressed", b.dataset[key] === v));
+  press("#modeSeg", "mode", state.opt.mode); press("#critSeg", "crit", state.phOpt.crit);
+  $("#optOutliers").checked = state.opt.excludeOutliers; $("#optPertGroups").checked = state.opt.pertInGroups;
+  $("#wXY").value = String(state.phOpt.wXY); $("#wZ").value = String(state.phOpt.wZ); $("#wUS").value = String(state.phOpt.wUS);
+  $("#kSel").value = String(state.phOpt.k); $("#optConstr").checked = state.phOpt.constrained;
+  for (const [id, k] of [["optHulls", "hulls"], ["optPert", "pert"], ["optUnlinked", "unlinked"], ["optLabels", "labels"], ["optDrop", "drop"]]) $("#" + id).checked = state.show[k];
+  $("#colorBy").value = state.colorBy; $("#exag").value = String(state.exag); $("#strataA").value = state.strataA;
+}
+function projOpen(p) {
+  const bool = (v, d) => typeof v === "boolean" ? v : d, pick = (v, list, d) => list.includes(v) ? v : d;
+  const o = p.opt || {}, sh = p.show || {}, ph = p.phOpt || {}, v = p.vista || {};
+  state.rows = p.rows; state.headers = p.headers.map(String); state.source = String(p.source || p.nome); state.demo = !!p.demo;
+  const g = guessMap(state.headers); state.map = {};
+  for (const def of FIELD_DEFS) { const m = p.map && p.map[def.key]; state.map[def.key] = m === "" || state.headers.includes(m) ? m : g[def.key]; }
+  state.opt = { mode: pick(o.mode, ["diretti", "mst", "completi"], "diretti"), excludeOutliers: bool(o.excludeOutliers, true), pertInGroups: bool(o.pertInGroups, false) };
+  for (const k of Object.keys(state.show)) state.show[k] = bool(sh[k], state.show[k]);
+  state.phOpt = { wXY: pick(+ph.wXY, [0, 0.25, 0.5, 1], 0.5), wZ: pick(+ph.wZ, [0, 0.5, 1, 2], 1), wUS: pick(+ph.wUS, [0, 0.5, 1, 2], 0),
+    k: ph.k === "auto" || !(+ph.k >= 1 && +ph.k <= 8) ? "auto" : Math.round(+ph.k), crit: pick(ph.crit, ["icl", "bic"], "icl"), constrained: bool(ph.constrained, false) };
+  state.colorBy = pick(v.colorBy, ["gruppo", "vaso", "us", "quota", "fase"], "gruppo"); state.exag = pick(+v.exag, [1, 2, 3, 5], 1);
+  state.strataA = +v.strataA >= 0 && +v.strataA <= 0.7 ? +v.strataA : 0.3; state.tab = pick(v.tab, TABS, "gruppi");
+  state.view = "pianta"; state.sel = null; state.strataFocus = ""; state.sort = {};
+  state.project = { id: p.id, nome: p.nome };
+  state.history = []; state.dirty = false; state.dataFilter = "";
+  state.fixLog = Array.isArray(p.correzioni) ? p.correzioni.filter(x => x && typeof x.msg === "string").map(x => ({ t: String(x.t || ""), msg: x.msg })) : [];
+  $("#tbSource").textContent = state.source; $("#demoBadge").hidden = !state.demo; $("#rowCount").textContent = `${state.rows.length} righe`;
+  syncControls(); renderFields(); run(true);
+  const view = pick(v.view, VIEWS, "pianta"), vb = document.querySelector(`#viewSeg button[data-view="${view}"]`);
+  setView(vb && !vb.disabled ? view : "pianta");
+  renderProjects();
+}
+function projSave() {
+  if (!state.rows.length) { toast("Carica prima i dati."); return; }
+  const nome = $("#projName").value.trim() || state.source.replace(/\.[^.]+$/, "") || "Progetto";
+  const all = projAll();
+  const same = Object.values(all).find(p => String(p.nome).toLowerCase() === nome.toLowerCase());
+  const id = same ? same.id : "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  all[id] = projSnapshot(nome, id);
+  const ok = projStore(all);
+  state.project = { id, nome }; state.dirty = false;
+  renderProjects();
+  toast(ok ? `Progetto «${nome}» ${same ? "aggiornato" : "salvato"} in questo browser.` : "L'archivio del browser non è disponibile: il progetto resta solo finché la pagina è aperta. Usa Esporta per conservarlo.");
+}
+function projDelete(id) {
+  const all = projAll(), p = all[id]; if (!p) return;
+  delete all[id]; projStore(all);
+  if (state.project && state.project.id === id) { state.project = null; $("#projName").value = ""; }
+  renderProjects();
+  toast(`Progetto «${p.nome}» eliminato. I dati caricati restano aperti.`);
+}
+function projImport(d) {
+  if (!Array.isArray(d.rows) || !Array.isArray(d.headers) || !d.rows.every(r => r && typeof r === "object")) { toast("Il file di progetto non è valido."); return; }
+  const all = projAll();
+  d.nome = String(d.nome || "Progetto importato").slice(0, 80);
+  d.id = typeof d.id === "string" && /^p[a-z0-9]+$/.test(d.id) && !all[d.id] ? d.id : "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  d.salvato = new Date().toISOString();
+  all[d.id] = d; projStore(all);
+  projOpen(d);
+  toast(`Progetto «${d.nome}» importato e aperto.`);
+}
+function renderProjects() {
+  const all = Object.values(projAll()).filter(p => p && Array.isArray(p.rows)).sort((a, b) => String(b.salvato || "").localeCompare(String(a.salvato || "")));
+  $("#projCount").textContent = all.length ? `${all.length} ${all.length === 1 ? "salvato" : "salvati"}` : "";
+  $("#tbProject").textContent = (state.project ? state.project.nome : "non salvato") + (state.dirty ? " · modificato" : "");
+  if (state.project) $("#projName").value = state.project.nome;
+  $("#projHint").textContent = all.length
+    ? "I progetti restano in questo browser. Per portarli su un altro computer usa Esporta e trascina il file nel riquadro Dati."
+    : "Salva dati, campi e impostazioni per riprendere il lavoro più tardi. Nessun progetto salvato.";
+  const box = $("#projList"); box.innerHTML = "";
+  const btn = (label, cls, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (cls ? " " + cls : ""); b.textContent = label; b.addEventListener("click", () => fn(b)); return b; };
+  for (const p of all) {
+    const on = state.project && state.project.id === p.id;
+    const el = document.createElement("div"); el.className = "proj" + (on ? " on" : "");
+    const name = document.createElement("b"); name.textContent = p.nome + (on ? " · aperto" : "");
+    const meta = document.createElement("small");
+    const when = new Date(p.salvato);
+    meta.textContent = `${p.rows.length} righe · ${p.source || "—"} · ${isNaN(when) ? "—" : when.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" })}`;
+    const row = document.createElement("div"); row.className = "row";
+    row.append(
+      btn("Riprendi", "", () => { projOpen(p); toast(`Progetto «${p.nome}» ripreso.`); }),
+      btn("Esporta", "", () => deliver({ name: (String(p.nome).replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_+|_+$/g, "") || "progetto") + ".progetto.json", data: JSON.stringify(p), keepName: true })),
+      btn("Elimina", "danger", b => {
+        if (b.classList.contains("arm")) { projDelete(p.id); return; }
+        b.classList.add("arm"); b.textContent = "Conferma";
+        setTimeout(() => { if (b.isConnected) { b.classList.remove("arm"); b.textContent = "Elimina"; } }, 4000);
+      }));
+    el.append(name, meta, row); box.append(el);
+  }
+}
+$("#projSave").addEventListener("click", projSave);
+$("#projName").addEventListener("keydown", e => { if (e.key === "Enter") projSave(); });
+
+/* avvio con l'esempio */
+loadData(demoCSV(), "esempio_rimontaggi.csv", true);
+</script>
+
+</body></html>

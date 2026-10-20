@@ -1,0 +1,1572 @@
+{
+ "type": "FeatureCollection",
+ "name": "2_fossa_che_taglia",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.64,
+     23.447,
+     50.605
+    ]
+   },
+   "properties": {
+    "RR": "3006",
+    "US": "201",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V01"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.614,
+     23.42,
+     50.603
+    ]
+   },
+   "properties": {
+    "RR": "3010",
+    "US": "201",
+    "_Attacca_con": "3006",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V01"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.71,
+     23.452,
+     50.628
+    ]
+   },
+   "properties": {
+    "RR": "3014",
+    "US": "201",
+    "_Attacca_con": "3010",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V01"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.457,
+     20.423,
+     50.403
+    ]
+   },
+   "properties": {
+    "RR": "3020",
+    "US": "202",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V02"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.242,
+     20.346,
+     50.396
+    ]
+   },
+   "properties": {
+    "RR": "3023",
+    "US": "202",
+    "_Attacca_con": "3020",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V02"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.659,
+     20.469,
+     50.441
+    ]
+   },
+   "properties": {
+    "RR": "3028",
+    "US": "202",
+    "_Attacca_con": "3023",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V02"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.805,
+     21.876,
+     50.228
+    ]
+   },
+   "properties": {
+    "RR": "3033",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V03"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.686,
+     21.873,
+     50.196
+    ]
+   },
+   "properties": {
+    "RR": "3036",
+    "US": "203",
+    "_Attacca_con": "3033",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V03"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.793,
+     21.919,
+     50.195
+    ]
+   },
+   "properties": {
+    "RR": "3037",
+    "US": "203",
+    "_Attacca_con": "3036",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V03"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.915,
+     22.044,
+     50.213
+    ]
+   },
+   "properties": {
+    "RR": "3040",
+    "US": "203",
+    "_Attacca_con": "3036",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V03"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.065,
+     20.507,
+     50.022
+    ]
+   },
+   "properties": {
+    "RR": "3044",
+    "US": "204",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V04"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.293,
+     20.895,
+     50.006
+    ]
+   },
+   "properties": {
+    "RR": "3048",
+    "US": "204",
+    "_Attacca_con": "3044",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V04"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.204,
+     20.716,
+     50.027
+    ]
+   },
+   "properties": {
+    "RR": "3049",
+    "US": "204",
+    "_Attacca_con": "3044",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V04"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.667,
+     23.669,
+     50.611
+    ]
+   },
+   "properties": {
+    "RR": "3050",
+    "US": "201",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V05"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.89,
+     23.5,
+     50.586
+    ]
+   },
+   "properties": {
+    "RR": "3055",
+    "US": "201",
+    "_Attacca_con": "3050",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V05"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.964,
+     23.455,
+     50.63
+    ]
+   },
+   "properties": {
+    "RR": "3060",
+    "US": "201",
+    "_Attacca_con": "3055",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V05"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.803,
+     23.583,
+     50.637
+    ]
+   },
+   "properties": {
+    "RR": "3066",
+    "US": "201",
+    "_Attacca_con": "3050",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V05"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.96,
+     23.602,
+     50.615
+    ]
+   },
+   "properties": {
+    "RR": "3068",
+    "US": "201",
+    "_Attacca_con": "3066; 3050",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V05"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.428,
+     22.689,
+     50.447
+    ]
+   },
+   "properties": {
+    "RR": "3074",
+    "US": "202",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V06"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.121,
+     22.668,
+     50.438
+    ]
+   },
+   "properties": {
+    "RR": "3076",
+    "US": "202",
+    "_Attacca_con": "3074",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V06"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.332,
+     22.675,
+     50.421
+    ]
+   },
+   "properties": {
+    "RR": "3079",
+    "US": "202",
+    "_Attacca_con": "",
+    "_pertinente_a": "3074",
+    "_Vaso_ID": "V06"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.351,
+     22.65,
+     50.44
+    ]
+   },
+   "properties": {
+    "RR": "3084",
+    "US": "202",
+    "_Attacca_con": "3079",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V06"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.089,
+     22.78,
+     50.425
+    ]
+   },
+   "properties": {
+    "RR": "3090",
+    "US": "202",
+    "_Attacca_con": "3079",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V06"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.57,
+     20.627,
+     50.21
+    ]
+   },
+   "properties": {
+    "RR": "3096",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V07"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.873,
+     20.438,
+     50.24
+    ]
+   },
+   "properties": {
+    "RR": "3100",
+    "US": "203",
+    "_Attacca_con": "3096",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V07"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.256,
+     20.635,
+     50.24
+    ]
+   },
+   "properties": {
+    "RR": "3106",
+    "US": "203",
+    "_Attacca_con": "3100",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V07"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.948,
+     20.7,
+     50.22
+    ]
+   },
+   "properties": {
+    "RR": "3110",
+    "US": "203",
+    "_Attacca_con": "3100",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V07"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.494,
+     20.66,
+     50.215
+    ]
+   },
+   "properties": {
+    "RR": "3111",
+    "US": "203",
+    "_Attacca_con": "3100",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V07"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.279,
+     23.322,
+     50.037
+    ]
+   },
+   "properties": {
+    "RR": "3114",
+    "US": "204",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V08"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.191,
+     23.419,
+     50.023
+    ]
+   },
+   "properties": {
+    "RR": "3117",
+    "US": "204",
+    "_Attacca_con": "3114",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V08"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.105,
+     23.379,
+     49.987
+    ]
+   },
+   "properties": {
+    "RR": "3119",
+    "US": "204",
+    "_Attacca_con": "3114",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V08"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.84,
+     23.023,
+     50.574
+    ]
+   },
+   "properties": {
+    "RR": "3126",
+    "US": "201",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V09"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.517,
+     22.965,
+     50.585
+    ]
+   },
+   "properties": {
+    "RR": "3130",
+    "US": "201",
+    "_Attacca_con": "3126",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V09"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.894,
+     23.086,
+     50.619
+    ]
+   },
+   "properties": {
+    "RR": "3131",
+    "US": "201",
+    "_Attacca_con": "3130",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V09"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.586,
+     23.144,
+     50.638
+    ]
+   },
+   "properties": {
+    "RR": "3138",
+    "US": "201",
+    "_Attacca_con": "3126; 3126",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V09"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.731,
+     22.385,
+     50.425
+    ]
+   },
+   "properties": {
+    "RR": "3143",
+    "US": "202",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.789,
+     22.589,
+     50.392
+    ]
+   },
+   "properties": {
+    "RR": "3149",
+    "US": "202",
+    "_Attacca_con": "3143",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.58,
+     22.495,
+     50.444
+    ]
+   },
+   "properties": {
+    "RR": "3152",
+    "US": "202",
+    "_Attacca_con": "3143",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.448,
+     20.488,
+     50.25
+    ]
+   },
+   "properties": {
+    "RR": "3159",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V11"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.399,
+     20.667,
+     50.247
+    ]
+   },
+   "properties": {
+    "RR": "3160",
+    "US": "203",
+    "_Attacca_con": "3159",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V11"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.178,
+     20.571,
+     50.186
+    ]
+   },
+   "properties": {
+    "RR": "3165",
+    "US": "203",
+    "_Attacca_con": "3160",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V11"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.211,
+     21.577,
+     50.008
+    ]
+   },
+   "properties": {
+    "RR": "3168",
+    "US": "204",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V12"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.204,
+     21.572,
+     50.0
+    ]
+   },
+   "properties": {
+    "RR": "3173",
+    "US": "204",
+    "_Attacca_con": "3168",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V12"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.196,
+     21.61,
+     50.002
+    ]
+   },
+   "properties": {
+    "RR": "3179",
+    "US": "204",
+    "_Attacca_con": "3173",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V12"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.477,
+     22.596,
+     50.623
+    ]
+   },
+   "properties": {
+    "RR": "3183",
+    "US": "201",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V13"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.608,
+     22.277,
+     50.642
+    ]
+   },
+   "properties": {
+    "RR": "3187",
+    "US": "201",
+    "_Attacca_con": "3183",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V13"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.649,
+     22.282,
+     50.626
+    ]
+   },
+   "properties": {
+    "RR": "3194",
+    "US": "201",
+    "_Attacca_con": "3187",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V13"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.769,
+     22.548,
+     50.627
+    ]
+   },
+   "properties": {
+    "RR": "3196",
+    "US": "201",
+    "_Attacca_con": "3183",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V13"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.146,
+     21.561,
+     50.256
+    ]
+   },
+   "properties": {
+    "RR": "3200",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V14"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.151,
+     22.382,
+     50.573
+    ]
+   },
+   "properties": {
+    "RR": "3204",
+    "US": "210",
+    "_Attacca_con": "3200",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V14"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.975,
+     22.007,
+     50.442
+    ]
+   },
+   "properties": {
+    "RR": "3207",
+    "US": "210",
+    "_Attacca_con": "3200",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V14"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.616,
+     21.294,
+     50.239
+    ]
+   },
+   "properties": {
+    "RR": "3213",
+    "US": "203",
+    "_Attacca_con": "3200",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V14"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.078,
+     21.817,
+     50.367
+    ]
+   },
+   "properties": {
+    "RR": "3219",
+    "US": "210",
+    "_Attacca_con": "3200",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V14"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.247,
+     21.668,
+     50.319
+    ]
+   },
+   "properties": {
+    "RR": "3221",
+    "US": "210",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V15"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.319,
+     21.814,
+     50.043
+    ]
+   },
+   "properties": {
+    "RR": "3228",
+    "US": "204",
+    "_Attacca_con": "3221",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V15"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.526,
+     22.683,
+     50.03
+    ]
+   },
+   "properties": {
+    "RR": "3234",
+    "US": "204",
+    "_Attacca_con": "3221",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V15"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.687,
+     22.797,
+     50.02
+    ]
+   },
+   "properties": {
+    "RR": "3239",
+    "US": "204",
+    "_Attacca_con": "3234",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V15"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.912,
+     21.706,
+     50.547
+    ]
+   },
+   "properties": {
+    "RR": "3246",
+    "US": "210",
+    "_Attacca_con": "3228",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V15"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.996,
+     22.957,
+     50.184
+    ]
+   },
+   "properties": {
+    "RR": "3252",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V16"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.914,
+     21.551,
+     50.44
+    ]
+   },
+   "properties": {
+    "RR": "3259",
+    "US": "210",
+    "_Attacca_con": "3252",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V16"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.757,
+     21.982,
+     50.418
+    ]
+   },
+   "properties": {
+    "RR": "3261",
+    "US": "210",
+    "_Attacca_con": "3259",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V16"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.748,
+     21.279,
+     50.19
+    ]
+   },
+   "properties": {
+    "RR": "3263",
+    "US": "203",
+    "_Attacca_con": "3252",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V16"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.557,
+     21.965,
+     50.357
+    ]
+   },
+   "properties": {
+    "RR": "3266",
+    "US": "210",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V17"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.111,
+     21.644,
+     50.253
+    ]
+   },
+   "properties": {
+    "RR": "3272",
+    "US": "210",
+    "_Attacca_con": "3266",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V17"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.364,
+     21.538,
+     50.056
+    ]
+   },
+   "properties": {
+    "RR": "3278",
+    "US": "204",
+    "_Attacca_con": "3266",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V17"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.941,
+     22.946,
+     50.0
+    ]
+   },
+   "properties": {
+    "RR": "3283",
+    "US": "204",
+    "_Attacca_con": "3272",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V17"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.081,
+     21.734,
+     50.422
+    ]
+   },
+   "properties": {
+    "RR": "3284",
+    "US": "210",
+    "_Attacca_con": "3266; 3266",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V17"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.707,
+     22.592,
+     50.22
+    ]
+   },
+   "properties": {
+    "RR": "3291",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V18"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.372,
+     21.213,
+     50.23
+    ]
+   },
+   "properties": {
+    "RR": "3296",
+    "US": "203",
+    "_Attacca_con": "3291",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V18"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.381,
+     21.827,
+     50.519
+    ]
+   },
+   "properties": {
+    "RR": "3302",
+    "US": "210",
+    "_Attacca_con": "3291",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V18"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.661,
+     21.952,
+     50.425
+    ]
+   },
+   "properties": {
+    "RR": "3309",
+    "US": "210",
+    "_Attacca_con": "3302",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V18"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.288,
+     22.086,
+     50.496
+    ]
+   },
+   "properties": {
+    "RR": "3310",
+    "US": "210",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V19"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.416,
+     22.137,
+     50.435
+    ]
+   },
+   "properties": {
+    "RR": "3317",
+    "US": "210",
+    "_Attacca_con": "3310",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V19"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.299,
+     22.089,
+     50.41
+    ]
+   },
+   "properties": {
+    "RR": "3319",
+    "US": "210",
+    "_Attacca_con": "3310",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V19"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.386,
+     22.175,
+     50.412
+    ]
+   },
+   "properties": {
+    "RR": "3325",
+    "US": "210",
+    "_Attacca_con": "3319; 3310",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V19"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.999,
+     22.042,
+     50.523
+    ]
+   },
+   "properties": {
+    "RR": "3330",
+    "US": "210",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V20"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.032,
+     21.978,
+     50.46
+    ]
+   },
+   "properties": {
+    "RR": "3336",
+    "US": "210",
+    "_Attacca_con": "3330",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V20"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.142,
+     21.978,
+     50.493
+    ]
+   },
+   "properties": {
+    "RR": "3340",
+    "US": "210",
+    "_Attacca_con": "3330",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V20"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.012,
+     22.167,
+     50.256
+    ]
+   },
+   "properties": {
+    "RR": "3344",
+    "US": "210",
+    "_Attacca_con": "3340",
+    "_pertinente_a": "",
+    "_Vaso_ID": "V20"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     10.285,
+     23.147,
+     50.599
+    ]
+   },
+   "properties": {
+    "RR": "3351",
+    "US": "201",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": ""
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.695,
+     20.739,
+     50.216
+    ]
+   },
+   "properties": {
+    "RR": "3357",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": ""
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     13.609,
+     22.428,
+     50.182
+    ]
+   },
+   "properties": {
+    "RR": "3363",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": ""
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.674,
+     20.808,
+     50.416
+    ]
+   },
+   "properties": {
+    "RR": "3368",
+    "US": "202",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": ""
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.63,
+     20.969,
+     50.047
+    ]
+   },
+   "properties": {
+    "RR": "3371",
+    "US": "204",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": ""
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.81,
+     22.726,
+     50.039
+    ]
+   },
+   "properties": {
+    "RR": "3378",
+    "US": "204",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": ""
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.175,
+     23.214,
+     50.178
+    ]
+   },
+   "properties": {
+    "RR": "3382",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": ""
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.778,
+     20.575,
+     50.188
+    ]
+   },
+   "properties": {
+    "RR": "3383",
+    "US": "203",
+    "_Attacca_con": "",
+    "_pertinente_a": "",
+    "_Vaso_ID": ""
+   }
+  }
+ ]
+}
