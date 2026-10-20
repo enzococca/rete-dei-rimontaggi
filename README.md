@@ -49,7 +49,7 @@ Le regole complete sono in [`dati_esempio/LEGGIMI.md`](dati_esempio/LEGGIMI.md).
 
 **La rete.** Ogni frammento è un nodo, ogni attacco un legame. I **gruppi di rimontaggio** sono i frammenti collegati tra loro, anche indirettamente. Le pertinenze sono tratteggiate e, salvo scelta esplicita, non uniscono i gruppi.
 
-**Viste.** Pianta, proiezioni verticali est-ovest e nord-sud (tutti i punti visti di lato, non una sezione di scavo) e vista 3D con un modello indicativo dei volumi delle US ricavato dalle quote. Nel 3D si può mettere in evidenza una singola US oppure una concentrazione: restano in primo piano le sue US e i suoi frammenti. Colori per gruppo, vaso, US, quota o concentrazione.
+**Viste.** Pianta, proiezioni verticali est-ovest e nord-sud (tutti i punti visti di lato, non una sezione di scavo) e vista 3D con un modello indicativo dei volumi delle US ricavato dalle quote. Nel 3D si può mettere in evidenza una singola US, una concentrazione o un gruppo di rimontaggio: restano in primo piano le US coinvolte e i frammenti scelti. Colori per gruppo, vaso, US, quota o concentrazione.
 
 ![Vista 3D colorata per US](docs/img/vista_3d.jpg)
 

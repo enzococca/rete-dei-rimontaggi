@@ -411,7 +411,7 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
           <div class="grp" id="strataGrp" hidden>
             <label class="label" for="strataA">Volumi US</label>
             <input type="range" id="strataA" min="0" max="0.7" step="0.05" value="0.3" aria-label="Opacità dei volumi US ricostruiti (0 li nasconde)">
-            <select id="strataFocus" aria-label="Evidenzia una US o una concentrazione"><option value="">tutte le US</option></select>
+            <select id="strataFocus" aria-label="Evidenzia una US, una concentrazione o un gruppo di rimontaggio"><option value="">tutte le US</option></select>
           </div>
           <div class="grp">
             <label class="label" for="colorBy">Colore</label>
@@ -2395,13 +2395,19 @@ document.querySelectorAll("#viewSeg button").forEach(b => b.addEventListener("cl
 $("#exag").addEventListener("change", e => { state.exag = +e.target.value; fit(); draw(); });
 $("#strataA").addEventListener("input", e => { state.strataA = +e.target.value; renderLegend(); draw(); });
 $("#strataFocus").addEventListener("change", e => { state.strataFocus = e.target.value; draw(); });
-/* evidenziazione nel 3D: una US ("us:…") oppure le US e i frammenti di una concentrazione ("conc:k") */
+/* evidenziazione nel 3D: una US ("us:…"), oppure le US e i frammenti di una concentrazione ("conc:k") o di un gruppo di rimontaggio ("grp:k") */
 function concUS(k) {
   return (state.usr ? state.usr.units : []).filter(u => { let best = 0, bk = null; for (const [kk, n] of u.phases) if (n > best) { best = n; bk = kk; } return bk === k; }).map(u => u.us);
 }
 function strataFocusSpec() {
   const f = state.strataFocus;
   if (!f || !state.res) return null;
+  if (f.startsWith("grp:")) {
+    const c = state.res.clusters[+f.slice(4) - 1];
+    if (!c) return null;
+    const ids = new Set(c.members);
+    return { us: new Set(c.us), frag: id => ids.has(id) };
+  }
   if (f.startsWith("conc:")) {
     const k = +f.slice(5), ph = state.ph && state.ph.ok ? state.ph : null;
     if (!ph) return null;
@@ -2418,6 +2424,9 @@ function fillStrataFocus() {
   if (S) { h += `<optgroup label="US">` + S.layers.map(L => { opts.push("us:" + L.us); return `<option value="us:${esc(L.us)}">US ${esc(L.us)}</option>`; }).join("") + `</optgroup>`; }
   if (S && ph) {
     h += `<optgroup label="Concentrazioni">` + ph.phases.map(f => { const us = concUS(f.id); opts.push("conc:" + f.id); return `<option value="conc:${f.id}">C${f.id}${us.length ? " · US " + us.map(esc).join(", ") : ""}</option>`; }).join("") + `</optgroup>`;
+  }
+  if (S && state.res.clusters.length) {
+    h += `<optgroup label="Gruppi di rimontaggio">` + state.res.clusters.map(c => { opts.push("grp:" + c.id); return `<option value="grp:${c.id}">G${c.id} · ${c.members.length} fr.${c.us.length ? " · US " + c.us.map(esc).join(", ") : ""}</option>`; }).join("") + `</optgroup>`;
   }
   sel.innerHTML = h;
   state.strataFocus = opts.includes(keep) ? keep : "";
