@@ -1518,8 +1518,8 @@ function drawMeasure(W, H) {
     ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]);
     for (const Q of [A, B]) { ctx.moveTo(Q[0] - 8, Q[1]); ctx.lineTo(Q[0] + 8, Q[1]); }
     ctx.stroke();
-    const rows = [`Δ quota ${fmtLen(dz)}`, `da ${fmtN(hi.z, 3)} a ${fmtN(lo.z, 3)} m`];
-    if (hi.id || lo.id) rows.push(`fr. ${hi.id ?? "—"} → ${lo.id ?? "—"}`);
+    const rows = [`Differenza di quota  ${fmtLen(dz)}`, `da q. ${fmtN(hi.z, 3)} a q. ${fmtN(lo.z, 3)}`];
+    if (hi.id || lo.id) rows.push(`fr. ${hi.id ?? "—"} (sopra) → ${lo.id ?? "—"} (sotto)`);
     box(A, B, rows);
   }
   // misura tra due frammenti (tutte le viste)
@@ -1531,7 +1531,8 @@ function drawMeasure(W, H) {
     ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(s1[0], s1[1]); ctx.lineTo(s2[0], s2[1]); ctx.stroke(); ctx.setLineDash([]);
     const dz = f1.z !== null && f2.z !== null ? Math.abs(f1.z - f2.z) : null, d2 = Math.hypot(f1.x - f2.x, f1.y - f2.y), d3 = dz === null ? null : Math.hypot(d2, dz);
     const hi = dz !== null && f2.z > f1.z ? f2 : f1, lo = hi === f1 ? f2 : f1;
-    box(s1, s2, [`Δ quota ${dz === null ? "— (quota mancante)" : fmtLen(dz)}`, `in pianta ${fmtLen(d2)}`, `in 3D ${d3 === null ? "—" : fmtLen(d3)}`, `fr. ${hi.id} → ${lo.id}`]);
+    const q = f => f.z === null ? "quota mancante" : "q. " + fmtN(f.z, 3);
+    box(s1, s2, [`Differenza di quota   ${dz === null ? "—" : fmtLen(dz)}`, `Distanza orizzontale  ${fmtLen(d2)}`, `Distanza reale (3D)   ${d3 === null ? "—" : fmtLen(d3)}`, `${dz === null ? "primo:     " : "più alto:  "}fr. ${hi.id} · ${q(hi)}`, `${dz === null ? "secondo:   " : "più basso: "}fr. ${lo.id} · ${q(lo)}`]);
   } else if (!(side && measure.a)) {
     const msg = measure.p1 && !measure.p2 ? "MISURA: CLICCA IL SECONDO FRAMMENTO · ESC CANCELLA"
       : side ? "MISURA: TRASCINA IN VERTICALE O CLICCA DUE FRAMMENTI · ESC CANCELLA"
