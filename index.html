@@ -1626,7 +1626,11 @@ function renderLegend() {
   } else {
     items.push(`<div class="li"><span class="label">Quota</span><span class="mono" style="font-size:11px">${fmtN(c.zmax)}</span><span class="ramp"></span><span class="mono" style="font-size:11px">${fmtN(c.zmin)}</span></div>`);
   }
-  if (state.view === "3d" && state.strataA > 0 && buildStrata(res)) items.push(`<div class="li"><span class="ramp earth" style="width:60px"></span><span>Volumi US ricostruiti dalle quote (modello indicativo)</span></div>`);
+  if (state.view === "3d" && state.strataA > 0 && buildStrata(res)) {
+    const spec = strataFocusSpec();
+    if (spec) for (const u of [...spec.us].sort(natCmp)) items.push(sw(colorCache.us(u), `Volume US ${u}`));
+    items.push(`<div class="li"><span class="ramp earth" style="width:60px"></span><span>${spec ? "Altri volumi US" : "Volumi US ricostruiti dalle quote (modello indicativo)"}</span></div>`);
+  }
   items.push(`<div class="li"><span class="ln"></span><span>${{ diretti: "Attacco", mst: "Albero minimo del gruppo", completi: "Coppia nel gruppo" }[state.opt.mode]}</span></div>`);
   if (state.show.pert && res.pert.length) items.push(`<div class="li"><span class="ln dash"></span><span>Pertinenza</span></div>`);
   L.innerHTML = items.join("");
@@ -2141,7 +2145,8 @@ function drawStrata(P, B, labels) {
   }).sort((a, b) => a.depth - b.depth);
   const spec = strataFocusSpec();
   for (const o of order) {
-    const base = strataColor(o.k, n), col = { top: rgbStr(base), wall: rgbStr(base.map(v => v * .86)), bot: rgbStr(base.map(v => v * .74)) };
+    const hit = spec && spec.us.has(o.L.us);
+    const base = hit ? hexRgb(colorCache.us(o.L.us)) : strataColor(o.k, n), col = { top: rgbStr(base), wall: rgbStr(base.map(v => v * .86)), bot: rgbStr(base.map(v => v * .74)) };
     // la camera guarda sempre dall'alto: la faccia inferiore resta nascosta.
     // Pareti lontane, superficie superiore in un solo tracciato, pareti vicine.
     const walls = o.L.walls.map(([p, q]) => { const pts = [o.top[p], o.top[q], o.bot[q], o.bot[p]]; return { pts, d: (pts[0][2] + pts[1][2] + pts[2][2] + pts[3][2]) / 4 }; }).sort((a, b) => a.d - b.d);
@@ -2158,7 +2163,7 @@ function drawStrata(P, B, labels) {
     oc.fill(); oc.lineWidth = 0.6; oc.stroke(); oc.lineWidth = 0.8;
     oc.fillStyle = col.wall; oc.strokeStyle = col.wall;
     for (const f of walls) if (f.d >= o.depth) quad(f);
-    const a = state.strataA * (spec && !spec.us.has(o.L.us) ? 0.22 : 1);
+    const a = hit ? Math.min(0.85, Math.max(state.strataA * 1.6, 0.5)) : state.strataA * (spec ? 0.22 : 1);
     ctx.globalAlpha = a; ctx.drawImage(strataCanvas, b0 * sc, b1 * sc, (b2 - b0) * sc, (b3 - b1) * sc, b0, b1, b2 - b0, b3 - b1); ctx.globalAlpha = 1;
     // contorni della superficie superiore e inferiore
     ctx.globalAlpha = Math.min(1, a * 1.6); ctx.strokeStyle = rgbStr(base.map(v => v * .6)); ctx.lineWidth = 1;
@@ -2168,7 +2173,7 @@ function drawStrata(P, B, labels) {
     // etichetta sul bordo più a sinistra dello strato
     let best = null;
     for (const [p] of o.L.walls) { const tp = o.top[p], bp = o.bot[p]; const sx = (tp[0] + bp[0]) / 2; if (!best || sx < best[0]) best = [sx, (tp[1] + bp[1]) / 2]; }
-    if (best) labels.push({ x: best[0], y: best[1], t: "US " + o.L.us, us: o.L.us, c: rgbStr(base.map(v => v * .55)) });
+    if (best) labels.push({ x: best[0], y: best[1], t: "US " + o.L.us, us: o.L.us, c: rgbStr(base.map(v => v * .55)), sw: hit ? rgbStr(base) : null });
   }
 }
 function drawStrataLabels(labels) {
@@ -2183,7 +2188,9 @@ function drawStrataLabels(labels) {
     const x = l.x - 10, w = ctx.measureText(l.t).width;
     ctx.globalAlpha = spec && !spec.us.has(l.us) ? .45 : 1;
     ctx.strokeStyle = ink2; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(l.x - 2, l.y); ctx.lineTo(x + 2, y); ctx.stroke();
-    ctx.fillStyle = surf; ctx.fillRect(x - w - 4, y - 7, w + 8, 14);
+    const sw = l.sw ? 12 : 0;
+    ctx.fillStyle = surf; ctx.fillRect(x - w - 4 - sw, y - 7, w + 8 + sw, 14);
+    if (l.sw) { ctx.fillStyle = l.sw; ctx.fillRect(x - w - 1 - sw, y - 4.5, 9, 9); }
     ctx.fillStyle = ink2; ctx.fillText(l.t, x, y);
   }
   ctx.globalAlpha = 1; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
@@ -2394,7 +2401,7 @@ function setView(v, refit = true) {
 document.querySelectorAll("#viewSeg button").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
 $("#exag").addEventListener("change", e => { state.exag = +e.target.value; fit(); draw(); });
 $("#strataA").addEventListener("input", e => { state.strataA = +e.target.value; renderLegend(); draw(); });
-$("#strataFocus").addEventListener("change", e => { state.strataFocus = e.target.value; draw(); });
+$("#strataFocus").addEventListener("change", e => { state.strataFocus = e.target.value; renderLegend(); draw(); });
 /* evidenziazione nel 3D: una US ("us:…"), oppure le US e i frammenti di una concentrazione ("conc:k") o di un gruppo di rimontaggio ("grp:k") */
 function concUS(k) {
   return (state.usr ? state.usr.units : []).filter(u => { let best = 0, bk = null; for (const [kk, n] of u.phases) if (n > best) { best = n; bk = kk; } return bk === k; }).map(u => u.us);
