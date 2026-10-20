@@ -432,7 +432,7 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
             <button type="button" id="zin" aria-label="Ingrandisci">+</button>
             <button type="button" id="zout" aria-label="Riduci">−</button>
             <button type="button" id="zfit" aria-label="Adatta alla vista" title="Adatta alla vista">⤢</button>
-            <button type="button" id="zmeasure" aria-label="Misura la differenza di quota" title="Misura la differenza di quota: trascina in verticale sulla proiezione (Esc cancella)" aria-pressed="false" hidden>↕</button>
+            <button type="button" id="zmeasure" aria-label="Misura differenza di quota e distanze" title="Misura: clicca due frammenti (Esc cancella)" aria-pressed="false" hidden>↕</button>
           </div>
           <div class="detail" id="detail" hidden></div>
           <div class="tip" id="tip" hidden></div>
@@ -1221,12 +1221,15 @@ function run(refit) {
   const m = state.map;
   const missing = FIELD_DEFS.filter(d => d.req && !m[d.key]).map(d => d.label);
   if (!state.rows.length || missing.length) {
-    state.res = null; state.ph = null; state.usr = null; state.phJob++; setBusy(false);
+    state.res = null; state.ph = null; state.usr = null; state.phJob++; setBusy(false); syncMeasure();
     showEmpty(state.rows.length ? `Scegli i campi obbligatori: ${missing.join(", ")}.` : state.headers.length ? "Tabella vuota: aggiungi i frammenti nella scheda Dati." : "Carica un file o l'esempio per iniziare.");
     renderStats(); renderTabs(); renderLegend(); return;
   }
   const frags = buildFragments(state.rows, m);
   state.res = analyse(frags, state.opt);
+  measure.a = measure.b = null;
+  if ((measure.p1 && !state.res.frags.has(measure.p1)) || (measure.p2 && !state.res.frags.has(measure.p2))) measure.p1 = measure.p2 = null;
+  syncMeasure();
   assignColors();
   const hasZ = [...state.res.frags.values()].some(f => f.z !== null);
   for (const b of $("#viewSeg").querySelectorAll("button")) if (b.dataset.view !== "pianta") b.disabled = !hasZ;
@@ -1335,7 +1338,7 @@ function draw() {
   ctx.fillStyle = surf; ctx.fillRect(0, 0, W, H);
   const res = state.res;
   if (!res || !res.frags.size) return;
-  if (state.view === "3d") { draw3D(); return; }
+  if (state.view === "3d") { draw3D(); if (measure.on) drawMeasure(W, H); return; }
 
   // griglia
   const step = niceStep(70), minor = step / 5, dec = decimalsFor(step);
@@ -1434,30 +1437,8 @@ function draw() {
     ctx.beginPath(); ctx.arc(p[0], p[1], 9, 0, Math.PI * 2); ctx.lineWidth = 2.5; ctx.strokeStyle = mark; ctx.stroke();
   }
 
-  // misura verticale
-  if (measure.on && (state.view === "eo" || state.view === "ns")) {
-    if (measure.a && measure.b) {
-      const A = toS([measure.a.h, measure.a.z * state.exag]), B = toS([measure.a.h, measure.b.z * state.exag]);
-      const dz = Math.abs(measure.b.z - measure.a.z), hi = measure.a.z >= measure.b.z ? measure.a : measure.b, lo = hi === measure.a ? measure.b : measure.a;
-      ctx.strokeStyle = mark; ctx.lineWidth = 2; ctx.setLineDash([]);
-      ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]);
-      for (const Q of [A, B]) { ctx.moveTo(Q[0] - 8, Q[1]); ctx.lineTo(Q[0] + 8, Q[1]); }
-      ctx.stroke();
-      const rows = [`Δ quota ${dz >= 1 ? fmtN(dz, 3) + " m" : fmtN(dz * 100, 1) + " cm"}`, `da ${fmtN(hi.z, 3)} a ${fmtN(lo.z, 3)} m`];
-      if (hi.id || lo.id) rows.push(`fr. ${hi.id ?? "—"} → ${lo.id ?? "—"}`);
-      ctx.font = `600 12px ${css("--f-mono")}`; ctx.textAlign = "left"; ctx.textBaseline = "top";
-      const bw = Math.max(...rows.map(r => ctx.measureText(r).width)) + 16, bh = rows.length * 16 + 10;
-      let bx = Math.max(A[0], B[0]) + 14, by = (A[1] + B[1]) / 2 - bh / 2;
-      if (bx + bw > W - 50) bx = Math.min(A[0], B[0]) - 14 - bw;
-      by = Math.min(Math.max(by, 8), H - bh - 8);
-      ctx.fillStyle = surf; ctx.strokeStyle = mark; ctx.lineWidth = 1.5; ctx.fillRect(bx, by, bw, bh); ctx.strokeRect(bx, by, bw, bh);
-      rows.forEach((r, i) => { ctx.fillStyle = i ? ink2 : ink; ctx.fillText(r, bx + 8, by + 6 + i * 16); });
-      ctx.textBaseline = "alphabetic";
-    } else {
-      ctx.font = `600 12px ${css("--f-display")}`; ctx.fillStyle = mark; ctx.textAlign = "left";
-      ctx.fillText("MISURA: TRASCINA IN VERTICALE · SUI FRAMMENTI SI AGGANCIA · ESC CANCELLA", 12, 24);
-    }
-  }
+  // misura
+  if (measure.on) drawMeasure(W, H);
 
   // coordinate ai bordi
   ctx.font = `400 10px ${css("--f-mono")}`; ctx.fillStyle = muted;
@@ -1496,17 +1477,67 @@ let drawPending = false;
 function requestDraw() { if (drawPending) return; drawPending = true; requestAnimationFrame(() => { drawPending = false; draw(); }); }
 const pointers = new Map(); let dragMoved = false, pinchD = 0, lastTap = 0;
 /* misura verticale nelle proiezioni: a e b hanno ascissa h comune e quota reale z (senza esagerazione) */
-const measure = { on: false, active: false, a: null, b: null };
+const measure = { on: false, active: false, moved: false, sx: 0, sy: 0, a: null, b: null, p1: null, p2: null };
 function measurePoint(sx, sy, h) {
   const f = pick(sx, sy);
   if (f && f.z !== null) return { h: h ?? proj(f)[0], z: f.z, id: f.id };
   const w = toW(sx, sy); return { h: h ?? w[0], z: w[1] / state.exag, id: null };
 }
 function syncMeasure() {
-  const ok = state.view === "eo" || state.view === "ns", b = $("#zmeasure");
-  b.hidden = !ok;
-  if (!ok) { measure.on = false; measure.active = false; measure.a = measure.b = null; }
+  const b = $("#zmeasure");
+  b.hidden = !state.res;
+  b.title = state.view === "eo" || state.view === "ns" ? "Misura: trascina in verticale per la differenza di quota, oppure clicca due frammenti (Esc cancella)" : "Misura: clicca due frammenti per differenza di quota e distanze (Esc cancella)";
   b.setAttribute("aria-pressed", measure.on); cv.classList.toggle("measure", measure.on);
+}
+function measureClick(sx, sy) {
+  const f = pick(sx, sy); if (!f) return;
+  if (!measure.p1 || measure.p2) { measure.p1 = f.id; measure.p2 = null; }
+  else if (f.id !== measure.p1) measure.p2 = f.id;
+  requestDraw();
+}
+const fmtLen = v => v >= 1 ? fmtN(v, 3) + " m" : fmtN(v * 100, 1) + " cm";
+function drawMeasure(W, H) {
+  const mark = css("--mark"), ink = css("--ink"), ink2 = css("--ink-2"), surf = css("--surface");
+  const box = (A, B, rows) => {
+    ctx.font = `600 12px ${css("--f-mono")}`; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    const bw = Math.max(...rows.map(r => ctx.measureText(r).width)) + 16, bh = rows.length * 16 + 10;
+    let bx = Math.max(A[0], B[0]) + 14, by = (A[1] + B[1]) / 2 - bh / 2;
+    if (bx + bw > W - 50) bx = Math.min(A[0], B[0]) - 14 - bw;
+    bx = Math.max(8, bx); by = Math.min(Math.max(by, 8), H - bh - 8);
+    ctx.fillStyle = surf; ctx.strokeStyle = mark; ctx.lineWidth = 1.5; ctx.fillRect(bx, by, bw, bh); ctx.strokeRect(bx, by, bw, bh);
+    rows.forEach((r, i) => { ctx.fillStyle = i ? ink2 : ink; ctx.fillText(r, bx + 8, by + 6 + i * 16); });
+    ctx.textBaseline = "alphabetic";
+  };
+  const side = state.view === "eo" || state.view === "ns";
+  ctx.setLineDash([]);
+  // linea verticale tracciata a mano (solo proiezioni)
+  if (side && measure.a && measure.b) {
+    const A = toS([measure.a.h, measure.a.z * state.exag]), B = toS([measure.a.h, measure.b.z * state.exag]);
+    const dz = Math.abs(measure.b.z - measure.a.z), hi = measure.a.z >= measure.b.z ? measure.a : measure.b, lo = hi === measure.a ? measure.b : measure.a;
+    ctx.strokeStyle = mark; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]);
+    for (const Q of [A, B]) { ctx.moveTo(Q[0] - 8, Q[1]); ctx.lineTo(Q[0] + 8, Q[1]); }
+    ctx.stroke();
+    const rows = [`Δ quota ${fmtLen(dz)}`, `da ${fmtN(hi.z, 3)} a ${fmtN(lo.z, 3)} m`];
+    if (hi.id || lo.id) rows.push(`fr. ${hi.id ?? "—"} → ${lo.id ?? "—"}`);
+    box(A, B, rows);
+  }
+  // misura tra due frammenti (tutte le viste)
+  const F = id => id && state.res.frags.get(id), f1 = F(measure.p1), f2 = F(measure.p2);
+  const s1 = f1 && screenPos(f1), s2 = f2 && screenPos(f2);
+  ctx.strokeStyle = mark; ctx.lineWidth = 2.5;
+  for (const sp of [s1, s2]) if (sp) { ctx.beginPath(); ctx.arc(sp[0], sp[1], 10, 0, Math.PI * 2); ctx.stroke(); }
+  if (f1 && f2 && s1 && s2) {
+    ctx.lineWidth = 2; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(s1[0], s1[1]); ctx.lineTo(s2[0], s2[1]); ctx.stroke(); ctx.setLineDash([]);
+    const dz = f1.z !== null && f2.z !== null ? Math.abs(f1.z - f2.z) : null, d2 = Math.hypot(f1.x - f2.x, f1.y - f2.y), d3 = dz === null ? null : Math.hypot(d2, dz);
+    const hi = dz !== null && f2.z > f1.z ? f2 : f1, lo = hi === f1 ? f2 : f1;
+    box(s1, s2, [`Δ quota ${dz === null ? "— (quota mancante)" : fmtLen(dz)}`, `in pianta ${fmtLen(d2)}`, `in 3D ${d3 === null ? "—" : fmtLen(d3)}`, `fr. ${hi.id} → ${lo.id}`]);
+  } else if (!(side && measure.a)) {
+    const msg = measure.p1 && !measure.p2 ? "MISURA: CLICCA IL SECONDO FRAMMENTO · ESC CANCELLA"
+      : side ? "MISURA: TRASCINA IN VERTICALE O CLICCA DUE FRAMMENTI · ESC CANCELLA"
+      : state.view === "3d" ? "MISURA: CLICCA DUE FRAMMENTI · TRASCINA PER RUOTARE · ESC CANCELLA" : "MISURA: CLICCA DUE FRAMMENTI · ESC CANCELLA";
+    ctx.font = `600 12px ${css("--f-display")}`; ctx.fillStyle = mark; ctx.textAlign = "left"; ctx.fillText(msg, 12, 24);
+  }
 }
 function pick(sx, sy) {
   let best = null, bd = 12;
@@ -1530,12 +1561,17 @@ function zoomAt(sx, sy, k) {
 cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.offsetX, e.offsetY]); dragMoved = false; if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchD = Math.hypot(a[0] - b[0], a[1] - b[1]); } });
 cv.addEventListener("pointerdown", e => {
   if (!measure.on || pointers.size !== 1 || (state.view !== "eo" && state.view !== "ns")) return;
-  measure.active = true; measure.a = measurePoint(e.offsetX, e.offsetY); measure.b = { ...measure.a }; $("#tip").hidden = true; requestDraw();
+  measure.active = true; measure.moved = false; measure.sx = e.offsetX; measure.sy = e.offsetY;
+  measure.a = measurePoint(e.offsetX, e.offsetY); measure.b = { ...measure.a }; $("#tip").hidden = true; requestDraw();
 });
 cv.addEventListener("pointermove", e => {
   const prev = pointers.get(e.pointerId);
   if (!prev) { hover(e.offsetX, e.offsetY); return; }
-  if (measure.active) { measure.b = measurePoint(e.offsetX, e.offsetY, measure.a.h); requestDraw(); return; }
+  if (measure.active) {
+    if (Math.hypot(e.offsetX - measure.sx, e.offsetY - measure.sy) > 3) measure.moved = true;
+    if (measure.moved) { measure.b = measurePoint(e.offsetX, e.offsetY, measure.a.h); requestDraw(); }
+    return;
+  }
   const cur = [e.offsetX, e.offsetY];
   if (pointers.size === 1) {
     const dx = cur[0] - prev[0], dy = cur[1] - prev[1];
@@ -1558,8 +1594,13 @@ cv.addEventListener("pointermove", e => {
 const endPointer = e => {
   if (!pointers.has(e.pointerId)) return;
   pointers.delete(e.pointerId); cv.classList.remove("drag");
-  if (measure.active) { measure.active = false; if (pointers.size < 2) pinchD = 0; requestDraw(); return; }
+  if (measure.active) {
+    measure.active = false; if (pointers.size < 2) pinchD = 0;
+    if (!measure.moved) { measure.a = measure.b = null; measureClick(e.offsetX, e.offsetY); }
+    requestDraw(); return;
+  }
   if (!dragMoved && pointers.size === 0 && e.type === "pointerup") {
+    if (measure.on) { measureClick(e.offsetX, e.offsetY); return; }
     const now = Date.now();
     if (now - lastTap < 300) { zoomAt(e.offsetX, e.offsetY, 1.8); lastTap = 0; return; }
     lastTap = now;
@@ -1583,8 +1624,8 @@ function hover(sx, sy) {
 $("#zin").onclick = () => zoomAt(view.W / 2, view.H / 2, 1.5);
 $("#zout").onclick = () => zoomAt(view.W / 2, view.H / 2, 1 / 1.5);
 $("#zfit").onclick = () => { fit(); draw(); };
-$("#zmeasure").onclick = () => { measure.on = !measure.on; if (!measure.on) measure.a = measure.b = null; syncMeasure(); draw(); };
-document.addEventListener("keydown", e => { if (e.key === "Escape" && measure.a) { measure.a = measure.b = null; draw(); } });
+$("#zmeasure").onclick = () => { measure.on = !measure.on; if (!measure.on) measure.a = measure.b = measure.p1 = measure.p2 = null; syncMeasure(); draw(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape" && (measure.a || measure.p1)) { measure.a = measure.b = measure.p1 = measure.p2 = null; draw(); } });
 new ResizeObserver(resize).observe($("#mapwrap"));
 
 /* selezione */
