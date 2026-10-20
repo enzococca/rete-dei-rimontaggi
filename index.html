@@ -191,6 +191,8 @@ h3.sub { font-size: 15px; text-transform: uppercase; letter-spacing: .07em; marg
 .mapwrap { position: relative; height: clamp(380px, 64vh, 780px); touch-action: none; }
 #map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
 #map.drag { cursor: grabbing; }
+#map.measure, #map.measure.drag { cursor: crosshair; }
+.zoom button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
 .zoom { position: absolute; right: 12px; top: 12px; display: grid; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; background: var(--surface); }
 .zoom button { border: 0; background: var(--surface); width: 32px; height: 30px; cursor: pointer; font-size: 16px; }
 .zoom button + button { border-top: 1px solid var(--line); }
@@ -430,6 +432,7 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
             <button type="button" id="zin" aria-label="Ingrandisci">+</button>
             <button type="button" id="zout" aria-label="Riduci">−</button>
             <button type="button" id="zfit" aria-label="Adatta alla vista" title="Adatta alla vista">⤢</button>
+            <button type="button" id="zmeasure" aria-label="Misura la differenza di quota" title="Misura la differenza di quota: trascina in verticale sulla proiezione (Esc cancella)" aria-pressed="false" hidden>↕</button>
           </div>
           <div class="detail" id="detail" hidden></div>
           <div class="tip" id="tip" hidden></div>
@@ -1431,6 +1434,31 @@ function draw() {
     ctx.beginPath(); ctx.arc(p[0], p[1], 9, 0, Math.PI * 2); ctx.lineWidth = 2.5; ctx.strokeStyle = mark; ctx.stroke();
   }
 
+  // misura verticale
+  if (measure.on && (state.view === "eo" || state.view === "ns")) {
+    if (measure.a && measure.b) {
+      const A = toS([measure.a.h, measure.a.z * state.exag]), B = toS([measure.a.h, measure.b.z * state.exag]);
+      const dz = Math.abs(measure.b.z - measure.a.z), hi = measure.a.z >= measure.b.z ? measure.a : measure.b, lo = hi === measure.a ? measure.b : measure.a;
+      ctx.strokeStyle = mark; ctx.lineWidth = 2; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]);
+      for (const Q of [A, B]) { ctx.moveTo(Q[0] - 8, Q[1]); ctx.lineTo(Q[0] + 8, Q[1]); }
+      ctx.stroke();
+      const rows = [`Δ quota ${dz >= 1 ? fmtN(dz, 3) + " m" : fmtN(dz * 100, 1) + " cm"}`, `da ${fmtN(hi.z, 3)} a ${fmtN(lo.z, 3)} m`];
+      if (hi.id || lo.id) rows.push(`fr. ${hi.id ?? "—"} → ${lo.id ?? "—"}`);
+      ctx.font = `600 12px ${css("--f-mono")}`; ctx.textAlign = "left"; ctx.textBaseline = "top";
+      const bw = Math.max(...rows.map(r => ctx.measureText(r).width)) + 16, bh = rows.length * 16 + 10;
+      let bx = Math.max(A[0], B[0]) + 14, by = (A[1] + B[1]) / 2 - bh / 2;
+      if (bx + bw > W - 50) bx = Math.min(A[0], B[0]) - 14 - bw;
+      by = Math.min(Math.max(by, 8), H - bh - 8);
+      ctx.fillStyle = surf; ctx.strokeStyle = mark; ctx.lineWidth = 1.5; ctx.fillRect(bx, by, bw, bh); ctx.strokeRect(bx, by, bw, bh);
+      rows.forEach((r, i) => { ctx.fillStyle = i ? ink2 : ink; ctx.fillText(r, bx + 8, by + 6 + i * 16); });
+      ctx.textBaseline = "alphabetic";
+    } else {
+      ctx.font = `600 12px ${css("--f-display")}`; ctx.fillStyle = mark; ctx.textAlign = "left";
+      ctx.fillText("MISURA: TRASCINA IN VERTICALE · SUI FRAMMENTI SI AGGANCIA · ESC CANCELLA", 12, 24);
+    }
+  }
+
   // coordinate ai bordi
   ctx.font = `400 10px ${css("--f-mono")}`; ctx.fillStyle = muted;
   ctx.textBaseline = "top";
@@ -1467,6 +1495,19 @@ function draw() {
 let drawPending = false;
 function requestDraw() { if (drawPending) return; drawPending = true; requestAnimationFrame(() => { drawPending = false; draw(); }); }
 const pointers = new Map(); let dragMoved = false, pinchD = 0, lastTap = 0;
+/* misura verticale nelle proiezioni: a e b hanno ascissa h comune e quota reale z (senza esagerazione) */
+const measure = { on: false, active: false, a: null, b: null };
+function measurePoint(sx, sy, h) {
+  const f = pick(sx, sy);
+  if (f && f.z !== null) return { h: h ?? proj(f)[0], z: f.z, id: f.id };
+  const w = toW(sx, sy); return { h: h ?? w[0], z: w[1] / state.exag, id: null };
+}
+function syncMeasure() {
+  const ok = state.view === "eo" || state.view === "ns", b = $("#zmeasure");
+  b.hidden = !ok;
+  if (!ok) { measure.on = false; measure.active = false; measure.a = measure.b = null; }
+  b.setAttribute("aria-pressed", measure.on); cv.classList.toggle("measure", measure.on);
+}
 function pick(sx, sy) {
   let best = null, bd = 12;
   for (const f of visibleFrags()) {
@@ -1487,9 +1528,14 @@ function zoomAt(sx, sy, k) {
   const after = toW(sx, sy); view.cx += before[0] - after[0]; view.cy += before[1] - after[1]; requestDraw();
 }
 cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.offsetX, e.offsetY]); dragMoved = false; if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchD = Math.hypot(a[0] - b[0], a[1] - b[1]); } });
+cv.addEventListener("pointerdown", e => {
+  if (!measure.on || pointers.size !== 1 || (state.view !== "eo" && state.view !== "ns")) return;
+  measure.active = true; measure.a = measurePoint(e.offsetX, e.offsetY); measure.b = { ...measure.a }; $("#tip").hidden = true; requestDraw();
+});
 cv.addEventListener("pointermove", e => {
   const prev = pointers.get(e.pointerId);
   if (!prev) { hover(e.offsetX, e.offsetY); return; }
+  if (measure.active) { measure.b = measurePoint(e.offsetX, e.offsetY, measure.a.h); requestDraw(); return; }
   const cur = [e.offsetX, e.offsetY];
   if (pointers.size === 1) {
     const dx = cur[0] - prev[0], dy = cur[1] - prev[1];
@@ -1512,6 +1558,7 @@ cv.addEventListener("pointermove", e => {
 const endPointer = e => {
   if (!pointers.has(e.pointerId)) return;
   pointers.delete(e.pointerId); cv.classList.remove("drag");
+  if (measure.active) { measure.active = false; if (pointers.size < 2) pinchD = 0; requestDraw(); return; }
   if (!dragMoved && pointers.size === 0 && e.type === "pointerup") {
     const now = Date.now();
     if (now - lastTap < 300) { zoomAt(e.offsetX, e.offsetY, 1.8); lastTap = 0; return; }
@@ -1536,6 +1583,8 @@ function hover(sx, sy) {
 $("#zin").onclick = () => zoomAt(view.W / 2, view.H / 2, 1.5);
 $("#zout").onclick = () => zoomAt(view.W / 2, view.H / 2, 1 / 1.5);
 $("#zfit").onclick = () => { fit(); draw(); };
+$("#zmeasure").onclick = () => { measure.on = !measure.on; if (!measure.on) measure.a = measure.b = null; syncMeasure(); draw(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape" && measure.a) { measure.a = measure.b = null; draw(); } });
 new ResizeObserver(resize).observe($("#mapwrap"));
 
 /* selezione */
@@ -2396,6 +2445,7 @@ function setView(v, refit = true) {
   $("#strataGrp").hidden = v !== "3d" || !(state.res && buildStrata(state.res));
   renderLegend();
   $("#zfit").title = v === "3d" ? "Vista iniziale" : "Adatta alla vista";
+  measure.a = measure.b = null; syncMeasure();
   if (refit) { fit(); draw(); }
 }
 document.querySelectorAll("#viewSeg button").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
