@@ -8,6 +8,10 @@ Uno strumento per studiare i **rimontaggi** (attacchi e pertinenze tra frammenti
 
 ## Come si usa
 
+**Online:** apri [enzococca.github.io/rete-dei-rimontaggi](https://enzococca.github.io/rete-dei-rimontaggi/). Anche online i dati che carichi restano nel tuo browser e non vengono inviati a nessun server.
+
+**Sul tuo computer:**
+
 1. Scarica il repository (pulsante **Code → Download ZIP**) oppure solo il file [`index.html`](index.html).
 2. Apri `index.html` con un doppio clic in un browser recente (Chrome, Firefox, Safari, Edge).
 3. Lo strumento parte con un esempio sintetico già caricato. Per usare i tuoi dati, trascina un file nel riquadro **Dati** oppure crea una tabella da zero con **Nuovo dataset**.
@@ -132,3 +136,7 @@ I primi tre sono sia in CSV sia in GeoJSON, con dati identici.
 ## Autore
 
 Enzo Cocca
+
+## Licenza
+
+Distribuito con licenza [GNU General Public License v3.0](LICENSE): puoi usarlo, modificarlo e ridistribuirlo, a condizione che le versioni modificate che distribuisci restino sotto la stessa licenza e con il codice sorgente disponibile.
