@@ -145,6 +145,15 @@ select { width: 100%; min-width: 0; padding: 5px 8px; border: 1px solid var(--li
 .pill.verifica { color: color-mix(in srgb, var(--warn) 70%, var(--ink)); border-color: var(--warn); }
 .fixlog { font-size: 12.5px; color: var(--muted); margin: 6px 0 16px; padding-left: 18px; }
 .fixlog li + li { margin-top: 2px; }
+.rtop { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 12px 16px; margin-bottom: 14px; max-width: 110ch; }
+.rtop h3, .rcard h3 { font-family: var(--f-display); font-size: 15px; text-transform: uppercase; letter-spacing: .07em; margin: 0 0 6px; }
+.rgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 12px; }
+.rcard { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; background: var(--surface-2); display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; line-height: 1.5; }
+.rcard p, .rtop p { margin: 0; }
+.rlist { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; line-height: 1.5; }
+.rwarn { color: color-mix(in srgb, var(--warn) 55%, var(--ink)); }
+.rfoot { margin-top: auto; padding-top: 4px; }
+.rgo { font-size: 12px; padding: 3px 9px; }
 @media (max-width: 560px) { .fix { grid-template-columns: minmax(0, 1fr); } }
 
 /* main column */
@@ -443,7 +452,8 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
 
       <div class="results">
         <div class="tabs" role="tablist" id="tabs">
-          <button role="tab" data-tab="gruppi" aria-selected="true">Gruppi<span class="cnt" id="cntG"></span></button>
+          <button role="tab" data-tab="riassunto" aria-selected="true">Riassunto</button>
+          <button role="tab" data-tab="gruppi" aria-selected="false">Gruppi<span class="cnt" id="cntG"></span></button>
           <button role="tab" data-tab="collegamenti" aria-selected="false">Collegamenti<span class="cnt" id="cntL"></span></button>
           <button role="tab" data-tab="matrice" aria-selected="false">Matrice US</button>
           <button role="tab" data-tab="distanze" aria-selected="false">Distanze</button>
@@ -1082,7 +1092,7 @@ const state = {
   ph: null, usr: null, phJob: 0, phBusy: false,
   strataA: 0.3, strataFocus: "",
   colorBy: "gruppo", view: "pianta", exag: 1,
-  res: null, sel: null, tab: "gruppi", sort: {},
+  res: null, sel: null, tab: "riassunto", sort: {},
   project: null, history: [], fixLog: [], dirty: false, dataFilter: "", dataOnlyBad: false,
 };
 
@@ -1756,7 +1766,7 @@ function renderTabs() {
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === state.tab));
   const P = $("#tabpanel");
   if (!res && state.tab !== "dati") { P.innerHTML = `<p class="hint">I risultati compaiono qui dopo il caricamento dei dati. Puoi anche compilare la tabella nella scheda Dati.</p>`; return; }
-  ({ dati: tabData, gruppi: tabGroups, collegamenti: tabLinks, matrice: tabMatrix, distanze: tabDist, fasi: tabPhases, palinsesto: tabPalimpsest, controlli: tabIssues })[state.tab](P, res);
+  ({ riassunto: tabSummary, dati: tabData, gruppi: tabGroups, collegamenti: tabLinks, matrice: tabMatrix, distanze: tabDist, fasi: tabPhases, palinsesto: tabPalimpsest, controlli: tabIssues })[state.tab](P, res);
 }
 document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => { state.tab = b.dataset.tab; renderTabs(); }));
 
@@ -1866,6 +1876,112 @@ function tabDist(P, res) {
     h.addEventListener("pointermove", e => { tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; });
     h.addEventListener("pointerleave", () => { h.querySelector(".bar")?.classList.remove("hl"); tip.hidden = true; });
   });
+}
+/* ---------- riassunto in parole semplici ---------- */
+function tabSummary(P, res) {
+  const s = summary(res), u = state.usr, ph = state.ph && state.ph.ok ? state.ph : null, busy = state.phBusy || !state.ph;
+  const pc = (a, b) => b ? Math.round(100 * a / b) + "%" : "—";
+  const len = v => v === null || v === undefined ? "—" : fmtLen(v);
+  const frs = [...res.frags.values()];
+  const issues = res.issues.filter(i => i.level !== "info");
+  const fixes = proposeFixes(), safe = fixes.filter(f => f.safe).length;
+  const missing = res.issues.filter(i => /attacco_verso_assente/.test(i.code)).reduce((a, i) => a + (parseInt(i.message, 10) || 0), 0);
+  const noZ = frs.filter(f => f.z === null).length;
+  const vessels = new Set(frs.map(f => f.vessel).filter(Boolean)).size;
+  const few = s.joins < 30;
+  const sintesi = [], cards = [];
+  const card = (title, body, tab, label) => cards.push(`<section class="rcard"><h3>${title}</h3>${body}${tab ? `<div class="rfoot"><button class="btn rgo" type="button" data-go="${tab}">${label} →</button></div>` : ""}</section>`);
+
+  // 1. i dati
+  let dati = `<p>La tabella ha <b>${state.rows.length} righe</b> e descrive <b>${s.frags} frammenti</b> con coordinate${s.excluded ? ` (altri ${s.excluded} sono esclusi dalla mappa)` : ""}. ${s.linked} frammenti, il ${pc(s.linked, s.frags)}, hanno almeno un attacco: in tutto <b>${s.joins} attacchi</b>${s.pert ? ` e ${s.pert} pertinenze` : ""}, che formano <b>${s.groups} gruppi di rimontaggio</b>${vessels ? `, attribuiti a ${vessels} vasi` : ""}${u && u.units.length ? `, in ${u.units.length} US` : ""}.</p>`;
+  if (issues.length || fixes.length || noZ) {
+    dati += `<p class="rwarn">Prima di interpretare, controlla i dati: ${issues.length ? `${issues.length} ${issues.length === 1 ? "segnalazione" : "segnalazioni"} nei controlli` : "nessuna segnalazione grave"}${fixes.length ? `, ${fixes.length} ${fixes.length === 1 ? "correzione proposta" : "correzioni proposte"} (${safe} ${safe === 1 ? "sicura" : "sicure"})` : ""}.${missing ? ` ${missing === 1 ? "Un attacco punta a un frammento che non è" : `${missing} attacchi puntano a frammenti che non sono`} nella tabella: forse la tabella è incompleta, e i numeri qui sotto sono parziali.` : ""}${noZ ? ` ${noZ} frammenti non hanno quota e restano fuori dalle misure verticali.` : ""}</p>`;
+    sintesi.push(missing ? `<b>Dati da completare.</b> ${missing === 1 ? "Manca un frammento a cui punta un attacco" : `Mancano frammenti a cui puntano ${missing} attacchi`}: prima di trarre conclusioni conviene recuperarli.` : `<b>Dati da controllare.</b> Ci sono ${issues.length + fixes.length} punti da verificare nella scheda Controlli.`);
+  } else dati += `<p>I controlli non segnalano problemi nei dati.</p>`;
+  if (state.demo) dati += `<p class="hint">Sono dati di esempio sintetici, costruiti per mostrare come funziona lo strumento.</p>`;
+  card("I dati", dati, "controlli", "Controlli");
+
+  // 2. in pianta
+  if (s.d2med !== null) {
+    const med = s.d2med, thr = Math.max(1, 3 * med), long = res.direct.filter(l => l.d2 > thr).length;
+    let t = `<p>Metà degli attacchi unisce frammenti a meno di <b>${len(med)}</b> di distanza in pianta; il più lungo è di ${len(s.d2max)}.</p>`;
+    const lettura = med < 0.5 ? "Gli attacchi sono corti: i vasi si sono rotti dove sono stati trovati, o lì vicino, e i pezzi non sono stati spostati molto."
+      : med < 1.5 ? "I pezzi si sono spostati in media di qualche decina di centimetri o poco più: un movimento moderato."
+      : "Gli attacchi sono lunghi: molti pezzi sono stati spostati lontano dal punto di rottura, per esempio per pulizia, scarico o rimaneggiamento.";
+    t += `<p>${lettura}</p>`;
+    if (long) t += `<p>${long} ${long === 1 ? "attacco è" : "attacchi sono"} molto più lunghi degli altri (oltre ${len(thr)}): possono indicare pezzi spostati di proposito, per esempio verso uno scarico, oppure errori nelle coordinate. Conviene guardarli uno per uno.</p>`;
+    card("Quanto si sono mossi i pezzi in pianta", t, "distanze", "Distanze");
+    sintesi.push(`<b>In pianta</b> ${med < 0.5 ? "i pezzi sono rimasti vicini al punto di rottura" : med < 1.5 ? "i pezzi si sono mossi in modo moderato" : "molti pezzi sono stati spostati lontano"}${long ? `, con ${long} ${long === 1 ? "attacco lungo" : "attacchi lunghi"} da controllare` : ""}.`);
+  }
+
+  // 3. in verticale
+  if (s.dzmed === null) card("Quanto si sono mossi i pezzi in verticale", `<p>Manca la quota: non si può dire niente sul movimento verticale.</p>`);
+  else {
+    const med = s.dzmed;
+    let t = `<p>Tra due frammenti che attaccano la differenza di quota è in mediana di <b>${len(med)}</b>; la più grande è di ${len(s.dzmax)}.</p>`;
+    t += `<p>${med < 0.05 ? "È un movimento verticale piccolo: i pezzi di uno stesso vaso stanno quasi alla stessa quota." : med < 0.15 ? "È un movimento verticale moderato: i pezzi di uno stesso vaso sono distribuiti su qualche centimetro di deposito." : "È un movimento verticale grande: i pezzi di uno stesso vaso attraversano molti centimetri di deposito."}</p>`;
+    if (s.dzmax > 1) t += `<p class="rwarn">La differenza massima, ${len(s.dzmax)}, è molto alta: controlla le quote, potrebbe esserci un errore di battitura.</p>`;
+    t += `<p class="hint">Su una superficie in pendenza una differenza di quota non vuol dire per forza che il pezzo si sia mosso: guardala insieme alla pianta.</p>`;
+    card("Quanto si sono mossi i pezzi in verticale", t, "collegamenti", "Collegamenti");
+  }
+
+  // 4. le US
+  if (!u || !u.units.length) card("Gli attacchi e le US", `<p>Serve il campo US per capire quali unità stratigrafiche sono legate dagli attacchi.</p>`);
+  else if (!u.L) card("Gli attacchi e le US", `<p>Nessun attacco unisce frammenti con US: non ci sono legami da analizzare.</p>`);
+  else {
+    const j = u.jumps, L = u.L, same = j[0] / L, near = j[1] / L, jump = (j[2] + j[3]) / L;
+    let t = `<p>Su ${L} attacchi tra frammenti con US: <b>${pc(j[0], L)}</b> restano nella stessa US, <b>${pc(j[1], L)}</b> uniscono US vicine nell'ordine di quota, <b>${pc(j[2] + j[3], L)}</b> saltano una o più US.</p>`;
+    let lettura;
+    if (same >= 0.7) lettura = "Le US si comportano come unità distinte: i pezzi di un vaso stanno quasi sempre nella stessa US.";
+    else if (near >= jump) lettura = "Molti attacchi uniscono US vicine: i limiti tra queste US forse non sono vere interruzioni (più US che eventi), oppure le superfici di contatto sono state rimescolate.";
+    else lettura = "Molti attacchi saltano più US: può esserci un taglio non riconosciuto, bioturbazione o un riporto di terra, oppure errori di registrazione. Conviene vedere se questi attacchi si concentrano in un punto della pianta.";
+    t += `<p>${lettura}</p>`;
+    if (same < 0.7 && jump >= 0.2 && near >= jump) t += `<p>Anche gli attacchi che saltano più US sono parecchi (${pc(j[2] + j[3], L)}): vanno guardati a parte.</p>`;
+    const sets = u.sets.filter(x => x.us.length), multi = sets.filter(x => x.us.length > 1);
+    if (sets.length > 1 || multi.length) {
+      t += `<p>La rete degli attacchi divide le US in <b>${sets.length} ${sets.length === 1 ? "insieme" : "insiemi"}</b>: ${sets.map(x => x.us.map(esc).join(" + ")).join(" · ")}. La separazione è ${u.Q >= 0.3 ? "netta" : u.Q >= 0.15 ? "moderata" : "debole"}.${multi.length ? " Le US di uno stesso insieme sono legate più di quanto farebbe il caso: possono essere parti di uno stesso deposito, oppure essere state rimescolate." : ""}</p>`;
+    }
+    const tiny = u.units.filter(x => x.n <= 2);
+    if (tiny.length) t += `<p>${tiny.length === 1 ? "La US" : "Le US"} ${tiny.map(x => esc(x.us)).join(", ")} ${tiny.length === 1 ? "ha" : "hanno"} uno o due frammenti soltanto: nell'ordine di quota ${tiny.length === 1 ? "occupa" : "occupano"} comunque un posto, e un attacco tra le US vicine può risultare un "salto" solo per questo.</p>`;
+    t += `<p class="hint">L'ordine di quota delle US è un'approssimazione: va confrontato con il matrix di Harris.</p>`;
+    card("Gli attacchi e le US", t, "palinsesto", "Palinsesto");
+    sintesi.push(`<b>Tra le US</b> ${same >= 0.7 ? "gli attacchi restano soprattutto dentro la stessa US" : near >= jump ? "prevalgono i legami tra US vicine in quota: forse più US che eventi" : "molti attacchi saltano più US: possibili tagli, bioturbazione o errori"}${sets.length > 1 ? `; la rete separa ${sets.length} insiemi di US` : ""}.`);
+  }
+
+  // 5. le concentrazioni
+  if (busy) card("Le concentrazioni", `<p class="hint">Calcolo in corso…</p>`);
+  else if (!ph) card("Le concentrazioni", `<p>${esc(state.ph.reason)}</p>`);
+  else {
+    let t = `<p>Guardando solo dove stanno i frammenti, il modello trova <b>${ph.K} ${ph.K === 1 ? "concentrazione" : "concentrazioni"}</b>: raggruppamenti per posizione, <b>non fasi cronologiche</b>.</p>`;
+    if (ph.K > 1) t += `<ul class="rlist">${ph.phases.map(f => `<li><b>C${f.id}</b>: ${f.n} frammenti${f.zMean !== null ? `, quota media ${fmtN(f.zMean, 2)}` : ""}${f.us.length ? `, soprattutto US ${f.us.slice(0, 4).map(x => esc(x[0])).join(", ")}` : ""}</li>`).join("")}</ul>`;
+    const c = ph.coherence;
+    if (ph.K === 1) { t += `<p>Dalle posizioni non emergono raggruppamenti distinti.</p>`; sintesi.push(`<b>Concentrazioni:</b> dalle posizioni non emergono raggruppamenti distinti.`); }
+    else if (ph.constrained) t += `<p class="rwarn">È attivo il vincolo sui gruppi di rimontaggio: in questo caso i rimontaggi non possono fare da verifica.</p>`;
+    else if (c.tot) {
+      const lift = c.expected ? c.pct / c.expected : 0;
+      const v = lift >= 1.3 ? "I rimontaggi sono d'accordo: le concentrazioni sono buone candidate a episodi deposizionali distinti."
+        : lift >= 1.05 ? "Accordo debole: il deposito è probabilmente rimescolato e le concentrazioni vanno prese con cautela."
+        : "I rimontaggi non sono d'accordo: le concentrazioni sono solo geometriche.";
+      t += `<p>Il ${pc(c.same, c.tot)} degli attacchi resta dentro la stessa concentrazione, contro il ${Math.round(100 * c.expected)}% che ci si aspetterebbe se gli attacchi fossero distribuiti a caso. ${v}</p>`;
+      const empty = ph.phases.map((f, i) => ({ f, i, inside: c.matrix[i][i], out: c.matrix[i].reduce((a, v2, k) => a + (k !== i ? v2 : 0), 0) + c.matrix.reduce((a, row, k) => a + (k < i ? row[i] : 0), 0) })).filter(x => !x.inside && x.out);
+      for (const x of empty) t += `<p>C${x.f.id} non ha attacchi al suo interno, ma ${x.out} verso altre concentrazioni: probabilmente non è un episodio a sé.</p>`;
+      const zs = ph.phases.filter(f => f.zMean !== null).map(f => f.zMean), zmed = zs.length ? median(zs) : null;
+      for (const f of ph.phases) if (f.n <= 3 && zmed !== null && Math.abs(f.zMean - zmed) > 0.5) t += `<p class="rwarn">C${f.id} ha solo ${f.n} frammenti, a una quota molto lontana dalle altre: è probabile che dipenda da quote sbagliate più che da un episodio a sé.</p>`;
+      sintesi.push(`<b>Concentrazioni:</b> ${ph.K}, ${lift >= 1.3 ? "sostenute dai rimontaggi" : lift >= 1.05 ? "sostenute solo debolmente dai rimontaggi" : "non sostenute dai rimontaggi"}${empty.length ? ` (${empty.map(x => "C" + x.f.id).join(", ")} senza attacchi interni)` : ""}.`);
+    }
+    if (fixes.some(f => /quota/.test(f.title))) t += `<p class="rwarn">Ci sono quote probabilmente sbagliate (vedi Controlli): correggile e il numero di concentrazioni potrebbe cambiare.</p>`;
+    card("Le concentrazioni", t, "fasi", "Concentrazioni");
+  }
+
+  // 6. attenzione
+  const att = [];
+  if (few) att.push(`Gli attacchi sono pochi (${s.joins}): i numeri sono indicativi, servono a osservare più che a concludere.`);
+  att.push("I rimontaggi trovati non sono un campione casuale: di solito si cercano prima tra frammenti della stessa US.");
+  att.push("Lo strumento conta, misura e confronta con il caso. L'interpretazione si fa con la documentazione di scavo: sezioni, matrix, schede delle US.");
+  card("Attenzione", `<ul class="rlist">${att.map(a => `<li>${a}</li>`).join("")}</ul>`);
+
+  P.innerHTML = `<div class="rtop"><h3>In sintesi</h3><ul class="rlist">${sintesi.map(x => `<li>${x}</li>`).join("") || "<li>Carica dati con attacchi per avere un riassunto.</li>"}</ul>${busy ? `<p class="hint">Le concentrazioni sono ancora in calcolo: il riassunto si completa da solo.</p>` : ""}</div><div class="rgrid">${cards.join("")}</div>`;
+  P.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => { state.tab = b.dataset.go; renderTabs(); }));
 }
 function tabIssues(P, res) {
   const fixHtml = fixesBlock();
@@ -2820,7 +2936,7 @@ $("#newBtn").addEventListener("click", newDataset);
 
 /* ---------- progetti: salvati nel browser, si riprendono o si eliminano ---------- */
 const PROJ_KEY = "rete-rimontaggi.progetti.v1", PROJ_FMT = "rete-rimontaggi-progetto";
-const VIEWS = ["pianta", "eo", "ns", "3d"], TABS = ["gruppi", "collegamenti", "matrice", "distanze", "fasi", "palinsesto", "controlli", "dati"];
+const VIEWS = ["pianta", "eo", "ns", "3d"], TABS = ["riassunto", "gruppi", "collegamenti", "matrice", "distanze", "fasi", "palinsesto", "controlli", "dati"];
 let projMem = null;   // ripiego se l'archivio del browser non è disponibile
 function projAll() {
   if (projMem) return projMem;
@@ -2857,7 +2973,7 @@ function projOpen(p) {
   state.phOpt = { wXY: pick(+ph.wXY, [0, 0.25, 0.5, 1], 0.5), wZ: pick(+ph.wZ, [0, 0.5, 1, 2], 1), wUS: pick(+ph.wUS, [0, 0.5, 1, 2], 0),
     k: ph.k === "auto" || !(+ph.k >= 1 && +ph.k <= 8) ? "auto" : Math.round(+ph.k), crit: pick(ph.crit, ["icl", "bic"], "icl"), constrained: bool(ph.constrained, false) };
   state.colorBy = pick(v.colorBy, ["gruppo", "vaso", "us", "quota", "fase"], "gruppo"); state.exag = pick(+v.exag, [1, 2, 3, 5], 1);
-  state.strataA = +v.strataA >= 0 && +v.strataA <= 0.7 ? +v.strataA : 0.3; state.tab = pick(v.tab, TABS, "gruppi");
+  state.strataA = +v.strataA >= 0 && +v.strataA <= 0.7 ? +v.strataA : 0.3; state.tab = pick(v.tab, TABS, "riassunto");
   state.view = "pianta"; state.sel = null; state.strataFocus = ""; state.sort = {};
   state.project = { id: p.id, nome: p.nome };
   state.history = []; state.dirty = false; state.dataFilter = "";

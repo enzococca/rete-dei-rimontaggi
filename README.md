@@ -57,6 +57,7 @@ Le regole complete sono in [`dati_esempio/LEGGIMI.md`](dati_esempio/LEGGIMI.md).
 
 | Scheda | Contenuto |
 |---|---|
+| Riassunto | La situazione in parole semplici: qualità dei dati, movimento dei pezzi in pianta e in verticale, legami tra US, concentrazioni, cautele |
 | Gruppi | Gruppi di rimontaggio con estensione, differenza di quota e US coinvolte |
 | Collegamenti | Ogni attacco con distanza in pianta, differenza di quota e US |
 | Matrice US | Numero di attacchi tra ogni coppia di US |
