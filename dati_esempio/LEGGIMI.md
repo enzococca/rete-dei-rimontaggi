@@ -86,6 +86,8 @@ In `_Attacca_con` ogni prodotto attacca con quello staccato subito dopo, l'ultim
 | Mappa, riquadro Mostra "Nuclei e sequenze di stacco" | Ogni nucleo con la sua catena sulle posizioni reali: vicino al nucleo gli ultimi stacchi (lamelle), all'esterno i primi, corticali |
 | Scheda Vasi e nuclei | Il diagramma della sequenza di ogni nucleo e la tabella con categoria, cortice, misura, distanza e dislivello dal nucleo |
 | Vista 3D | Due schegge di N2 (stacchi 2 e 3) sono scese di 9 cm nella US 13 |
+| Scheda Vasi e nuclei, matrix litico | In "Sequenza di stacco" il nucleo in alto e gli stacchi a ritroso; in "Posizione reale (x, y, z)" ogni pezzo alla sua quota e distanza dal nucleo, sopra le fasce delle US: gli stacchi 2 e 3 di N2 cadono nella fascia della US 13 |
+| Matrix (con `5_litica_nuclei_matrix.csv`) | La US 12 copre la 13: i due passaggi della catena di N2 che cambiano US sono in rapporto diretto |
 
 Da far notare: nel nucleo N2 il pezzo 2107 è una scheggia con il 60% di cortice ma è il settimo stacco. Lo strumento lo segnala: può essere cortice rimasto su un fianco del nucleo oppure un errore nell'ordine. I primi stacchi, più corticali, sono anche i più lontani dal nucleo: la decorticazione li ha sparsi su un'area più ampia.
 
@@ -186,6 +188,7 @@ Il matrix viene anche controllato: righe non riconosciute, cicli (A copre B e B 
 | `0_esempio_lezione_matrix.csv` | l'esempio interno allo strumento (si carica da solo con l'esempio) | La US 36 riempie una fossa (US 34) che taglia le US 21 e 33: è più bassa in quota ma più recente. Le US 21 e 33 si appoggiano a un muro (US 30) e stanno su rami diversi: i loro 6 attacchi fanno pensare che siano contemporanee |
 | `1_deposito_stratificato_matrix.csv` | `1_deposito_stratificato` e `4_dati_da_correggere` | Una sequenza semplice: quasi tutti gli attacchi nella stessa US |
 | `2_fossa_che_taglia_matrix.csv` | `2_fossa_che_taglia` | La fossa US 211 (senza frammenti) taglia 202 e 203 ed è riempita da 210: gli attacchi del riempimento sono a 2 o 3 passaggi |
+| `5_litica_nuclei_matrix.csv` | `5_litica_nuclei` | US 11 copre 12, 12 copre 13: i pezzi di N2 scesi nella US 13 sono a un passaggio dal nucleo, in rapporto diretto |
 | `3_area_uso_e_scarico_matrix.csv` | `3_area_uso_e_scarico` | Piano d'uso e scarico legati ("si lega a"): i loro attacchi risultano tra US contemporanee |
 
 ## Come deve essere un file perché venga accettato

@@ -2784,32 +2784,84 @@ function semSelState() {
   const sel = state.sel, hl = sel ? (semHighlight(sel) || new Set(selIds(sel))) : null;
   return { sel, hl, fid: sel && sel.type === "frag" ? sel.id : null };
 }
-function coreSVG(G) {
-  const R = 30, STEP = 96, TOP = 46, cols = [[G.core], ...G.levels];
-  if (G.free.length) cols.push(G.free);
-  const rows = Math.max(...cols.map(c => c.length));
-  const W = 70 + (cols.length - 1) * STEP + 90, H = TOP + rows * 64 + 30;
-  const pos = new Map(), mid = TOP + (rows * 64) / 2 - 32;
-  cols.forEach((c, i) => c.forEach((f, j) => pos.set(f || "core", [50 + i * STEP, mid + (j - (c.length - 1) / 2) * 64 + 16])));
-  const P = f => pos.get(f || "core");
-  const cxFill = v => v === null ? "var(--surface-2)" : `color-mix(in srgb, var(--l5) ${Math.round(v)}%, var(--surface))`;
-  const { sel, hl, fid } = semSelState(), lin = fid && G.parent.has(fid) ? lineage(G, fid) : (fid === G.key ? lineage(G, fid) : null);
-  const dim = k => hl && hl.size && !hl.has(k) ? " semdim" : "";
+/* matrix litico: la sequenza di scheggiatura come un matrix di Harris (in alto il nucleo, lo stato finale;
+   sotto gli stacchi a ritroso). Modo "posizione": ogni pezzo alla sua quota reale (z) e alla sua distanza
+   in pianta dal nucleo (x, y), sopra le fasce delle US */
+function lithicMatrixSVG(G) {
+  const res = state.res, mode = state.litMode || "sequenza", { sel, hl, fid } = semSelState();
+  const fragOf = k => k === G.key ? G.core : res.frags.get(k);
+  const kids = k => G.children.get(k) || [];
+  const lin = fid && (G.parent.has(fid) || fid === G.key) ? lineage(G, fid) : null;
   const role = k => !lin ? "" : k === lin.parent ? "padre" : lin.kids.includes(k) ? "figlio" : "";
-  let e = "", n = "";
-  for (const ed of G.edges) {
-    const a = P(ed.from), b = P(ed.to), ka = ed.from ? ed.from.id : G.key;
-    e += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" class="${hl && hl.size && !(hl.has(ka) && hl.has(ed.to.id)) ? "semdim" : ""}" stroke="${lithicColor(ed.to.cat)}" stroke-width="${edgeWidth(G, ed.to).toFixed(1)}" stroke-linecap="round"${ed.loose ? ' stroke-dasharray="4 4"' : ""}><title>${esc(semName(ka))} → ${esc(ed.to.id)} · ${esc(ed.to.cat || "categoria non indicata")}${ed.to.size !== null ? " · " + esc(state.map.misura) + " " + fmtN(ed.to.size, 1) : ""} · distanza reale ${fmtLen(ed.d)}</title></line>`;
+  const dim = k => hl && hl.size && !hl.has(k) ? " semdim" : "";
+  const isOn = k => k === G.key ? ((sel && sel.type === "core" && sel.id === G.n) || fid === G.key) : fid === k;
+  const cxFill = v => v === null || v === undefined ? "var(--surface-2)" : `color-mix(in srgb, var(--l5) ${Math.round(v)}%, var(--surface))`;
+  const mx = state.matrix && state.matrix.g, coreUS = G.core ? usKey(G.core.us) : null;
+  const usRel = (a, b) => { if (!a || !b || a === b) return ""; if (!mx) return `US ${a} → US ${b}`; const r = mxRelation(mx, a, b);
+    return `US ${a} → US ${b}: ${{ contemporanee: "contemporanee", diretto: "rapporto diretto", due: "2 passaggi", lontane: `${r.d} passaggi`, rami: "rami diversi", fuori: "fuori dal matrix" }[r.k]}`; };
+  const short = c => !c ? "—" : c.replace(/scheggia /i, "sch. ").replace(/semicorticale/i, "semicort.");
+  const attr = k => k === G.key ? `data-core="${esc(G.n)}"` : `data-id="${esc(k)}"`;
+  const tip = (k, f) => k === G.key ? `Nucleo ${esc(G.n)}${f ? ` · ${esc(f.id)} · US ${esc(f.us ?? "—")} · q. ${fmtN(f.z)}` : " (non schedato)"}` :
+    `${esc(k)} · stacco ${f.ord !== null ? fmtN(f.ord, 0) : "—"} · ${esc(f.cat || "—")} · cortice ${f.cortex !== null ? fmtN(f.cortex, 0) + "%" : "n.d."} · US ${esc(f.us ?? "—")} · q. ${fmtN(f.z)} · padre ${esc(semName(G.parent.get(k)))}`;
+  let e = "", n = "", W, H, extra = "";
+  if (mode === "sequenza") {
+    // albero: ogni foglia una colonna, il padre sopra la media dei figli
+    let leaf = 0; const col = new Map(), dep = new Map();
+    const walk = (k, d) => { dep.set(k, d); const ks = kids(k); if (!ks.length) col.set(k, leaf++); else { ks.forEach(c => walk(c, d + 1)); col.set(k, mean(ks.map(c => col.get(c)))); } };
+    walk(G.key, 0);
+    const BW = 262, BH = 40, CW = 286, ROW = 62, L0 = 24, T0 = 18;
+    const X = k => L0 + col.get(k) * CW + BW / 2, Y = k => T0 + dep.get(k) * ROW;
+    W = L0 * 2 + Math.max(1, leaf) * CW; H = T0 + (Math.max(...dep.values()) + 1) * ROW + 10;
+    for (const [p, ks] of G.children) for (const c of ks) {
+      const f = fragOf(c), ym = Y(p) + BH + (ROW - BH) / 2, loose = G.free.includes(f);
+      const d = Math.abs(X(p) - X(c)) < .5 ? `M${X(p)},${Y(p) + BH} V${Y(c)}` : `M${X(p)},${Y(p) + BH} V${ym} H${X(c)} V${Y(c)}`;
+      const pf = fragOf(p), rel = usRel(pf ? usKey(pf.us) : null, usKey(f.us));
+      e += `<path d="${d}" fill="none" class="${hl && hl.size && !(hl.has(p) && hl.has(c)) ? "semdim" : ""}" stroke="${lithicColor(f.cat)}" stroke-width="${edgeWidth(G, f).toFixed(1)}"${loose ? ' stroke-dasharray="4 4"' : ""}><title>${esc(semName(p))} → ${esc(c)}${rel ? " · " + esc(rel) : ""}</title></path>`;
+    }
+    for (const k of dep.keys()) {
+      const f = fragOf(k), x = X(k) - BW / 2, y = Y(k), core = k === G.key, r = role(k);
+      const u = f ? usKey(f.us) : null, moved = !core && coreUS && u && u !== coreUS;
+      const l1 = core ? `Nucleo ${esc(G.n)}${f ? " · " + esc(f.id) : ""}` : `${esc(k)} · stacco ${f.ord !== null ? fmtN(f.ord, 0) : "?"}`;
+      const l2 = core ? (f ? `US ${esc(f.us ?? "—")} · q. ${fmtN(f.z, 3)}` : "non schedato") : `${esc(short(f.cat))} · US ${esc(f.us ?? "—")} · q. ${fmtN(f.z, 3)}`;
+      n += `<g class="semnode${isOn(k) ? " on" : ""}${dim(k)}" ${attr(k)}><rect class="halo" x="${x}" y="${y}" width="${BW}" height="${BH}" rx="3" fill="${core ? "color-mix(in srgb, var(--l5) 22%, var(--surface))" : "var(--surface)"}" stroke="var(--ink-2)" stroke-width="${core ? 2 : 1.2}"${moved ? ' stroke-dasharray="5 3"' : ""}/>`
+        + (core ? "" : `<rect x="${x}" y="${y}" width="7" height="${BH}" fill="${lithicColor(f.cat)}"/><circle cx="${x + BW - 13}" cy="${y + 13}" r="6" fill="${cxFill(f.cortex)}" stroke="var(--ink-2)" stroke-width=".8"/>`)
+        + `<text x="${x + 14}" y="${y + 16}" class="mxl" style="text-anchor:start">${l1}</text><text x="${x + 14}" y="${y + 31}" class="mxs" style="text-anchor:start">${l2}</text>`
+        + (r ? `<text x="${x + BW + 6}" y="${y + 24}" class="mxs semrole" style="text-anchor:start">${r}</text>` : "")
+        + `<title>${tip(k, f)}${moved ? " · " + esc(usRel(coreUS, u)) : ""}</title></g>`;
+    }
+  } else {
+    // posizione reale: orizzontale = distanza in pianta dal nucleo, verticale = quota
+    const keys = [G.key, ...G.prods.map(f => f.id)].filter(k => { const f = k === G.key ? G.hub : fragOf(k); return f && f.z !== null; });
+    const P0 = k => k === G.key ? G.hub : fragOf(k);
+    const dh = k => { const f = P0(k); return Math.hypot(f.x - G.hub.x, f.y - G.hub.y); };
+    const uss = [...new Set(keys.map(k => usKey((fragOf(k) || {}).us)).filter(Boolean))];
+    const band = uss.map(u => { const zs = [...res.frags.values()].filter(f => usKey(f.us) === u && f.z !== null).map(f => f.z); return { u, z0: Math.min(...zs), z1: Math.max(...zs) }; });
+    const zs = keys.map(k => P0(k).z).concat(band.flatMap(b => [b.z0, b.z1]));
+    let z0 = Math.min(...zs), z1 = Math.max(...zs); const pad = Math.max(.01, (z1 - z0) * .12); z0 -= pad; z1 += pad;
+    const dmax = Math.max(.1, ...keys.map(dh)) * 1.08;
+    const L = 70, T = 24, PW = 640, PH = 300; W = L + PW + 110; H = T + PH + 48;
+    const X = k => L + 18 + dh(k) / dmax * (PW - 18), Y = k => T + (z1 - P0(k).z) / (z1 - z0) * PH, Yz = z => T + (z1 - z) / (z1 - z0) * PH;
+    band.forEach((b, i) => { extra += `<rect x="${L}" y="${Yz(b.z1)}" width="${PW}" height="${Math.max(2, Yz(b.z0) - Yz(b.z1))}" fill="${colorCache.us(b.u)}" opacity=".13"/><text x="${L + PW - 6}" y="${Yz(b.z1) + 13}" class="mxs" style="text-anchor:end;font-weight:600;fill:${colorCache.us(b.u)}">US ${esc(b.u)}</text>`; });
+    let zt = Math.pow(10, Math.floor(Math.log10((z1 - z0) / 3)));
+    for (const m of [1, 2, 5, 10]) if ((z1 - z0) / (m * zt) <= 7) { zt *= m; break; }
+    for (let z = Math.ceil(z0 / zt) * zt; z <= z1; z += zt) extra += `<line x1="${L - 4}" x2="${L + PW}" y1="${Yz(z)}" y2="${Yz(z)}" stroke="var(--grid)"/><text x="${L - 7}" y="${Yz(z) + 4}" class="mxs" style="text-anchor:end">${fmtN(z, decimalsFor(zt))}</text>`;
+    const dt = dmax > 2 ? .5 : dmax > 1 ? .25 : .1;
+    const Xd = d => L + 18 + d / dmax * (PW - 18);
+    for (let d = 0; d <= dmax; d += dt) extra += `<line x1="${Xd(d)}" x2="${Xd(d)}" y1="${T}" y2="${T + PH + 4}" stroke="var(--grid)"/><text x="${Xd(d)}" y="${T + PH + 17}" class="mxs">${fmtN(d, 2)}</text>`;
+    extra += `<text x="${L + PW / 2}" y="${T + PH + 36}" class="mxs">distanza in pianta dal nucleo (m)</text><text x="14" y="${T + PH / 2}" class="mxs" transform="rotate(-90 14 ${T + PH / 2})">quota (m)</text>`;
+    const ok = new Set(keys);
+    for (const [p, ks] of G.children) for (const c of ks) {
+      if (!ok.has(p) || !ok.has(c)) continue;
+      const f = fragOf(c), pf = fragOf(p), rel = usRel(pf ? usKey(pf.us) : null, usKey(f.us));
+      e += `<path d="M${X(p)},${Y(p)} H${X(c)} V${Y(c)}" fill="none" class="${hl && hl.size && !(hl.has(p) && hl.has(c)) ? "semdim" : ""}" stroke="${lithicColor(f.cat)}" stroke-width="${edgeWidth(G, f).toFixed(1)}"${G.free.includes(f) ? ' stroke-dasharray="4 4"' : ""}><title>${esc(semName(p))} → ${esc(c)} · dislivello ${fmtN((f.z - P0(p).z) * 100, 1)} cm${rel ? " · " + esc(rel) : ""}</title></path>`;
+    }
+    for (const k of keys) {
+      const f = fragOf(k), core = k === G.key, r = role(k), x = X(k), y = Y(k);
+      n += `<g class="semnode${isOn(k) ? " on" : ""}${dim(k)}" ${attr(k)}>${core ? `<circle class="halo" cx="${x}" cy="${y}" r="11" fill="var(--l5)" stroke="var(--surface)" stroke-width="2"/>` : `<circle class="halo" cx="${x}" cy="${y}" r="8" fill="${cxFill(f.cortex)}" stroke="var(--ink-2)" stroke-width="1.2"/>`}<text x="${x + 12}" y="${y - 6}" class="mxs" style="text-anchor:start">${core ? "nucleo " + esc(G.n) : esc(k) + (f.ord !== null ? " (" + fmtN(f.ord, 0) + ")" : "")}${r ? " · " + r : ""}</text><title>${tip(k, f)}</title></g>`;
+    }
   }
-  const c = P(G.core), on = (sel && sel.type === "core" && sel.id === G.n) || fid === G.key;
-  n += `<g class="semnode${on ? " on" : ""}${dim(G.key)}" data-core="${esc(G.n)}"><circle cx="${c[0]}" cy="${c[1]}" r="${R * .62}" fill="var(--l5)" stroke="var(--surface)" stroke-width="2.5"/><circle class="halo" cx="${c[0]}" cy="${c[1]}" r="${R * .62 + 4}" fill="none" stroke="var(--l5)" stroke-width="1.5"/><text x="${c[0]}" y="${c[1] + R * .62 + 18}" class="mxl">${esc(G.core ? G.core.id : "—")}</text><text x="${c[0]}" y="${c[1] - R * .62 - 10}" class="mxs">${role(G.key) || "nucleo"}</text><title>Nucleo ${esc(G.n)}: clic per vederlo sulla mappa</title></g>`;
-  for (const f of G.prods) {
-    const p = P(f); if (!p) continue;
-    const r = role(f.id);
-    n += `<g class="semnode${fid === f.id ? " on" : ""}${dim(f.id)}" data-id="${esc(f.id)}"><circle class="halo" cx="${p[0]}" cy="${p[1]}" r="13" fill="${cxFill(f.cortex)}" stroke="var(--ink-2)" stroke-width="1.2"/><text x="${p[0]}" y="${p[1] + 4}" class="mxn" style="text-anchor:middle${f.cortex !== null && f.cortex > 55 ? ";fill:var(--surface)" : ""}">${f.ord !== null ? fmtN(f.ord, 0) : "?"}</text><text x="${p[0]}" y="${p[1] + 28}" class="mxs">${esc(f.id)}</text>${r ? `<text x="${p[0]}" y="${p[1] - 19}" class="mxs semrole">${r}</text>` : ""}<title>${esc(f.id)}${f.ord !== null ? " · stacco " + fmtN(f.ord, 0) : ""} · ${esc(f.cat || "—")} · cortice ${f.cortex !== null ? fmtN(f.cortex, 0) + "%" : "n.d."}: clic per vederlo sulla mappa</title></g>`;
-  }
-  const ax = `<text x="50" y="18" class="mxs" style="text-anchor:start">← verso il nucleo: ultimi stacchi</text><text x="${W - 20}" y="18" class="mxs" style="text-anchor:end">primi stacchi, più corticali →</text>`;
-  return `<div class="svgscroll"><svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 900)}px;max-width:${W}px" role="img" aria-label="Sequenza di scheggiatura del nucleo ${esc(G.n)}">${ax}${e}${n}</svg></div>`;
+  const seg = `<div class="seg two" style="margin:4px 0 8px;max-width:440px">${[["sequenza", "Sequenza di stacco"], ["posizione", "Posizione reale (x, y, z)"]].map(([m, t]) => `<button type="button" data-litmode="${m}" aria-pressed="${mode === m}">${t}</button>`).join("")}</div>`;
+  return `${seg}<div class="svgscroll"><svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 820)}px;max-width:${W}px" role="img" aria-label="Matrix litico del nucleo ${esc(G.n)}">${extra}${e}${n}</svg></div>`;
 }
 /* albero del vaso: vaso → gruppi di rimontaggio → frammenti, con rami ortogonali */
 function vesselTreeSVG(V, res) {
@@ -2857,25 +2909,28 @@ function tabSemantic(P, res) {
   } else if (state.map.nucleo === state.map.id) h += `<p class="rwarn">Il campo Nucleo è la stessa colonna dell'ID del frammento: ogni pezzo sarebbe un nucleo a sé. Scegli nel pannello Campi la colonna che contiene l'ID del nucleo.</p>`;
   else if (!cores.length) h += `<p class="rwarn">Nessun nucleo ha prodotti: nella colonna «${esc(state.map.nucleo)}» ogni valore compare una volta sola. Deve contenere l'ID del nucleo, uguale per tutti i pezzi che vi rimontano.</p>`;
   else {
-    h += `<p class="hint">Ogni catena parte dal nucleo e va all'indietro nella scheggiatura: prima l'ultimo pezzo staccato, poi i precedenti, fino ai primi stacchi, che sono i più corticali e stanno all'esterno. Il <b>padre</b> di un pezzo è quello più vicino al nucleo nella catena, i <b>figli</b> sono quelli staccati prima. ${cores.some(G => !G.hasOrd) ? "Dove manca l'ordine di stacco la catena segue la corticalità (meno cortice = più vicino al nucleo). " : ""}Colore dell'arco = categoria del prodotto; spessore = misura${state.map.misura ? ` (${esc(state.map.misura)})` : " (campo non scelto)"}; riempimento del cerchio = cortice (chiaro = assente, scuro = totale).</p>`;
+    h += `<p class="hint">Ogni catena parte dal nucleo e va all'indietro nella scheggiatura: prima l'ultimo pezzo staccato, poi i precedenti, fino ai primi stacchi, che sono i più corticali e stanno all'esterno. Il <b>padre</b> di un pezzo è quello più vicino al nucleo nella catena, i <b>figli</b> sono quelli staccati prima. ${cores.some(G => !G.hasOrd) ? "Dove manca l'ordine di stacco la catena segue la corticalità (meno cortice = più vicino al nucleo). " : ""}Il <b>matrix litico</b> di ogni nucleo si legge come un matrix di Harris: in alto il nucleo (lo stato finale del blocco), sotto gli stacchi a ritroso fino ai primi; i rami compaiono quando più pezzi hanno lo stesso ordine di stacco. Con <b>Posizione reale</b> ogni pezzo sta alla sua quota (z) e alla sua distanza in pianta dal nucleo (x, y), sopra le fasce delle US: si vede se la sequenza di scheggiatura è rimasta nello stesso livello o si è dispersa. Bordo tratteggiato = pezzo in una US diversa da quella del nucleo. Colore = categoria del prodotto; spessore = misura${state.map.misura ? ` (${esc(state.map.misura)})` : " (campo non scelto)"}; riempimento del cerchio = cortice (chiaro = assente, scuro = totale).</p>`;
     for (const G of cores) {
       const far = G.edges.filter(e => !e.loose).sort((a, b) => b.d - a.d)[0];
       const notes = [];
       if (!G.core) notes.push(`Il nucleo ${esc(G.n)} non è tra i pezzi schedati (nessuna riga con categoria "nucleo" o con ID ${esc(G.n)}): il supernodo è nel baricentro dei prodotti.`);
       if (G.late.length) notes.push(`Pezzi con molto cortice ma staccati tardi: ${G.late.map(f => `${esc(f.id)} (stacco ${fmtN(f.ord, 0)}, cortice ${fmtN(f.cortex, 0)}%)`).join(", ")}. Può essere cortice residuo su un fianco del nucleo, o un errore nell'ordine.`);
       if (G.free.length) notes.push(`${G.free.length} ${G.free.length === 1 ? "pezzo" : "pezzi"} senza ordine di stacco, collegati al nucleo con il tratteggio: ${G.free.map(f => esc(f.id)).join(", ")}.`);
+      const cross = G.edges.filter(e => { const a = e.from ? usKey(e.from.us) : G.core ? usKey(G.core.us) : null, b = usKey(e.to.us); return a && b && a !== b; });
+      if (cross.length) notes.push(`${cross.length} ${cross.length === 1 ? "passaggio" : "passaggi"} della catena ${cross.length === 1 ? "cambia" : "cambiano"} US: ${cross.map(e => { const a = e.from ? usKey(e.from.us) : usKey(G.core.us), b = usKey(e.to.us), mx = state.matrix && state.matrix.g, r = mx ? mxRelation(mx, a, b) : null; return `${esc(e.from ? e.from.id : G.n)} (US ${esc(a)}) → ${esc(e.to.id)} (US ${esc(b)}${r ? ", " + { contemporanee: "contemporanee", diretto: "rapporto diretto nel matrix", due: "2 passaggi nel matrix", lontane: r.d + " passaggi nel matrix", rami: "rami diversi del matrix", fuori: "fuori dal matrix" }[r.k] : ""}, ${fmtN((e.to.z - (e.from || G.hub).z) * 100, 1)} cm)`; }).join("; ")}. Pezzi dello stesso blocco in US diverse: spostamento dopo l'abbandono, o US da rivedere.${state.matrix ? "" : " Con il matrix di Harris caricato il passaggio viene letto anche sulla sequenza stratigrafica."}`);
       if (G.otherCore.length) notes.push(`Attacchi verso pezzi di un altro nucleo: ${G.otherCore.map(f => esc(f.id)).join(", ")}. Controllare il campo Nucleo.`);
       const L = fid && (G.parent.has(fid) || fid === G.key) ? lineage(G, fid) : null;
       const linTxt = L ? `<p><b>${esc(fid)}</b>: padre ${L.parent !== undefined ? esc(semName(L.parent)) : "nessuno (è il nucleo)"} · figli ${L.kids.length ? L.kids.map(esc).join(", ") : "nessuno"} · ${L.down.length} discendenti · ${L.up.length} passi fino al nucleo.</p>` : "";
-      h += `<div class="chart"><h3>Nucleo ${esc(G.n)} · ${G.prods.length} prodotti${G.core && G.core.us ? " · US " + esc(G.core.us) : ""}</h3><p>${far ? `Il passo più lungo della catena sul terreno è ${esc(far.from ? far.from.id : G.n)} → ${esc(far.to.id)}: ${fmtLen(far.d)}.` : ""}</p>${linTxt}${coreSVG(G)}${notes.length ? `<p class="rwarn">${notes.join("<br>")}</p>` : ""}</div>`;
+      h += `<div class="chart"><h3>Nucleo ${esc(G.n)} · ${G.prods.length} prodotti${G.core && G.core.us ? " · US " + esc(G.core.us) : ""}</h3><p>${far ? `Il passo più lungo della catena sul terreno è ${esc(far.from ? far.from.id : G.n)} → ${esc(far.to.id)}: ${fmtLen(far.d)}.` : ""}</p>${linTxt}${lithicMatrixSVG(G)}${notes.length ? `<p class="rwarn">${notes.join("<br>")}</p>` : ""}</div>`;
       h += tbl([["Stacco", 1], ["Pezzo"], ["Padre"], ["Categoria"], ["Cortice", 1], ["Misura", 1], ["Dal padre", 1], ["Dal nucleo", 1], ["Dislivello", 1], ["US"]],
         G.edges.slice().sort((a, b) => (b.to.ord ?? -1) - (a.to.ord ?? -1)).map(e => { const f = e.to, dz = f.z !== null && G.hub.z !== null ? f.z - G.hub.z : null; return `<tr data-id="${esc(f.id)}" class="${fid === f.id ? "on" : ""}" style="cursor:pointer"><td class="n">${f.ord !== null ? fmtN(f.ord, 0) : "—"}</td><td class="mono">${esc(f.id)}</td><td class="mono">${esc(semName(G.parent.get(f.id)))}</td><td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:${lithicColor(f.cat)}"></span>${esc(f.cat || "—")}</td><td class="n">${f.cortex !== null ? fmtN(f.cortex, 0) + "%" : "—"}</td><td class="n">${f.size !== null ? fmtN(f.size, 1) : "—"}</td><td class="n">${fmtLen(e.d)}</td><td class="n">${fmtLen(d3of(G.hub, f))}</td><td class="n">${dz !== null ? (dz > 0 ? "+" : "") + fmtN(dz * 100, 1) + " cm" : "—"}</td><td class="mono">${esc(f.us || "—")}</td></tr>`; }));
     }
   }
   P.innerHTML = `<div class="semwrap">${h}</div>`;
   P.querySelector(".semwrap").addEventListener("click", ev => {
-    const t = ev.target.closest("[data-id],[data-core],[data-v],[data-g]"); if (!t) return;
-    if (t.dataset.id) select({ type: "frag", id: t.dataset.id }, true);
+    const t = ev.target.closest("[data-litmode],[data-id],[data-core],[data-v],[data-g]"); if (!t) return;
+    if (t.dataset.litmode) { state.litMode = t.dataset.litmode; const y = window.scrollY; renderTabs(); window.scrollTo(0, y); }
+    else if (t.dataset.id) select({ type: "frag", id: t.dataset.id }, true);
     else if (t.dataset.core) select({ type: "core", id: t.dataset.core }, true);
     else if (t.dataset.v) select({ type: "vessel", id: t.dataset.v }, true);
     else select({ type: "group", id: +t.dataset.g }, true);

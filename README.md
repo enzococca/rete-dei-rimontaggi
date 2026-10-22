@@ -130,6 +130,10 @@ Oltre agli attacchi frattura con frattura, lo strumento può aggiungere un nodo 
 
 ![Un frammento selezionato con il suo vaso come padre](docs/img/vaso_padre.jpg)
 
+- **Matrix litico.** Ogni nucleo ha il suo matrix, letto come un matrix di Harris: in alto il nucleo (lo stato finale del blocco), sotto gli stacchi a ritroso fino ai primi, con linee ad angolo retto e rami quando più pezzi hanno lo stesso ordine. Con **Posizione reale (x, y, z)** ogni pezzo sta alla sua quota e alla sua distanza in pianta dal nucleo, sopra le fasce delle US: si vede se la sequenza è rimasta nel suo livello o si è dispersa. I passaggi della catena che cambiano US vengono segnalati e, se il matrix di Harris è caricato, letti sulla sequenza stratigrafica.
+
+![Matrix litico in posizione reale: due schegge corticali scese nella US 13](docs/img/matrix_litico.jpg)
+
 ![Scheda Vasi e nuclei](docs/img/scheda_litica.jpg)
 
 ## Sfondo: ortofoto, raster e DEM
@@ -156,7 +160,7 @@ Nella cartella [`dati_esempio`](dati_esempio) ci sono dataset **sintetici**, cos
 | `5_litica_nuclei` | Due nuclei con i loro prodotti: ordine di stacco, categoria, cortice e lunghezza |
 | `sfondo/` | Ortofoto (GeoTIFF, PNG e JPEG con world file) e DEM in GeoTIFF per l'esempio interno |
 
-I primi tre sono sia in CSV sia in GeoJSON, con dati identici. Per ognuno c'è anche un matrix di Harris d'esempio (`*_matrix.csv`); il matrix dell'esempio interno si carica da solo.
+I dataset 1, 2, 3 e 5 sono sia in CSV sia in GeoJSON, con dati identici. Per ognuno c'è anche un matrix di Harris d'esempio (`*_matrix.csv`); il matrix dell'esempio interno si carica da solo.
 
 ## Parole usate
 
