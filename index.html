@@ -338,6 +338,28 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
       </section>
 
       <section>
+        <h2>Sfondo <span class="n" id="bgCount"></span></h2>
+        <div class="row">
+          <label class="btn" for="bgImgFile" title="GeoTIFF, oppure PNG/JPG insieme al world file">Immagine…</label>
+          <input type="file" id="bgImgFile" accept=".tif,.tiff,.png,.jpg,.jpeg,.pgw,.pngw,.jgw,.jpgw,.jpw,.wld" multiple hidden>
+          <label class="btn" for="bgDemFile" title="Modello digitale del terreno in GeoTIFF">DEM…</label>
+          <input type="file" id="bgDemFile" accept=".tif,.tiff" hidden>
+          <button class="btn" id="bgDemo" type="button" hidden>Sfondo dell'esempio</button>
+          <span class="hint" id="bgBusy" hidden>caricamento…</span>
+        </div>
+        <div id="bgOpts" hidden>
+          <label class="label" for="bgAlpha">Opacità</label>
+          <input type="range" id="bgAlpha" min="0.1" max="1" step="0.05" value="0.75" aria-label="Opacità dello sfondo">
+          <div class="checks">
+            <label><input type="checkbox" id="bgShowImg" checked> Immagine</label>
+            <label><input type="checkbox" id="bgShowDem" checked> DEM (ombreggiatura in pianta, superficie nel 3D)</label>
+          </div>
+          <div class="row"><button class="btn danger" id="bgDel" type="button">Rimuovi lo sfondo</button></div>
+        </div>
+        <p class="hint" id="bgHint"></p>
+      </section>
+
+      <section>
         <h2>Progetto <span class="n" id="projCount"></span></h2>
         <div class="proj-save">
           <input type="text" id="projName" placeholder="Nome del progetto" maxlength="80" aria-label="Nome del progetto">
@@ -402,6 +424,8 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
           <label><input type="checkbox" id="optUnlinked" checked> Frammenti senza attacchi</label>
           <label><input type="checkbox" id="optLabels"> Numeri dei frammenti</label>
           <label><input type="checkbox" id="optDrop" checked> Linee verticali al piano (3D)</label>
+          <label><input type="checkbox" id="optVessels"> Vasi come supernodi (ceramica)</label>
+          <label><input type="checkbox" id="optCores" checked> Nuclei e sequenze di stacco (litica)</label>
         </div>
       </section>
 
@@ -483,6 +507,7 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
           <button role="tab" data-tab="fasi" aria-selected="false">Concentrazioni</button>
           <button role="tab" data-tab="palinsesto" aria-selected="false">Palinsesto</button>
           <button role="tab" data-tab="matrix" aria-selected="false">Matrix</button>
+          <button role="tab" data-tab="grafi" aria-selected="false">Vasi e nuclei</button>
           <button role="tab" data-tab="controlli" aria-selected="false">Controlli<span class="cnt" id="cntI"></span></button>
           <button role="tab" data-tab="dati" aria-selected="false">Dati<span class="cnt" id="cntD"></span></button>
         </div>
@@ -583,6 +608,11 @@ function buildFragments(rows, m) {
       us: m.us ? normaliseId(row[m.us]) : null,
       refits: parseRefits(row[m.refit]),
       pert: m.pert ? parseRefits(row[m.pert]) : [],
+      nucleo: m.nucleo ? normaliseId(row[m.nucleo]) : null,
+      ord: m.ordine ? toFloat(row[m.ordine]) : null,
+      cat: m.categoria ? (String(row[m.categoria] ?? "").trim() || null) : null,
+      cortex: m.cortice ? parseCortex(row[m.cortice]) : null,
+      size: m.misura ? toFloat(row[m.misura]) : null,
     });
   }
   return out;
@@ -1105,13 +1135,18 @@ const FIELD_DEFS = [
   { key: "z", label: "Quota", guess: [/^(z|quota|q|elev|elevation|h|coord_?z)$/i, /^__geom_z$/, /quota/i] },
   { key: "vessel", label: "Vaso", guess: [/vaso_?id|id_?vaso|num_?vaso|^vaso$/i, /vaso|vessel/i] },
   { key: "us", label: "US", guess: [/^(us|su|sus|context|contesto|strato|layer)$/i, /^us[_ ]|unit/i] },
+  { key: "nucleo", label: "Nucleo (litica)", guess: [/^(nucleo|core)(_?id)?$/i, /id_?nucleo|nucleo/i] },
+  { key: "ordine", label: "Ordine di stacco", guess: [/ordine|stacco|sequenz|removal|order/i] },
+  { key: "categoria", label: "Categoria del prodotto", guess: [/categ|prodott|tipolog|product/i] },
+  { key: "cortice", label: "Corticalità", guess: [/cortic|cortex|cortice/i] },
+  { key: "misura", label: "Misura", guess: [/lungh|misur|length|peso|weight|dimens|size/i] },
 ];
 const GEOM_LABEL = { __geom_x: "⟨geometria X⟩", __geom_y: "⟨geometria Y⟩", __geom_z: "⟨geometria Z⟩" };
 
 const state = {
   rows: [], headers: [], source: "", demo: false, map: {},
   opt: { mode: "diretti", excludeOutliers: true, pertInGroups: false },
-  show: { hulls: true, pert: true, unlinked: true, labels: false, drop: true },
+  show: { hulls: true, pert: true, unlinked: true, labels: false, drop: true, vessels: false, cores: true },
   phOpt: { wXY: 0.5, wZ: 1, wUS: 0, k: "auto", crit: "icl", constrained: false },
   ph: null, usr: null, phJob: 0, phBusy: false,
   strataA: 0.3, strataFocus: "",
@@ -1274,7 +1309,7 @@ function run(refit) {
   else $("#emptyMap").hidden = true;
   state.ph = null;
   fillStrataFocus();
-  renderStats(); renderTabs(); renderLegend(); renderDetail(); renderMatrixPanel();
+  renderStats(); renderTabs(); renderLegend(); renderDetail(); renderMatrixPanel(); renderBgPanel();
   if (refit) fit(); draw();
   schedulePhases();
 }
@@ -1376,6 +1411,8 @@ function draw() {
   if (!res || !res.frags.size) return;
   if (state.view === "3d") { draw3D(); if (measure.on) drawMeasure(W, H); return; }
 
+  drawBg2D();
+
   // griglia
   const step = niceStep(70), minor = step / 5, dec = decimalsFor(step);
   const [wx0, wy1] = toW(0, 0), [wx1, wy0] = toW(W, H);
@@ -1425,6 +1462,7 @@ function draw() {
     }
     ctx.setLineDash([]); ctx.globalAlpha = 1;
   }
+  const semPos = f => { const p = proj(f); return p ? toS(p) : null; };
   // collegamenti
   ctx.lineWidth = 2; ctx.lineCap = "round";
   for (const l of res.links) {
@@ -1434,6 +1472,8 @@ function draw() {
     ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
   }
   ctx.globalAlpha = 1;
+
+  drawSemantic(semPos, alphaOf, "edges");
 
   // punti
   for (const f of fs) {
@@ -1445,6 +1485,7 @@ function draw() {
     else { ctx.fillStyle = surf; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = state.colorBy === "gruppo" ? muted : fragColor(f); ctx.stroke(); }
   }
   ctx.globalAlpha = 1;
+  drawSemantic(semPos, alphaOf, "nodes");
 
   // etichette
   ctx.textBaseline = "middle";
@@ -1760,6 +1801,11 @@ function renderLegend() {
   }
   items.push(`<div class="li"><span class="ln"></span><span>${{ diretti: "Attacco", mst: "Albero minimo del gruppo", completi: "Coppia nel gruppo" }[state.opt.mode]}</span></div>`);
   if (state.show.pert && res.pert.length) items.push(`<div class="li"><span class="ln dash"></span><span>Pertinenza</span></div>`);
+  semLegend(items, sw);
+  if (state.view === "pianta" || state.view === "3d") {
+    if (BG.dem && BG.showDem) items.push(`<div class="li"><span class="ramp earth" style="width:40px"></span><span>DEM: ${esc(BG.dem.name)} (${fmtN(BG.dem.zmin, 2)}–${fmtN(BG.dem.zmax, 2)})</span></div>`);
+    if (BG.img && BG.showImg) items.push(`<div class="li"><span class="sw" style="background:var(--grid-strong)"></span><span>Sfondo: ${esc(BG.img.name)}</span></div>`);
+  }
   L.innerHTML = items.join("");
 }
 
@@ -1792,7 +1838,7 @@ function renderTabs() {
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === state.tab));
   const P = $("#tabpanel");
   if (!res && state.tab !== "dati") { P.innerHTML = `<p class="hint">I risultati compaiono qui dopo il caricamento dei dati. Puoi anche compilare la tabella nella scheda Dati.</p>`; return; }
-  ({ riassunto: tabSummary, matrix: tabMatrixHarris, dati: tabData, gruppi: tabGroups, palinsesto: (Q, r) => { tabPalimpsest(Q, r); matrixBanner(Q, r); }, collegamenti: tabLinks, matrice: tabMatrix, distanze: tabDist, fasi: tabPhases, controlli: tabIssues })[state.tab](P, res);
+  ({ riassunto: tabSummary, matrix: tabMatrixHarris, grafi: tabSemantic, dati: tabData, gruppi: tabGroups, palinsesto: (Q, r) => { tabPalimpsest(Q, r); matrixBanner(Q, r); }, collegamenti: tabLinks, matrice: tabMatrix, distanze: tabDist, fasi: tabPhases, controlli: tabIssues })[state.tab](P, res);
 }
 document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => { state.tab = b.dataset.tab; renderTabs(); }));
 
@@ -2209,6 +2255,379 @@ $("#mxFile").addEventListener("change", e => { const f = e.target.files[0]; if (
 $("#mxDemo").addEventListener("click", () => { loadMatrixText(DEMO_MATRIX, "matrix_esempio.csv"); state.tab = "matrix"; renderTabs(); });
 $("#mxDel").addEventListener("click", () => { setMatrix(null); renderTabs(); toast("Matrix rimosso."); });
 $("#mxTpl").addEventListener("click", () => deliver({ name: "modello_matrix.csv", data: DEMO_MATRIX, keepName: true }));
+/* ---------- sfondo: immagine georeferenziata e DEM ---------- */
+const BG = { img: null, dem: null, alpha: 0.75, showImg: true, showDem: true };
+let GTLIB = null;
+async function geotiffLib() {
+  if (!GTLIB) {
+    try { GTLIB = await import("https://cdn.jsdelivr.net/npm/geotiff@2.1.3/+esm"); }
+    catch { throw new Error("per leggere i GeoTIFF serve la connessione a internet la prima volta (libreria geotiff.js)"); }
+  }
+  return GTLIB;
+}
+const fitSize = (w, h, max) => { const k = Math.min(1, max / Math.max(w, h)); return [Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k))]; };
+async function readGeoTiff(file) {
+  const lib = await geotiffLib(), tiff = await lib.fromArrayBuffer(await file.arrayBuffer()), im = await tiff.getImage();
+  let bb; try { bb = im.getBoundingBox(); } catch { throw new Error("il GeoTIFF non contiene la georeferenziazione"); }
+  if (!bb || bb.some(v => !Number.isFinite(v)) || bb[2] <= bb[0] || bb[3] <= bb[1]) throw new Error("il GeoTIFF non contiene una georeferenziazione valida");
+  return { im, bb };
+}
+function canvasData(L) { if (!L.data) L.data = L.canvas.getContext("2d").getImageData(0, 0, L.canvas.width, L.canvas.height).data; return L.data; }
+function sampleColor(L, x, y) {
+  const [x0, y0, x1, y1] = L.ext, W = L.canvas.width, H = L.canvas.height;
+  const c = Math.floor((x - x0) / (x1 - x0) * W), r = Math.floor((y1 - y) / (y1 - y0) * H);
+  if (c < 0 || r < 0 || c >= W || r >= H) return null;
+  const d = canvasData(L), i = (r * W + c) * 4;
+  return d[i + 3] < 10 ? null : `rgb(${d[i]},${d[i + 1]},${d[i + 2]})`;
+}
+async function loadBgImage(files) {
+  const list = [...files], ras = list.find(f => /\.(tiff?|png|jpe?g)$/i.test(f.name));
+  if (!ras) { toast("Scegli un'immagine: GeoTIFF, oppure PNG o JPG insieme al suo world file."); return; }
+  let canvas, ext;
+  if (/\.tiff?$/i.test(ras.name)) {
+    const { im, bb } = await readGeoTiff(ras), [w, h] = fitSize(im.getWidth(), im.getHeight(), 2048), spp = im.getSamplesPerPixel();
+    canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+    const cx = canvas.getContext("2d"), id = cx.createImageData(w, h), px = id.data;
+    if (spp >= 3) {
+      const rgb = await im.readRGB({ interleave: true, width: w, height: h }), bps = (im.fileDirectory.BitsPerSample || [8])[0], k = bps > 8 ? 255 / (2 ** bps - 1) : 1;
+      for (let i = 0; i < w * h; i++) { px[4 * i] = rgb[3 * i] * k; px[4 * i + 1] = rgb[3 * i + 1] * k; px[4 * i + 2] = rgb[3 * i + 2] * k; px[4 * i + 3] = 255; }
+    } else {
+      const r = await im.readRasters({ samples: [0], width: w, height: h, interleave: true }), nd = im.getGDALNoData();
+      let lo = Infinity, hi = -Infinity; for (const v of r) if (Number.isFinite(v) && v !== nd) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+      for (let i = 0; i < w * h; i++) { const v = r[i], ok = Number.isFinite(v) && v !== nd, g = ok ? 255 * (v - lo) / ((hi - lo) || 1) : 0; px[4 * i] = px[4 * i + 1] = px[4 * i + 2] = g; px[4 * i + 3] = ok ? 255 : 0; }
+    }
+    cx.putImageData(id, 0, 0); ext = bb;
+  } else {
+    const base = ras.name.replace(/\.[^.]+$/, "").toLowerCase();
+    const wfs = list.filter(f => /\.(pgw|pngw|jgw|jpgw|jpw|wld)$/i.test(f.name));
+    const wf = wfs.find(f => f.name.replace(/\.[^.]+$/, "").toLowerCase() === base) || wfs[0];
+    if (!wf) { toast(`Per ${ras.name} serve anche il world file (${/png$/i.test(ras.name) ? ".pgw" : ".jgw"} oppure .wld): selezionali insieme.`); return; }
+    const v = (await wf.text()).trim().split(/\s+/).map(Number);
+    if (v.length < 6 || v.slice(0, 6).some(n => !Number.isFinite(n)) || !v[0] || !v[3]) { toast(`Il world file ${wf.name} non è valido: servono sei numeri.`); return; }
+    const [A, D, B, E, C, F] = v, bmp = await createImageBitmap(ras), [w, h] = fitSize(bmp.width, bmp.height, 2048);
+    canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h; canvas.getContext("2d").drawImage(bmp, 0, 0, w, h);
+    const x0 = C - A / 2, yTop = F - E / 2, xa = x0 + A * bmp.width, yb = yTop + E * bmp.height;
+    ext = [Math.min(x0, xa), Math.min(yTop, yb), Math.max(x0, xa), Math.max(yTop, yb)];
+    if (B || D) toast("Il world file contiene una rotazione: l'immagine viene mostrata senza ruotarla.");
+  }
+  BG.img = { canvas, ext, name: ras.name }; BG.showImg = true; afterBg();
+}
+function makeDem(w, h, z, ext, name, nodataNote) {
+  let zmin = Infinity, zmax = -Infinity; for (const v of z) if (Number.isFinite(v)) { zmin = Math.min(zmin, v); zmax = Math.max(zmax, v); }
+  if (!Number.isFinite(zmin)) throw new Error("il DEM non contiene quote valide");
+  const D = { w, h, z, ext, zmin, zmax, name };
+  // ombreggiatura (sole da nord-ovest, 45°) e colori per quota
+  const dx = (ext[2] - ext[0]) / w, dy = (ext[3] - ext[1]) / h, rel = zmax - zmin || 1, zf = Math.min(25, Math.max(1, 0.15 * Math.max(ext[2] - ext[0], ext[3] - ext[1]) / rel));
+  const ramp = [1, 2, 3, 4, 5, 6, 7].map(i => hexRgb(css("--l" + i))).reverse();
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const cx = cv.getContext("2d"), id = cx.createImageData(w, h), px = id.data, at = (r, c) => z[Math.min(h - 1, Math.max(0, r)) * w + Math.min(w - 1, Math.max(0, c))];
+  const az = 315 * Math.PI / 180, zen = 45 * Math.PI / 180;
+  for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) {
+    const v = z[r * w + c], i = (r * w + c) * 4;
+    if (!Number.isFinite(v)) { px[i + 3] = 0; continue; }
+    const g = (a, b) => Number.isFinite(a) && Number.isFinite(b) ? a - b : 0;
+    const dzdx = g(at(r, c + 1), at(r, c - 1)) / (2 * dx) * zf, dzdy = g(at(r - 1, c), at(r + 1, c)) / (2 * dy) * zf;
+    const slope = Math.atan(Math.hypot(dzdx, dzdy)), aspect = Math.atan2(dzdy, -dzdx);
+    const hs = Math.max(0, Math.cos(zen) * Math.cos(slope) + Math.sin(zen) * Math.sin(slope) * Math.cos(az - Math.PI / 2 - aspect));
+    const t = (v - zmin) / rel * 6, lo = Math.min(5, Math.floor(t)), f = t - lo, col = ramp[lo].map((u, k) => u + (ramp[lo + 1][k] - u) * f), s = 0.45 + 0.75 * hs;
+    px[i] = Math.min(255, col[0] * s); px[i + 1] = Math.min(255, col[1] * s); px[i + 2] = Math.min(255, col[2] * s); px[i + 3] = 255;
+  }
+  cx.putImageData(id, 0, 0); D.canvas = cv;
+  return D;
+}
+async function loadDem(file) {
+  const { im, bb } = await readGeoTiff(file), [w, h] = fitSize(im.getWidth(), im.getHeight(), 800);
+  const r = await im.readRasters({ samples: [0], width: w, height: h, interleave: true, resampleMethod: "bilinear" }), nd = im.getGDALNoData();
+  const z = Float32Array.from(r, v => !Number.isFinite(v) || (nd !== null && Math.abs(v - nd) < 1e-6) || Math.abs(v) > 1e7 ? NaN : v);
+  BG.dem = makeDem(w, h, z, bb, file.name); BG.showDem = true; afterBg();
+}
+function demAt(D, x, y) {
+  const [x0, y0, x1, y1] = D.ext, fx = (x - x0) / (x1 - x0) * D.w - 0.5, fy = (y1 - y) / (y1 - y0) * D.h - 0.5;
+  if (fx < -0.5 || fy < -0.5 || fx > D.w - 0.5 || fy > D.h - 0.5) return NaN;
+  const c0 = Math.max(0, Math.min(D.w - 2, Math.floor(fx))), r0 = Math.max(0, Math.min(D.h - 2, Math.floor(fy))), tx = Math.min(1, Math.max(0, fx - c0)), ty = Math.min(1, Math.max(0, fy - r0));
+  const q = (r, c) => D.z[r * D.w + c], a = q(r0, c0), b = q(r0, c0 + 1), c = q(r0 + 1, c0), d = q(r0 + 1, c0 + 1);
+  if (![a, b, c, d].every(Number.isFinite)) { const n = [a, b, c, d].filter(Number.isFinite); return n.length ? n[Math.round(tx) + 2 * Math.round(ty)] ?? n[0] : NaN; }
+  return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
+}
+function drawBg2D() {
+  if (state.view !== "pianta") return;
+  for (const [L, on] of [[BG.dem, BG.showDem], [BG.img, BG.showImg]]) {
+    if (!L || !on) continue;
+    const p0 = toS([L.ext[0], L.ext[3]]), p1 = toS([L.ext[2], L.ext[1]]);
+    ctx.globalAlpha = BG.alpha; ctx.imageSmoothingEnabled = true; ctx.drawImage(L.canvas, p0[0], p0[1], p1[0] - p0[0], p1[1] - p0[1]); ctx.globalAlpha = 1;
+  }
+}
+function drawBg3D(P, b) {
+  const D = BG.showDem && BG.dem, I = BG.showImg && BG.img;
+  if (!D && !I) return;
+  const ext = D ? D.ext : I.ext;
+  const x0 = Math.max(b.x0, ext[0]), x1 = Math.min(b.x1, ext[2]), y0 = Math.max(b.y0, ext[1]), y1 = Math.min(b.y1, ext[3]);
+  if (x1 <= x0 || y1 <= y0) return;
+  const nx = 64, ny = Math.max(2, Math.min(96, Math.round(nx * (y1 - y0) / (x1 - x0)))), ex = state.exag;
+  const gx = i => x0 + (x1 - x0) * i / nx, gy = j => y0 + (y1 - y0) * j / ny;
+  const Z = []; for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) { const z = D ? demAt(D, gx(i), gy(j)) : b.z0 / ex; Z.push(Number.isFinite(z) ? z * ex : NaN); }
+  const quads = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const k = j * (nx + 1) + i, zs = [Z[k], Z[k + 1], Z[k + nx + 2], Z[k + nx + 1]];
+    if (!zs.every(Number.isFinite)) continue;
+    const pts = [P([gx(i), gy(j), zs[0]]), P([gx(i + 1), gy(j), zs[1]]), P([gx(i + 1), gy(j + 1), zs[2]]), P([gx(i), gy(j + 1), zs[3]])];
+    const cxw = (gx(i) + gx(i + 1)) / 2, cyw = (gy(j) + gy(j + 1)) / 2;
+    const col = (I && sampleColor(I, cxw, cyw)) || (D && sampleColor(D, cxw, cyw));
+    if (!col) continue;
+    quads.push({ pts, col, d: (pts[0][2] + pts[1][2] + pts[2][2] + pts[3][2]) / 4 });
+  }
+  quads.sort((a, c) => a.d - c.d);
+  ctx.globalAlpha = BG.alpha; ctx.lineWidth = 0.6;
+  for (const q of quads) { ctx.fillStyle = q.col; ctx.strokeStyle = q.col; ctx.beginPath(); q.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+}
+/* sfondo sintetico per l'esempio: un DEM della superficie e una "ortofoto" disegnata */
+function demoBackground() {
+  const ext = [99.6, 497.4, 105.0, 500.8], w = 270, h = 170, dx = (ext[2] - ext[0]) / w, dy = (ext[3] - ext[1]) / h, rnd = mulberry32(7);
+  const zf = (x, y) => 79.62 - 0.035 * (x - 100) + 0.025 * (y - 498) + 0.012 * Math.sin(x * 3.1) * Math.cos(y * 2.3) - 0.07 * Math.exp(-((x - 102.6) ** 2 + (y - 498.9) ** 2) / 0.12);
+  const z = new Float32Array(w * h); for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) z[r * w + c] = zf(ext[0] + (c + .5) * dx, ext[3] - (r + .5) * dy);
+  BG.dem = makeDem(w, h, z, ext, "DEM dell'esempio (sintetico)");
+  const cv = document.createElement("canvas"); cv.width = 1080; cv.height = 680; const g = cv.getContext("2d"), sx = cv.width / (ext[2] - ext[0]), sy = cv.height / (ext[3] - ext[1]);
+  const X = x => (x - ext[0]) * sx, Y = y => (ext[3] - y) * sy;
+  for (let r = 0; r < cv.height; r += 4) for (let c = 0; c < cv.width; c += 4) { const t = rnd(); g.fillStyle = `rgb(${150 + 30 * t | 0},${118 + 24 * t | 0},${84 + 18 * t | 0})`; g.fillRect(c, r, 4, 4); }
+  g.fillStyle = "rgba(90,62,40,.35)"; g.beginPath(); g.ellipse(X(102.6), Y(498.9), 0.55 * sx, 0.45 * sy, 0.3, 0, 7); g.fill();
+  for (let k = 0; k < 140; k++) { const x = ext[0] + rnd() * (ext[2] - ext[0]), y = ext[1] + rnd() * (ext[3] - ext[1]), s = 3 + rnd() * 9, t = 140 + rnd() * 60; g.fillStyle = `rgb(${t | 0},${t | 0},${t - 10 | 0})`; g.beginPath(); g.ellipse(X(x), Y(y), s, s * (0.5 + rnd() * .5), rnd() * 3, 0, 7); g.fill(); }
+  g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = 2;
+  for (let x = Math.ceil(ext[0]); x <= ext[2]; x++) { g.beginPath(); g.moveTo(X(x), 0); g.lineTo(X(x), cv.height); g.stroke(); }
+  for (let y = Math.ceil(ext[1]); y <= ext[3]; y++) { g.beginPath(); g.moveTo(0, Y(y)); g.lineTo(cv.width, Y(y)); g.stroke(); }
+  BG.img = { canvas: cv, ext, name: "ortofoto dell'esempio (sintetica)" };
+  BG.showImg = BG.showDem = true; afterBg();
+}
+function bgProblems() {
+  const out = [], res = state.res; if (!res || !res.frags.size) return out;
+  const fs = [...res.frags.values()], xs = fs.map(f => f.x), ys = fs.map(f => f.y), zs = fs.map(f => f.z).filter(z => z !== null);
+  const fx0 = Math.min(...xs), fx1 = Math.max(...xs), fy0 = Math.min(...ys), fy1 = Math.max(...ys);
+  for (const [L, nome] of [[BG.img, "L'immagine"], [BG.dem, "Il DEM"]]) {
+    if (!L) continue;
+    const [x0, y0, x1, y1] = L.ext;
+    if (x1 < fx0 || x0 > fx1 || y1 < fy0 || y0 > fy1) out.push(`${nome} non si sovrappone ai frammenti: controlla che usi lo stesso sistema di coordinate (est ${fmtN(x0, 1)}–${fmtN(x1, 1)}, nord ${fmtN(y0, 1)}–${fmtN(y1, 1)}).`);
+  }
+  if (BG.dem && zs.length) { const z0 = Math.min(...zs), z1 = Math.max(...zs); if (BG.dem.zmax < z0 - 3 || BG.dem.zmin > z1 + 3) out.push(`Le quote del DEM (${fmtN(BG.dem.zmin, 2)}–${fmtN(BG.dem.zmax, 2)}) sono lontane da quelle dei frammenti (${fmtN(z0, 2)}–${fmtN(z1, 2)}): forse usano un riferimento diverso.`); }
+  return out;
+}
+function renderBgPanel() {
+  const any = BG.img || BG.dem, h = $("#bgHint");
+  $("#bgCount").textContent = [BG.img && "immagine", BG.dem && "DEM"].filter(Boolean).join(" + ");
+  $("#bgDel").hidden = !any; $("#bgOpts").hidden = !any; $("#bgDemo").hidden = !state.demo;
+  $("#bgShowImg").checked = BG.showImg; $("#bgShowImg").disabled = !BG.img; $("#bgShowDem").checked = BG.showDem; $("#bgShowDem").disabled = !BG.dem;
+  if (!any) { h.textContent = "Facoltativo. Immagine: GeoTIFF, oppure PNG/JPG con world file (.pgw/.jgw/.wld). DEM: GeoTIFF. Stesso sistema di coordinate dei frammenti. Si vede in pianta e nel 3D."; return; }
+  const pr = bgProblems(), parts = [];
+  if (BG.img) parts.push(`Immagine: ${BG.img.name}.`);
+  if (BG.dem) parts.push(`DEM: ${BG.dem.name}, quote ${fmtN(BG.dem.zmin, 2)}–${fmtN(BG.dem.zmax, 2)}.`);
+  h.textContent = parts.join(" ") + (pr.length ? " " + pr.join(" ") : "") + " Lo sfondo non si salva nel progetto: va ricaricato.";
+  h.classList.toggle("rwarn", pr.length > 0);
+}
+function afterBg() { renderBgPanel(); renderLegend(); draw(); }
+async function bgGuard(fn) { const b = $("#bgBusy"); b.hidden = false; try { await fn(); } catch (e) { toast(`Sfondo non caricato: ${e.message}`); } finally { b.hidden = true; } }
+$("#bgImgFile").addEventListener("change", e => { const fs = e.target.files; if (fs.length) bgGuard(() => loadBgImage(fs)); e.target.value = ""; });
+$("#bgDemFile").addEventListener("change", e => { const f = e.target.files[0]; if (f) bgGuard(() => loadDem(f)); e.target.value = ""; });
+$("#bgDemo").addEventListener("click", () => demoBackground());
+$("#bgAlpha").addEventListener("input", e => { BG.alpha = +e.target.value; draw(); });
+$("#bgShowImg").addEventListener("change", e => { BG.showImg = e.target.checked; afterBg(); });
+$("#bgShowDem").addEventListener("change", e => { BG.showDem = e.target.checked; afterBg(); });
+$("#bgDel").addEventListener("click", () => { BG.img = BG.dem = null; afterBg(); toast("Sfondo rimosso."); });
+/* ---------- grafi semantici: vasi (ceramica) e nuclei (litica) ---------- */
+// Il supernodo non sposta i frammenti: ogni pezzo resta nella sua x, y, z di rinvenimento.
+function parseCortex(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim().toLowerCase().replace("%", "");
+  if (!s) return null;
+  const n = toFloat(s);
+  if (n !== null) return Math.max(0, Math.min(100, n <= 1 && /\./.test(s) ? n * 100 : n));
+  if (/^(no|assente|0|non corticale|acorticale)$/.test(s)) return 0;
+  if (/total|intera|piena|^s[iì]$|^corticale$/.test(s)) return 100;
+  if (/semi|parz|residu|marg/.test(s)) return 50;
+  return null;
+}
+const isCoreCat = c => !!c && /nucle|core/i.test(c);
+const LITHIC_COL = [[/cortic/i, /semi|parz/i, "--c4"], [/cortic/i, null, "--c2"], [/lamell|bladelet/i, null, "--c7"], [/lama|blade/i, null, "--c1"],
+  [/ritocc|strument|tool|grattat|bulin|punta/i, null, "--c8"], [/scheg|flake|eclat/i, null, "--c3"], [/debris|scaglia|chip|frammento/i, null, "--other"]];
+function lithicColor(cat) {
+  if (!cat) return css("--other");
+  for (const [a, b, v] of LITHIC_COL) if (a.test(cat) && (!b || b.test(cat))) return css(v);
+  const extra = ["--c5", "--c6"], k = [...cat].reduce((s, c) => s + c.charCodeAt(0), 0);
+  return css(extra[k % extra.length]);
+}
+function centroid(m) {
+  const zs = m.filter(f => f.z !== null).map(f => f.z);
+  return { x: mean(m.map(f => f.x)), y: mean(m.map(f => f.y)), z: zs.length ? mean(zs) : null };
+}
+const d3of = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, (a.z !== null && b.z !== null) ? a.z - b.z : 0);
+
+function vesselGraphs(res) {
+  const by = new Map();
+  for (const f of res.frags.values()) if (f.vessel && !/^\?+$/.test(f.vessel)) { if (!by.has(f.vessel)) by.set(f.vessel, []); by.get(f.vessel).push(f); }
+  return [...by].filter(([, m]) => m.length >= 2).map(([v, m]) => {
+    const c = centroid(m), zs = m.filter(f => f.z !== null).map(f => f.z);
+    const groups = new Set(m.map(f => res.clusterOf.get(f.id)).filter(Boolean));
+    return { v, m, c, groups: groups.size, loose: m.filter(f => !res.clusterOf.has(f.id)).length,
+      us: [...new Set(m.map(f => usKey(f.us)).filter(Boolean))].sort(natCmp),
+      spread: Math.max(...m.map(f => Math.hypot(f.x - c.x, f.y - c.y))), dz: zs.length > 1 ? Math.max(...zs) - Math.min(...zs) : null };
+  }).sort((a, b) => natCmp(a.v, b.v));
+}
+
+function coreGraphs(res) {
+  if (!state.map.nucleo) return [];
+  const by = new Map();
+  for (const f of res.frags.values()) if (f.nucleo) { if (!by.has(f.nucleo)) by.set(f.nucleo, []); by.get(f.nucleo).push(f); }
+  const out = [];
+  for (const [n, m] of by) {
+    const core = m.find(f => isCoreCat(f.cat)) || m.find(f => f.id === n) || null;
+    const prods = m.filter(f => f !== core);
+    const hasOrd = prods.some(f => f.ord !== null), hasCx = prods.some(f => f.cortex !== null);
+    // dal nucleo verso l'esterno: ultimo stacco vicino al nucleo, primi stacchi (corticali) per ultimi
+    const key = f => hasOrd ? f.ord : hasCx ? (f.cortex === null ? null : -f.cortex) : null;
+    const ranked = prods.filter(f => key(f) !== null).sort((a, b) => key(b) - key(a) || natCmp(a.id, b.id));
+    const free = prods.filter(f => key(f) === null);
+    const levels = [];
+    for (const f of ranked) { const L = levels[levels.length - 1]; if (L && key(L[0]) === key(f)) L.push(f); else levels.push([f]); }
+    const hub = core ? { x: core.x, y: core.y, z: core.z } : centroid(m);
+    const node = f => f || hub;
+    const edges = [];
+    let prev = [core];
+    levels.forEach((L, i) => {
+      for (const f of L) {
+        let best = prev[0], bd = Infinity;
+        for (const p of prev) { const d = d3of(node(p), f); if (d < bd) { bd = d; best = p; } }
+        edges.push({ from: best, to: f, step: i + 1, d: d3of(node(best), f) });
+      }
+      prev = L;
+    });
+    for (const f of free) edges.push({ from: core, to: f, step: null, d: d3of(hub, f), loose: true });
+    const sizes = prods.map(f => f.size).filter(v => v !== null);
+    const late = hasOrd && hasCx ? ranked.filter((f, i) => f.cortex >= 50 && i < ranked.length / 2) : [];
+    const otherCore = prods.filter(f => f.refits.some(r => { const g = res.frags.get(r); return g && g.nucleo && g.nucleo !== n; }));
+    out.push({ n, core, hub, prods, levels, free, edges, hasOrd, hasCx, late, otherCore,
+      smin: sizes.length ? Math.min(...sizes) : null, smax: sizes.length ? Math.max(...sizes) : null });
+  }
+  return out.sort((a, b) => natCmp(a.n, b.n));
+}
+function edgeWidth(G, f) {
+  if (f.size === null || G.smin === null) return 2.2;
+  const t = G.smax > G.smin ? (Math.sqrt(f.size) - Math.sqrt(G.smin)) / (Math.sqrt(G.smax) - Math.sqrt(G.smin)) : .5;
+  return 1.4 + t * 6;
+}
+const semCache = { res: null, v: null, c: null };
+function semGraphs() {
+  const res = state.res;
+  if (semCache.res !== res) { semCache.res = res; semCache.v = vesselGraphs(res); semCache.c = coreGraphs(res); }
+  return { vessels: semCache.v, cores: semCache.c };
+}
+
+/* disegno sulla mappa: pos(punto) → [sx, sy] o null; vale per pianta, proiezioni e 3D */
+function drawSemantic(pos, alphaOf, pass) {
+  if (!state.res) return;
+  const { vessels, cores } = semGraphs(), surf = css("--surface"), ink = css("--ink");
+  const diamond = (p, r) => { ctx.beginPath(); ctx.moveTo(p[0], p[1] - r); ctx.lineTo(p[0] + r, p[1]); ctx.lineTo(p[0], p[1] + r); ctx.lineTo(p[0] - r, p[1]); ctx.closePath(); };
+  const label = (t, x, y, col) => { ctx.font = `600 11.5px ${css("--f-display")}`; ctx.lineWidth = 3; ctx.strokeStyle = surf; ctx.strokeText(t, x, y); ctx.fillStyle = col; ctx.fillText(t, x, y); };
+  ctx.lineCap = "round"; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  if (state.show.vessels) for (const V of vessels) {
+    const c = pos(V.c); if (!c) continue;
+    const col = state.colorBy === "vaso" ? colorCache.vessel(V.v) : css("--ink-2"), a = alphaOf(V.m.map(f => f.id));
+    if (pass === "edges") {
+      ctx.strokeStyle = col; ctx.lineWidth = 1.3; ctx.setLineDash([1.5, 3]); ctx.globalAlpha = .9 * a;
+      for (const f of V.m) { const p = pos(f); if (!p) continue; ctx.beginPath(); ctx.moveTo(c[0], c[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); }
+      ctx.setLineDash([]);
+    } else {
+      ctx.globalAlpha = a; diamond(c, 7); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = surf; ctx.stroke();
+      label("V" + V.v.replace(/^v/i, ""), c[0] + 9, c[1] - 8, col);
+    }
+  }
+  if (state.show.cores) for (const G of cores) {
+    const h = pos(G.hub); if (!h) continue;
+    const a = alphaOf(G.prods.map(f => f.id).concat(G.core ? [G.core.id] : []));
+    if (pass === "edges") {
+      for (const e of G.edges) {
+        const p = e.from ? pos(e.from) : h, q = pos(e.to); if (!p || !q) continue;
+        ctx.globalAlpha = .85 * a; ctx.strokeStyle = lithicColor(e.to.cat); ctx.lineWidth = edgeWidth(G, e.to);
+        if (e.loose) ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); ctx.setLineDash([]);
+      }
+    } else {
+      ctx.globalAlpha = a;
+      for (const e of G.edges) if (e.step !== null && G.hasOrd) { const q = pos(e.to); if (q) { ctx.font = `600 9.5px ${css("--f-mono")}`; ctx.lineWidth = 3; ctx.strokeStyle = surf; ctx.strokeText(fmtN(e.to.ord, 0), q[0] - 4, q[1] + 11); ctx.fillStyle = ink; ctx.fillText(fmtN(e.to.ord, 0), q[0] - 4, q[1] + 11); } }
+      ctx.beginPath(); ctx.arc(h[0], h[1], 9, 0, Math.PI * 2); ctx.fillStyle = css("--l5"); ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = surf; ctx.stroke();
+      ctx.beginPath(); ctx.arc(h[0], h[1], 12.5, 0, Math.PI * 2); ctx.lineWidth = 1.5; ctx.strokeStyle = css("--l5"); ctx.stroke();
+      label("Nucleo " + G.n + (G.core ? "" : " (baricentro)"), h[0] + 15, h[1] - 10, ink);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function semLegend(items, sw) {
+  if (!state.res) return;
+  const { vessels, cores } = semGraphs();
+  if (state.show.vessels && vessels.length) items.push(`<div class="li"><span class="sw" style="background:var(--ink-2);transform:rotate(45deg);border-radius:1px"></span><span>Vaso: supernodo nel baricentro dei suoi frammenti</span></div>`);
+  if (state.show.cores && cores.length) {
+    items.push(`<div class="li"><span class="sw" style="background:var(--l5);border-radius:50%"></span><span>Nucleo; catena dall'ultimo stacco al primo</span></div>`);
+    const cats = new Map(); for (const G of cores) for (const f of G.prods) if (f.cat) cats.set(f.cat, lithicColor(f.cat));
+    for (const [c, col] of [...cats].sort((a, b) => natCmp(a[0], b[0]))) items.push(`<div class="li"><span class="ln" style="border-top:4px solid ${col}"></span><span>${esc(c)}</span></div>`);
+    if (cores.some(G => G.smin !== null)) items.push(`<div class="li"><span class="ln" style="border-top-width:1px;width:10px"></span><span class="ln" style="border-top-width:6px;width:12px"></span><span>Spessore = misura (${esc(state.map.misura)})</span></div>`);
+  }
+}
+
+/* scheda Vasi e nuclei */
+function coreSVG(G) {
+  const R = 30, STEP = 96, TOP = 46, cols = [[G.core], ...G.levels];
+  if (G.free.length) cols.push(G.free);
+  const rows = Math.max(...cols.map(c => c.length));
+  const W = 70 + (cols.length - 1) * STEP + 90, H = TOP + rows * 64 + 30;
+  const pos = new Map(), mid = TOP + (rows * 64) / 2 - 32;
+  cols.forEach((c, i) => c.forEach((f, j) => pos.set(f || "core", [50 + i * STEP, mid + (j - (c.length - 1) / 2) * 64 + 16])));
+  const P = f => pos.get(f || "core");
+  const cxFill = v => v === null ? "var(--surface-2)" : `color-mix(in srgb, var(--l5) ${Math.round(v)}%, var(--surface))`;
+  let e = "", n = "";
+  for (const ed of G.edges) {
+    const a = P(ed.from), b = P(ed.to);
+    e += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${lithicColor(ed.to.cat)}" stroke-width="${edgeWidth(G, ed.to).toFixed(1)}" stroke-linecap="round"${ed.loose ? ' stroke-dasharray="4 4"' : ""}><title>${esc(ed.to.id)} · ${esc(ed.to.cat || "categoria non indicata")}${ed.to.size !== null ? " · " + esc(state.map.misura) + " " + fmtN(ed.to.size, 1) : ""} · distanza reale ${fmtLen(ed.d)}</title></line>`;
+  }
+  const c = P(G.core);
+  n += `<g><circle cx="${c[0]}" cy="${c[1]}" r="${R * .62}" fill="var(--l5)" stroke="var(--surface)" stroke-width="2.5"/><circle cx="${c[0]}" cy="${c[1]}" r="${R * .62 + 4}" fill="none" stroke="var(--l5)" stroke-width="1.5"/><text x="${c[0]}" y="${c[1] + R * .62 + 18}" class="mxl">${esc(G.core ? G.core.id : "—")}</text><text x="${c[0]}" y="${c[1] - R * .62 - 10}" class="mxs">nucleo</text></g>`;
+  for (const f of G.prods) {
+    const p = P(f); if (!p) continue;
+    n += `<g><circle cx="${p[0]}" cy="${p[1]}" r="13" fill="${cxFill(f.cortex)}" stroke="var(--ink-2)" stroke-width="1.2"/><text x="${p[0]}" y="${p[1] + 4}" class="mxn" style="text-anchor:middle${f.cortex !== null && f.cortex > 55 ? ";fill:var(--surface)" : ""}">${f.ord !== null ? fmtN(f.ord, 0) : "?"}</text><text x="${p[0]}" y="${p[1] + 28}" class="mxs">${esc(f.id)}</text><title>${esc(f.id)}${f.ord !== null ? " · stacco " + fmtN(f.ord, 0) : ""} · ${esc(f.cat || "—")} · cortice ${f.cortex !== null ? fmtN(f.cortex, 0) + "%" : "n.d."}</title></g>`;
+  }
+  const ax = `<text x="50" y="18" class="mxs" style="text-anchor:start">← verso il nucleo: ultimi stacchi</text><text x="${W - 20}" y="18" class="mxs" style="text-anchor:end">primi stacchi, più corticali →</text>`;
+  return `<div class="svgscroll"><svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 900)}px;max-width:${W}px" role="img" aria-label="Sequenza di scheggiatura del nucleo ${esc(G.n)}">${ax}${e}${n}</svg></div>`;
+}
+function tabSemantic(P, res) {
+  const { vessels, cores } = semGraphs();
+  const tbl = (head, rows) => `<div class="tablewrap"><table><thead><tr>${head.map(h => `<th class="${h[1] ? "n" : ""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
+  let h = `<div class="summary"><p>Qui i rimontaggi si leggono a <b>livello semantico</b>: un nodo in più (il <b>supernodo</b>) rappresenta l'oggetto intero, il vaso o il nucleo, e si collega a tutti i suoi pezzi. I frammenti restano nella posizione x, y, z in cui sono stati trovati: il supernodo aggiunge solo un legame di appartenenza. Si attiva sulla mappa dal riquadro <b>Mostra</b>.</p></div>`;
+  h += `<h3 class="sub">Ceramica: il vaso come supernodo</h3>`;
+  if (!state.map.vessel) h += `<p class="hint">Scegli il campo Vaso nel pannello Campi per vedere i vasi come supernodi.</p>`;
+  else if (!vessels.length) h += `<p class="hint">Nessun vaso con almeno due frammenti.</p>`;
+  else {
+    const multi = vessels.filter(V => V.groups > 1 || V.loose);
+    h += `<p class="hint">Il supernodo sta nel baricentro dei frammenti del vaso; i raggi tratteggiati vanno a ogni frammento, anche a quelli che non attaccano. Così si vede tutto il vaso e non solo i pezzi uniti. ${multi.length ? `${multi.length} ${multi.length === 1 ? "vaso ha" : "vasi hanno"} pezzi non ancora riattaccati tra loro (più gruppi o frammenti isolati): sono i candidati per cercare altri attacchi.` : "Tutti i frammenti di ogni vaso sono uniti da attacchi."}</p>`;
+    h += tbl([["Vaso"], ["Frammenti", 1], ["Gruppi di rimontaggio", 1], ["Senza attacchi", 1], ["US"], ["Max dal baricentro", 1], ["Dislivello", 1]],
+      vessels.map(V => `<tr><td class="mono">${esc(V.v)}</td><td class="n">${V.m.length}</td><td class="n">${V.groups}</td><td class="n">${V.loose || ""}</td><td class="mono">${esc(V.us.join(", ") || "—")}</td><td class="n">${fmtLen(V.spread)}</td><td class="n">${V.dz !== null ? fmtLen(V.dz) : "—"}</td></tr>`));
+  }
+  h += `<h3 class="sub">Litica: il nucleo come supernodo e la sequenza di scheggiatura</h3>`;
+  if (!state.map.nucleo) {
+    h += `<p class="hint">Per la litica scegli nel pannello Campi almeno il campo <b>Nucleo</b> (l'ID del nucleo a cui il pezzo rimonta). Facoltativi: <b>Ordine di stacco</b> (1 = primo pezzo staccato), <b>Categoria del prodotto</b> (scheggia corticale, lama, lamella…; la riga del nucleo ha categoria "nucleo"), <b>Corticalità</b> (percentuale di cortice, o assente / parziale / totale) e <b>Misura</b> (lunghezza o peso). Esempio: <span class="mono">5_litica_nuclei.csv</span> nei dati di esempio.</p>`;
+  } else if (!cores.length) h += `<p class="hint">Nessun pezzo ha il campo Nucleo compilato.</p>`;
+  else {
+    h += `<p class="hint">Ogni catena parte dal nucleo e va all'indietro nella scheggiatura: prima l'ultimo pezzo staccato, poi i precedenti, fino ai primi stacchi, che sono i più corticali e stanno all'esterno. ${cores.some(G => !G.hasOrd) ? "Dove manca l'ordine di stacco la catena segue la corticalità (meno cortice = più vicino al nucleo). " : ""}Colore dell'arco = categoria del prodotto; spessore = misura${state.map.misura ? ` (${esc(state.map.misura)})` : " (campo non scelto)"}; riempimento del cerchio = cortice (chiaro = assente, scuro = totale). Sulla mappa la stessa catena è disegnata sulle posizioni reali dei pezzi.</p>`;
+    for (const G of cores) {
+      const far = G.edges.filter(e => !e.loose).sort((a, b) => b.d - a.d)[0];
+      const notes = [];
+      if (!G.core) notes.push(`Il nucleo ${esc(G.n)} non è tra i pezzi schedati (nessuna riga con categoria "nucleo" o con ID ${esc(G.n)}): il supernodo è nel baricentro dei prodotti.`);
+      if (G.late.length) notes.push(`Pezzi con molto cortice ma staccati tardi: ${G.late.map(f => `${esc(f.id)} (stacco ${fmtN(f.ord, 0)}, cortice ${fmtN(f.cortex, 0)}%)`).join(", ")}. Può essere cortice residuo su un fianco del nucleo, o un errore nell'ordine.`);
+      if (G.free.length) notes.push(`${G.free.length} ${G.free.length === 1 ? "pezzo" : "pezzi"} senza ordine di stacco, collegati al nucleo con il tratteggio: ${G.free.map(f => esc(f.id)).join(", ")}.`);
+      if (G.otherCore.length) notes.push(`Attacchi verso pezzi di un altro nucleo: ${G.otherCore.map(f => esc(f.id)).join(", ")}. Controllare il campo Nucleo.`);
+      h += `<div class="chart"><h3>Nucleo ${esc(G.n)} · ${G.prods.length} prodotti${G.core && G.core.us ? " · US " + esc(G.core.us) : ""}</h3><p>${far ? `Il passo più lungo della catena sul terreno è ${esc(far.from ? far.from.id : G.n)} → ${esc(far.to.id)}: ${fmtLen(far.d)}.` : ""}</p>${coreSVG(G)}${notes.length ? `<p class="rwarn">${notes.join("<br>")}</p>` : ""}</div>`;
+      h += tbl([["Stacco", 1], ["Pezzo"], ["Categoria"], ["Cortice", 1], ["Misura", 1], ["Dal pezzo prima", 1], ["Dal nucleo", 1], ["Dislivello", 1], ["US"]],
+        G.edges.slice().sort((a, b) => (b.to.ord ?? -1) - (a.to.ord ?? -1)).map(e => { const f = e.to, dz = f.z !== null && G.hub.z !== null ? f.z - G.hub.z : null; return `<tr><td class="n">${f.ord !== null ? fmtN(f.ord, 0) : "—"}</td><td class="mono">${esc(f.id)}</td><td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:${lithicColor(f.cat)}"></span>${esc(f.cat || "—")}</td><td class="n">${f.cortex !== null ? fmtN(f.cortex, 0) + "%" : "—"}</td><td class="n">${f.size !== null ? fmtN(f.size, 1) : "—"}</td><td class="n">${fmtLen(e.d)}</td><td class="n">${fmtLen(d3of(G.hub, f))}</td><td class="n">${dz !== null ? (dz > 0 ? "+" : "") + fmtN(dz * 100, 1) + " cm" : "—"}</td><td class="mono">${esc(f.us || "—")}</td></tr>`; }));
+    }
+  }
+  P.innerHTML = h;
+}
+
 function matrixBanner(P, res) {
   const A = matrixAnalysis(res); if (!A || !A.L) return;
   const pc = n => Math.round(100 * n / A.L) + "%", c = A.cnt;
@@ -2380,6 +2799,8 @@ function draw3D() {
   const alphaOf = ids => (!hl || ids.some(id => hl.has(id)) ? 1 : .14) * (ids.some(inFocus) ? 1 : .2);
   const fs = visibleFrags().filter(f => f.z !== null);
   const S = new Map(fs.map(f => [f.id, P(world(f))]));
+  // sfondo: DEM come superficie, immagine drappeggiata sul DEM o sul piano di base
+  drawBg3D(P, b);
   // stratigrafia ricostruita
   const strataLabels = [];
   const strataOn = state.strataA > 0 && buildStrata(res);
@@ -2412,6 +2833,7 @@ function draw3D() {
     for (const l of res.pert) { const p = S.get(l.a), q = S.get(l.b); if (!p || !q) continue; ctx.globalAlpha = alphaOf([l.a, l.b]); ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); }
     ctx.setLineDash([]);
   }
+  const semPos = f => f.z === null ? null : P(world(f));
   ctx.lineWidth = 2; ctx.lineCap = "round";
   for (const l of res.links) {
     const p = S.get(l.a), q = S.get(l.b); if (!p || !q) continue;
@@ -2420,6 +2842,7 @@ function draw3D() {
     ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
   }
   ctx.globalAlpha = 1;
+  drawSemantic(semPos, alphaOf, "edges");
   // punti, dal più lontano al più vicino
   const order = fs.filter(f => res.clusterOf.has(f.id) || state.show.unlinked || (hl && hl.has(f.id))).sort((a, c) => S.get(a.id)[2] - S.get(c.id)[2]);
   for (const f of order) {
@@ -2439,6 +2862,7 @@ function draw3D() {
     const p = S.get(state.sel.id);
     ctx.beginPath(); ctx.arc(p[0], p[1], 9, 0, Math.PI * 2); ctx.lineWidth = 2.5; ctx.strokeStyle = mark; ctx.stroke();
   }
+  drawSemantic(semPos, alphaOf, "nodes");
   drawStrataLabels(strataLabels);
   // freccia del nord nel piano
   const o = P([cam.c[0], cam.c[1], b.z0]), nq = P([cam.c[0], cam.c[1] + span * 0.1, b.z0]);
@@ -2891,7 +3315,7 @@ document.querySelectorAll("#critSeg button").forEach(b => b.addEventListener("cl
 $("#colorBy").addEventListener("change", e => { state.colorBy = e.target.value; renderLegend(); draw(); });
 $("#optOutliers").addEventListener("change", e => { state.opt.excludeOutliers = e.target.checked; state.sel = null; run(true); });
 $("#optPertGroups").addEventListener("change", e => { state.opt.pertInGroups = e.target.checked; state.sel = null; run(false); });
-for (const [id, k] of [["optHulls", "hulls"], ["optPert", "pert"], ["optUnlinked", "unlinked"], ["optLabels", "labels"], ["optDrop", "drop"]])
+for (const [id, k] of [["optHulls", "hulls"], ["optPert", "pert"], ["optUnlinked", "unlinked"], ["optLabels", "labels"], ["optDrop", "drop"], ["optVessels", "vessels"], ["optCores", "cores"]])
   $("#" + id).addEventListener("change", e => { state.show[k] = e.target.checked; renderLegend(); renderTabs(); draw(); });
 $("#file").addEventListener("change", e => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value = ""; });
 const drop = $("#drop");
@@ -3168,7 +3592,7 @@ $("#newBtn").addEventListener("click", newDataset);
 
 /* ---------- progetti: salvati nel browser, si riprendono o si eliminano ---------- */
 const PROJ_KEY = "rete-rimontaggi.progetti.v1", PROJ_FMT = "rete-rimontaggi-progetto";
-const VIEWS = ["pianta", "eo", "ns", "3d"], TABS = ["riassunto", "gruppi", "collegamenti", "matrice", "distanze", "fasi", "palinsesto", "matrix", "controlli", "dati"];
+const VIEWS = ["pianta", "eo", "ns", "3d"], TABS = ["riassunto", "gruppi", "collegamenti", "matrice", "distanze", "fasi", "palinsesto", "matrix", "grafi", "controlli", "dati"];
 let projMem = null;   // ripiego se l'archivio del browser non è disponibile
 function projAll() {
   if (projMem) return projMem;
@@ -3192,7 +3616,7 @@ function syncControls() {
   $("#optOutliers").checked = state.opt.excludeOutliers; $("#optPertGroups").checked = state.opt.pertInGroups;
   $("#wXY").value = String(state.phOpt.wXY); $("#wZ").value = String(state.phOpt.wZ); $("#wUS").value = String(state.phOpt.wUS);
   $("#kSel").value = String(state.phOpt.k); $("#optConstr").checked = state.phOpt.constrained;
-  for (const [id, k] of [["optHulls", "hulls"], ["optPert", "pert"], ["optUnlinked", "unlinked"], ["optLabels", "labels"], ["optDrop", "drop"]]) $("#" + id).checked = state.show[k];
+  for (const [id, k] of [["optHulls", "hulls"], ["optPert", "pert"], ["optUnlinked", "unlinked"], ["optLabels", "labels"], ["optDrop", "drop"], ["optVessels", "vessels"], ["optCores", "cores"]]) $("#" + id).checked = state.show[k];
   $("#colorBy").value = state.colorBy; $("#exag").value = String(state.exag); $("#strataA").value = state.strataA;
 }
 function projOpen(p) {

@@ -1,0 +1,509 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     502.778,
+     202.343,
+     45.307
+    ]
+   },
+   "properties": {
+    "RR": "2001",
+    "US": "12",
+    "_Attacca_con": "2002",
+    "nucleo": "N1",
+    "ordine": "1",
+    "categoria": "scheggia corticale",
+    "cortice": "100",
+    "lunghezza_mm": "68"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     501.339,
+     202.256,
+     45.306
+    ]
+   },
+   "properties": {
+    "RR": "2002",
+    "US": "12",
+    "_Attacca_con": "2003",
+    "nucleo": "N1",
+    "ordine": "2",
+    "categoria": "scheggia corticale",
+    "cortice": "90",
+    "lunghezza_mm": "61"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     501.144,
+     201.355,
+     45.322
+    ]
+   },
+   "properties": {
+    "RR": "2003",
+    "US": "12",
+    "_Attacca_con": "2004",
+    "nucleo": "N1",
+    "ordine": "3",
+    "categoria": "scheggia corticale",
+    "cortice": "80",
+    "lunghezza_mm": "57"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     502.85,
+     201.881,
+     45.313
+    ]
+   },
+   "properties": {
+    "RR": "2004",
+    "US": "12",
+    "_Attacca_con": "2005",
+    "nucleo": "N1",
+    "ordine": "4",
+    "categoria": "scheggia semicorticale",
+    "cortice": "50",
+    "lunghezza_mm": "52"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     502.523,
+     200.594,
+     45.316
+    ]
+   },
+   "properties": {
+    "RR": "2005",
+    "US": "12",
+    "_Attacca_con": "2006",
+    "nucleo": "N1",
+    "ordine": "5",
+    "categoria": "scheggia semicorticale",
+    "cortice": "40",
+    "lunghezza_mm": "49"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     502.944,
+     201.112,
+     45.316
+    ]
+   },
+   "properties": {
+    "RR": "2006",
+    "US": "12",
+    "_Attacca_con": "2007",
+    "nucleo": "N1",
+    "ordine": "6",
+    "categoria": "lama",
+    "cortice": "10",
+    "lunghezza_mm": "74"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     501.455,
+     201.889,
+     45.314
+    ]
+   },
+   "properties": {
+    "RR": "2007",
+    "US": "12",
+    "_Attacca_con": "2008",
+    "nucleo": "N1",
+    "ordine": "7",
+    "categoria": "lama",
+    "cortice": "0",
+    "lunghezza_mm": "71"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     501.9,
+     202.186,
+     45.309
+    ]
+   },
+   "properties": {
+    "RR": "2008",
+    "US": "12",
+    "_Attacca_con": "2009",
+    "nucleo": "N1",
+    "ordine": "8",
+    "categoria": "scheggia",
+    "cortice": "0",
+    "lunghezza_mm": "33"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     502.516,
+     201.78,
+     45.302
+    ]
+   },
+   "properties": {
+    "RR": "2009",
+    "US": "12",
+    "_Attacca_con": "2010",
+    "nucleo": "N1",
+    "ordine": "9",
+    "categoria": "lama",
+    "cortice": "0",
+    "lunghezza_mm": "65"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     501.662,
+     201.153,
+     45.331
+    ]
+   },
+   "properties": {
+    "RR": "2010",
+    "US": "12",
+    "_Attacca_con": "2011",
+    "nucleo": "N1",
+    "ordine": "10",
+    "categoria": "ritoccato",
+    "cortice": "0",
+    "lunghezza_mm": "58"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     501.719,
+     201.794,
+     45.306
+    ]
+   },
+   "properties": {
+    "RR": "2011",
+    "US": "12",
+    "_Attacca_con": "2012",
+    "nucleo": "N1",
+    "ordine": "11",
+    "categoria": "lamella",
+    "cortice": "0",
+    "lunghezza_mm": "38"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     502.191,
+     201.721,
+     45.309
+    ]
+   },
+   "properties": {
+    "RR": "2012",
+    "US": "12",
+    "_Attacca_con": "2013",
+    "nucleo": "N1",
+    "ordine": "12",
+    "categoria": "lamella",
+    "cortice": "0",
+    "lunghezza_mm": "34"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     501.723,
+     201.585,
+     45.304
+    ]
+   },
+   "properties": {
+    "RR": "2013",
+    "US": "12",
+    "_Attacca_con": "2014",
+    "nucleo": "N1",
+    "ordine": "13",
+    "categoria": "lamella",
+    "cortice": "0",
+    "lunghezza_mm": "29"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     502.1,
+     201.4,
+     45.31
+    ]
+   },
+   "properties": {
+    "RR": "2014",
+    "US": "12",
+    "_Attacca_con": "",
+    "nucleo": "N1",
+    "ordine": "",
+    "categoria": "nucleo",
+    "cortice": "15",
+    "lunghezza_mm": "46"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     504.242,
+     203.807,
+     45.305
+    ]
+   },
+   "properties": {
+    "RR": "2101",
+    "US": "12",
+    "_Attacca_con": "2102",
+    "nucleo": "N2",
+    "ordine": "1",
+    "categoria": "scheggia corticale",
+    "cortice": "100",
+    "lunghezza_mm": "55"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     504.238,
+     201.61,
+     45.201
+    ]
+   },
+   "properties": {
+    "RR": "2102",
+    "US": "13",
+    "_Attacca_con": "2103",
+    "nucleo": "N2",
+    "ordine": "2",
+    "categoria": "scheggia corticale",
+    "cortice": "85",
+    "lunghezza_mm": "49"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     505.294,
+     202.007,
+     45.216
+    ]
+   },
+   "properties": {
+    "RR": "2103",
+    "US": "13",
+    "_Attacca_con": "2104",
+    "nucleo": "N2",
+    "ordine": "3",
+    "categoria": "scheggia semicorticale",
+    "cortice": "45",
+    "lunghezza_mm": "44"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     504.38,
+     203.606,
+     45.296
+    ]
+   },
+   "properties": {
+    "RR": "2104",
+    "US": "12",
+    "_Attacca_con": "2105",
+    "nucleo": "N2",
+    "ordine": "4",
+    "categoria": "scheggia",
+    "cortice": "10",
+    "lunghezza_mm": "38"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     504.634,
+     201.946,
+     45.289
+    ]
+   },
+   "properties": {
+    "RR": "2105",
+    "US": "12",
+    "_Attacca_con": "2106",
+    "nucleo": "N2",
+    "ordine": "5",
+    "categoria": "scheggia",
+    "cortice": "0",
+    "lunghezza_mm": "35"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     504.013,
+     202.741,
+     45.307
+    ]
+   },
+   "properties": {
+    "RR": "2106",
+    "US": "12",
+    "_Attacca_con": "2107",
+    "nucleo": "N2",
+    "ordine": "6",
+    "categoria": "scheggia",
+    "cortice": "0",
+    "lunghezza_mm": "31"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     504.025,
+     202.416,
+     45.294
+    ]
+   },
+   "properties": {
+    "RR": "2107",
+    "US": "12",
+    "_Attacca_con": "2108",
+    "nucleo": "N2",
+    "ordine": "7",
+    "categoria": "scheggia corticale",
+    "cortice": "60",
+    "lunghezza_mm": "27"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     504.378,
+     203.224,
+     45.285
+    ]
+   },
+   "properties": {
+    "RR": "2108",
+    "US": "12",
+    "_Attacca_con": "2109",
+    "nucleo": "N2",
+    "ordine": "8",
+    "categoria": "ritoccato",
+    "cortice": "0",
+    "lunghezza_mm": "33"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     504.22,
+     202.807,
+     45.275
+    ]
+   },
+   "properties": {
+    "RR": "2109",
+    "US": "12",
+    "_Attacca_con": "2110",
+    "nucleo": "N2",
+    "ordine": "9",
+    "categoria": "scheggia",
+    "cortice": "0",
+    "lunghezza_mm": "22"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     504.6,
+     202.7,
+     45.29
+    ]
+   },
+   "properties": {
+    "RR": "2110",
+    "US": "12",
+    "_Attacca_con": "",
+    "nucleo": "N2",
+    "ordine": "",
+    "categoria": "nucleo",
+    "cortice": "15",
+    "lunghezza_mm": "39"
+   }
+  }
+ ]
+}

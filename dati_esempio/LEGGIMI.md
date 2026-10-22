@@ -1,11 +1,11 @@
 # Dati di esempio per la Rete dei rimontaggi
 
-Tre dataset sintetici, ciascuno in due formati con gli stessi identici dati: `.csv` (colonne est, nord, quota) e `.geojson` (punti con la quota come terza coordinata). Caricati nello strumento danno gli stessi risultati.
+Dataset sintetici; i primi tre sono in due formati con gli stessi identici dati: `.csv` (colonne est, nord, quota) e `.geojson` (punti con la quota come terza coordinata). Caricati nello strumento danno gli stessi risultati.
 
 Colonne: `RR` (ID frammento), `est`, `nord`, `quota`, `US`, `_Attacca_con`, `_pertinente_a`, `_Vaso_ID`.
 I dati sono puliti: nessun avviso nella scheda Controlli. Per mostrare i controlli si usa l'esempio interno allo strumento, che contiene errori messi apposta.
 
-Ogni dataset mostra una configurazione diversa degli attacchi.
+Ogni dataset mostra una delle configurazioni della tabella di lettura (slide 10).
 
 ## 1. Deposito stratificato
 
@@ -64,6 +64,57 @@ Da far notare: qui l'attacco lungo non è un disturbo. Area d'uso e scarico appa
 | Quota con una cifra sbagliata (75.074) | 1067 | Da verificare: 79.074 |
 | Stesso vaso scritto in due modi (V5 e V05) | 1091 | Da verificare: unificare in V05 |
 | Attacco verso un frammento che non esiste (1999) | 1007 | Nessuna correzione automatica: va sistemato a mano nella scheda Dati |
+
+## 5. Litica: due nuclei e le loro sequenze
+
+`5_litica_nuclei` · CSV e GeoJSON · 24 pezzi: 2 nuclei (N1 con 13 prodotti, N2 con 9), US 12 e 13
+
+Colonne in più rispetto alla ceramica:
+
+| Colonna | Che cosa contiene |
+|---|---|
+| `nucleo` | ID del nucleo a cui il pezzo rimonta (N1, N2). Lo ha anche la riga del nucleo stesso |
+| `ordine` | Ordine di stacco: 1 = primo pezzo staccato. Vuoto per il nucleo |
+| `categoria` | scheggia corticale, scheggia semicorticale, scheggia, lama, lamella, ritoccato; `nucleo` per il nucleo |
+| `cortice` | Percentuale di cortice (0-100). Vanno bene anche assente / parziale / totale |
+| `lunghezza_mm` | Misura del pezzo: decide lo spessore degli archi. Può essere anche larghezza o peso |
+
+In `_Attacca_con` ogni prodotto attacca con quello staccato subito dopo, l'ultimo con il nucleo: è la catena del rimontaggio.
+
+| Dove guardare | Che cosa si vede |
+|---|---|
+| Mappa, riquadro Mostra "Nuclei e sequenze di stacco" | Ogni nucleo con la sua catena sulle posizioni reali: vicino al nucleo gli ultimi stacchi (lamelle), all'esterno i primi, corticali |
+| Scheda Vasi e nuclei | Il diagramma della sequenza di ogni nucleo e la tabella con categoria, cortice, misura, distanza e dislivello dal nucleo |
+| Vista 3D | Due schegge di N2 (stacchi 2 e 3) sono scese di 9 cm nella US 13 |
+
+Da far notare: nel nucleo N2 il pezzo 2107 è una scheggia con il 60% di cortice ma è il settimo stacco. Lo strumento lo segnala: può essere cortice rimasto su un fianco del nucleo oppure un errore nell'ordine. I primi stacchi, più corticali, sono anche i più lontani dal nucleo: la decorticazione li ha sparsi su un'area più ampia.
+
+### Il grafo semantico: vasi e nuclei come supernodi
+
+Il supernodo è un nodo in più che rappresenta l'oggetto intero e si collega a tutti i suoi pezzi. I frammenti restano dove sono stati trovati (x, y, z); il supernodo non sposta nulla.
+
+- **Ceramica** (campo Vaso): il vaso è un rombo nel baricentro dei suoi frammenti, con raggi tratteggiati verso ciascuno. Con l'esempio interno si attiva dal riquadro Mostra, "Vasi come supernodi"; conviene togliere "Inviluppi dei gruppi".
+- **Litica** (campo Nucleo, più ordine, categoria, cortice e misura se ci sono): il nucleo è il supernodo e la catena va dall'ultimo stacco al primo. Senza ordine di stacco la catena segue la corticalità (meno cortice = più vicino al nucleo). I pezzi senza ordine si collegano al nucleo con un tratteggio. Se manca la riga del nucleo, il supernodo va nel baricentro dei prodotti.
+
+## Lo sfondo: ortofoto, raster e DEM
+
+Nella cartella `sfondo/` ci sono uno sfondo e un DEM sintetici che coprono l'area dell'esempio interno (est 99,6-105,0, nord 497,4-500,8):
+
+| File | Che cos'è |
+|---|---|
+| `ortofoto_esempio.tif` | Immagine RGB in GeoTIFF: la posizione è scritta nel file |
+| `ortofoto_esempio.png` + `.pgw` | La stessa immagine in PNG con il suo world file |
+| `ortofoto_esempio.jpg` + `.jgw` | La stessa immagine in JPEG con il suo world file |
+| `dem_esempio.tif` | DEM in GeoTIFF (una banda, quote in metri, -9999 = nessun dato) |
+
+Come si usa:
+
+1. Carica i dati dei frammenti (qui l'esempio interno).
+2. Nel riquadro **Sfondo** fai clic su **Immagine** e scegli il GeoTIFF, oppure seleziona **insieme** il PNG (o JPEG) e il suo world file.
+3. Fai clic su **DEM** e scegli il GeoTIFF delle quote.
+4. In pianta l'immagine sta sotto la griglia e il DEM diventa un rilievo ombreggiato; nel 3D il DEM è una superficie con l'immagine drappeggiata sopra. Trasparenza e visibilità si regolano nel riquadro.
+
+Il world file è un file di testo di sei righe (dimensione del pixel in x, due rotazioni, dimensione del pixel in y, negativa, e le coordinate del centro del primo pixel in alto a sinistra). QGIS lo crea con *Raster > Georeferenziatore* o con l'opzione "Crea file world" nell'esportazione. Le coordinate del raster devono essere nello stesso sistema dei frammenti, e le quote del DEM nello stesso riferimento delle quote: se non si sovrappongono lo strumento lo segnala. Per leggere i GeoTIFF serve la connessione a internet (la libreria si scarica al primo uso); PNG e JPEG funzionano anche senza.
 
 ## Il matrix di Harris: come crearlo e importarlo
 
@@ -178,7 +229,12 @@ RR,est,nord,quota,US,_Attacca_con,_pertinente_a,_Vaso_ID
 | Quota | no | `z`, `quota`, `elev` | Serve per proiezioni verticali, 3D e concentrazioni |
 | US | no | `US`, `contesto`, `strato`, `layer` | Serve per matrice US e palinsesto. "20 base" e "20 tetto" contano come US 20 |
 | Pertinente a | no | `pertinente_a` | Stesse regole di "Attacca con" |
-| Vaso | no | `vaso`, `vaso_id`, `vessel` | |
+| Vaso | no | `vaso`, `vaso_id`, `vessel` | Serve per i vasi come supernodi |
+| Nucleo | no | `nucleo`, `core` | Litica: ID del nucleo |
+| Ordine di stacco | no | `ordine`, `stacco`, `sequenza` | Litica: 1 = primo stacco |
+| Categoria del prodotto | no | `categoria`, `prodotto`, `tipologia` | Litica; `nucleo` per la riga del nucleo |
+| Corticalità | no | `cortice`, `corticale`, `cortex` | Litica: 0-100, oppure assente / parziale / totale |
+| Misura | no | `lunghezza`, `misura`, `peso`, `size` | Litica: spessore degli archi |
 
 - Se le colonne hanno altri nomi si scelgono a mano nel pannello Campi: non serve rinominarle.
 - Le coordinate devono essere in metri (griglia locale o sistema proiettato). Con latitudine e longitudine in gradi le distanze risultano sbagliate.

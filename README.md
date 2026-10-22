@@ -36,7 +36,12 @@ RR,est,nord,quota,US,Attacca_con,pertinente_a,Vaso_ID
 | Quota | no | Serve per le viste laterali, il 3D e le concentrazioni |
 | US | no | Serve per la matrice tra US e l'analisi del palinsesto |
 | Pertinente a | no | Frammenti dello stesso vaso che non combaciano |
-| Vaso | no | Attribuzione al vaso |
+| Vaso | no | Attribuzione al vaso; serve per i vasi come supernodi |
+| Nucleo | no (litica) | ID del nucleo a cui il pezzo rimonta; la riga del nucleo ha categoria `nucleo` |
+| Ordine di stacco | no (litica) | 1 = primo pezzo staccato |
+| Categoria del prodotto | no (litica) | Scheggia corticale, semicorticale, scheggia, lama, lamella, ritoccato… |
+| Corticalità | no (litica) | Percentuale di cortice, oppure assente / parziale / totale |
+| Misura | no (litica) | Lunghezza, larghezza o peso: decide lo spessore degli archi |
 
 - I nomi delle colonne sono liberi: quelli comuni vengono riconosciuti da soli, gli altri si scelgono nel pannello **Campi**.
 - Il separatore del CSV (virgola, punto e virgola, tabulazione) viene riconosciuto da solo; i decimali possono avere il punto o la virgola.
@@ -65,6 +70,7 @@ Le regole complete sono in [`dati_esempio/LEGGIMI.md`](dati_esempio/LEGGIMI.md).
 | Concentrazioni | Raggruppamenti statistici dei frammenti per posizione e verifica con i rimontaggi |
 | Palinsesto | Attacchi nell'ordine di quota delle US, osservati contro attesi, insiemi di US |
 | Matrix | Il matrix di Harris importato, con gli attacchi letti sulla sequenza stratigrafica vera |
+| Vasi e nuclei | Vasi come supernodi (ceramica) e sequenze di scheggiatura attorno al nucleo (litica) |
 | Controlli | Errori nei dati e correzioni proposte |
 | Dati | La tabella, modificabile cella per cella |
 
@@ -112,6 +118,28 @@ La scheda **Matrix** disegna il diagramma con gli attacchi come archi colorati. 
 
 ![Scheda Matrix](docs/img/scheda_matrix.jpg)
 
+## Vasi e nuclei: il grafo semantico
+
+Oltre agli attacchi frattura con frattura, lo strumento può aggiungere un nodo che rappresenta l'oggetto intero, il **supernodo**, collegato a tutti i suoi pezzi. I frammenti restano sempre nella posizione x, y, z in cui sono stati trovati, in pianta, nelle proiezioni e nel 3D: il supernodo aggiunge un legame di appartenenza, non sposta nulla. Si attiva dal riquadro **Mostra**.
+
+- **Ceramica.** Il vaso è un rombo nel baricentro dei suoi frammenti, con un raggio tratteggiato verso ciascuno, anche verso i pezzi che non attaccano. Invece del poligono dei gruppi si vede tutto il vaso; la scheda elenca i vasi con pezzi non ancora riattaccati, che sono i candidati per cercare altri attacchi.
+- **Litica.** Il nucleo è il supernodo, nella sua posizione di rinvenimento. I prodotti si collegano in ordine di scheggiatura a ritroso: prima l'ultimo pezzo staccato, poi i precedenti, fino ai primi stacchi, corticali, che stanno all'esterno della catena. Il colore dell'arco indica la categoria del prodotto, lo spessore la misura. Senza ordine di stacco la catena segue la corticalità. Lo strumento segnala i pezzi molto corticali staccati tardi e gli attacchi verso pezzi di un altro nucleo.
+
+![Sequenze di scheggiatura sui nuclei, in pianta](docs/img/litica_pianta.jpg)
+
+![Scheda Vasi e nuclei](docs/img/scheda_litica.jpg)
+
+## Sfondo: ortofoto, raster e DEM
+
+Nel riquadro **Sfondo** si può caricare sotto i frammenti:
+
+- un'**immagine** georeferenziata: GeoTIFF, oppure PNG o JPEG con il suo *world file* (`.pgw`, `.jgw`, `.wld`, da selezionare insieme all'immagine);
+- un **DEM** dello scavo in GeoTIFF (una banda, quote in metri).
+
+In pianta l'immagine sta sotto la griglia e il DEM si vede come rilievo ombreggiato. Nel 3D il DEM diventa una superficie, con l'immagine drappeggiata sopra, sotto i volumi delle US e i frammenti. Le coordinate del raster devono essere nello stesso sistema dei frammenti (stessa griglia di scavo o stesso sistema proiettato) e le quote del DEM nello stesso riferimento delle quote: se non si sovrappongono lo strumento lo segnala. Il GeoTIFF viene letto nel browser con la libreria geotiff.js, che si scarica al primo uso: per i GeoTIFF serve la connessione a internet, per PNG e JPEG no. Esempi sintetici in [`dati_esempio/sfondo`](dati_esempio/sfondo), da usare con l'esempio interno.
+
+![DEM e ortofoto nel 3D](docs/img/sfondo_3d.jpg)
+
 ## Dati di esempio
 
 Nella cartella [`dati_esempio`](dati_esempio) ci sono dataset **sintetici**, costruiti per mostrare configurazioni diverse:
@@ -122,6 +150,8 @@ Nella cartella [`dati_esempio`](dati_esempio) ci sono dataset **sintetici**, cos
 | `2_fossa_che_taglia` | Una fossa taglia due US e ne porta i cocci nel riempimento: pochi salti lunghi, tutti in un punto |
 | `3_area_uso_e_scarico` | Frammenti piccoli nell'area d'uso, pezzi grandi in uno scarico a cinque metri: attacchi lunghi in pianta |
 | `4_dati_da_correggere` | Il primo dataset con errori messi apposta, per provare il correttore |
+| `5_litica_nuclei` | Due nuclei con i loro prodotti: ordine di stacco, categoria, cortice e lunghezza |
+| `sfondo/` | Ortofoto (GeoTIFF, PNG e JPEG con world file) e DEM in GeoTIFF per l'esempio interno |
 
 I primi tre sono sia in CSV sia in GeoJSON, con dati identici. Per ognuno c'è anche un matrix di Harris d'esempio (`*_matrix.csv`); il matrix dell'esempio interno si carica da solo.
 
@@ -135,6 +165,8 @@ I primi tre sono sia in CSV sia in GeoJSON, con dati identici. Per ognuno c'è a
 | Concentrazione (cluster) | Raggruppamento statistico di frammenti per posizione; non è una fase cronologica |
 | Insieme di US | US che la rete degli attacchi tiene legate più del caso |
 | Ordine di quota | US ordinate per quota mediana; non è la sequenza stratigrafica |
+| Supernodo | Nodo aggiunto che rappresenta l'oggetto intero (vaso o nucleo) e si collega a tutti i suoi pezzi |
+| Ordine di stacco | Posizione del pezzo nella sequenza di scheggiatura: 1 è il primo staccato dal blocco |
 | Atteso | Valore che si avrebbe se gli attacchi fossero distribuiti a caso |
 
 ## Limiti
