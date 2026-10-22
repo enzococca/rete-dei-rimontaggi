@@ -114,7 +114,7 @@ US;rapporto;US
 
 Rapporti riconosciuti: copre / coperto da, taglia / tagliato da, riempie / riempito da, si appoggia a / gli si appoggia, posteriore a / anteriore a, uguale a, si lega a (anche in inglese). Si carica dal riquadro **Matrix di Harris** dopo i dati dei frammenti; **Scarica il modello** dà un file di partenza. Ogni attacco viene classificato: nella stessa US, tra US contemporanee, in rapporto diretto, a due o più passaggi nella sequenza, oppure tra US su rami diversi del matrix. Le coordinate x, y, z dei frammenti non cambiano.
 
-La scheda **Matrix** disegna il diagramma con gli attacchi come archi colorati. Istruzioni complete ed esempi in [`dati_esempio/LEGGIMI.md`](dati_esempio/LEGGIMI.md).
+La scheda **Matrix** disegna il diagramma in forma gerarchica, dalle US più recenti in alto alle più antiche in basso, con linee ad angolo retto e solo i rapporti diretti (quelli già implicati da un altro percorso vengono omessi). Gli attacchi tra US sono linee colorate in corsie a destra, con il numero di attacchi. Il matrix è collegato alla mappa: clic su una US o su un attacco e i frammenti vengono evidenziati e inquadrati in pianta, nelle proiezioni e nel 3D; clic su un frammento della mappa e nel matrix si accendono la sua US e gli attacchi che la toccano. Istruzioni complete ed esempi in [`dati_esempio/LEGGIMI.md`](dati_esempio/LEGGIMI.md).
 
 ![Scheda Matrix](docs/img/scheda_matrix.jpg)
 
@@ -123,9 +123,12 @@ La scheda **Matrix** disegna il diagramma con gli attacchi come archi colorati. 
 Oltre agli attacchi frattura con frattura, lo strumento può aggiungere un nodo che rappresenta l'oggetto intero, il **supernodo**, collegato a tutti i suoi pezzi. I frammenti restano sempre nella posizione x, y, z in cui sono stati trovati, in pianta, nelle proiezioni e nel 3D: il supernodo aggiunge un legame di appartenenza, non sposta nulla. Si attiva dal riquadro **Mostra**.
 
 - **Ceramica.** Il vaso è un rombo nel baricentro dei suoi frammenti, con un raggio tratteggiato verso ciascuno, anche verso i pezzi che non attaccano. Invece del poligono dei gruppi si vede tutto il vaso; la scheda elenca i vasi con pezzi non ancora riattaccati, che sono i candidati per cercare altri attacchi.
+- **Padri e figli.** Tutto è cliccabile, sulla mappa e nella scheda **Vasi e nuclei**, e le due viste si seguono. Il vaso è il padre dei suoi frammenti: selezionandone uno si vedono il vaso (anello tratteggiato, "padre") e i fratelli, e nella scheda compare l'albero vaso → gruppi di rimontaggio → frammenti. Nella litica il padre di un pezzo è quello più vicino al nucleo nella catena e i figli sono quelli staccati prima: il pannello dei dettagli mostra padre, figli e la linea fino al nucleo, con pulsanti per spostarsi lungo la catena.
 - **Litica.** Il nucleo è il supernodo, nella sua posizione di rinvenimento. I prodotti si collegano in ordine di scheggiatura a ritroso: prima l'ultimo pezzo staccato, poi i precedenti, fino ai primi stacchi, corticali, che stanno all'esterno della catena. Il colore dell'arco indica la categoria del prodotto, lo spessore la misura. Senza ordine di stacco la catena segue la corticalità. Lo strumento segnala i pezzi molto corticali staccati tardi e gli attacchi verso pezzi di un altro nucleo.
 
-![Sequenze di scheggiatura sui nuclei, in pianta](docs/img/litica_pianta.jpg)
+![Un pezzo selezionato con il padre e il figlio nella catena](docs/img/litica_pianta.jpg)
+
+![Un frammento selezionato con il suo vaso come padre](docs/img/vaso_padre.jpg)
 
 ![Scheda Vasi e nuclei](docs/img/scheda_litica.jpg)
 

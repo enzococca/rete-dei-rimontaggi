@@ -94,6 +94,7 @@ Da far notare: nel nucleo N2 il pezzo 2107 è una scheggia con il 60% di cortice
 Il supernodo è un nodo in più che rappresenta l'oggetto intero e si collega a tutti i suoi pezzi. I frammenti restano dove sono stati trovati (x, y, z); il supernodo non sposta nulla.
 
 - **Ceramica** (campo Vaso): il vaso è un rombo nel baricentro dei suoi frammenti, con raggi tratteggiati verso ciascuno. Con l'esempio interno si attiva dal riquadro Mostra, "Vasi come supernodi"; conviene togliere "Inviluppi dei gruppi".
+- **Padri e figli**: tutto si clicca, sulla mappa o nella scheda Vasi e nuclei. Il padre di un frammento ceramico è il vaso; nella litica è il pezzo più vicino al nucleo nella catena, e i figli sono quelli staccati prima. Il pannello dei dettagli li elenca e permette di spostarsi lungo la catena.
 - **Litica** (campo Nucleo, più ordine, categoria, cortice e misura se ci sono): il nucleo è il supernodo e la catena va dall'ultimo stacco al primo. Senza ordine di stacco la catena segue la corticalità (meno cortice = più vicino al nucleo). I pezzi senza ordine si collegano al nucleo con un tratteggio. Se manca la riga del nucleo, il supernodo va nel baricentro dei prodotti.
 
 ## Lo sfondo: ortofoto, raster e DEM
@@ -162,7 +163,7 @@ US;rapporto;US
 
 1. Carica prima i dati dei frammenti.
 2. Nel pannello a sinistra, riquadro **Matrix di Harris**, trascina il CSV o fai clic su **Carica il matrix**. Va bene anche trascinarlo nel riquadro Dati: lo strumento riconosce il matrix dalla colonna "rapporto".
-3. Apri la scheda **Matrix**: il diagramma mostra le US dalla più recente alla più antica, con gli attacchi disegnati come archi colorati.
+3. Apri la scheda **Matrix**: il diagramma gerarchico mostra le US dalla più recente alla più antica con linee ad angolo retto (solo i rapporti diretti) e gli attacchi come linee colorate in corsie a destra. Clic su una US o su un attacco: i frammenti si evidenziano in pianta e nel 3D. Clic su un frammento della mappa: nel matrix si accende la sua US.
 
 Con **Scarica il modello** si ottiene un CSV di partenza. Il matrix si salva insieme al progetto. Se carichi un altro file di frammenti, il matrix viene tolto, perché le US sono diverse.
 

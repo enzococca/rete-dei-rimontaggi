@@ -195,6 +195,15 @@ h3.sub { font-size: 15px; text-transform: uppercase; letter-spacing: .07em; marg
 .chart .dot:hover, .chart .dot.hl { stroke: var(--ink); stroke-width: 2; }
 .chart path[data-tip]:hover, .chart path.hl { stroke-opacity: 1; }
 .svgscroll { overflow-x: auto; }
+.semnode { cursor: pointer; }
+.semnode:hover .halo { stroke: var(--mark); stroke-width: 2.5; }
+.semnode.on .halo { stroke: var(--mark); stroke-width: 3; }
+.semdim { opacity: .22; }
+.semrole { fill: var(--accent); font-weight: 600; }
+.semnode.hit .halo { stroke: var(--accent); stroke-width: 2.5; }
+.mxarc { cursor: pointer; }
+.mxarc:hover .halo, .mxarc.on .halo { stroke-opacity: 1; filter: drop-shadow(0 0 2px var(--mark)); }
+.semtree { fill: none; stroke: var(--grid-strong); stroke-width: 1.6; }
 .ids { display: flex; flex-wrap: wrap; gap: 4px; }
 .hbars { display: grid; gap: 8px; margin-top: 6px; }
 .hb { display: grid; grid-template-columns: 96px minmax(0, 1fr) 32px; gap: 10px; align-items: center; font-size: 13px; }
@@ -1397,6 +1406,7 @@ function decimalsFor(step) { return Math.max(0, -Math.floor(Math.log10(step) + 1
 function highlightSet() {
   const res = state.res, sel = state.sel;
   if (!res || !sel) return null;
+  const sh = semHighlight(sel); if (sh) return sh;
   if (sel.type === "group") return new Set(res.clusters[sel.id - 1]?.members || []);
   const g = res.clusterOf.get(sel.id);
   if (g) return new Set(res.clusters[g - 1].members);
@@ -1682,8 +1692,8 @@ const endPointer = e => {
     const now = Date.now();
     if (now - lastTap < 300) { zoomAt(e.offsetX, e.offsetY, 1.8); lastTap = 0; return; }
     lastTap = now;
-    const f = pick(e.offsetX, e.offsetY);
-    select(f ? { type: "frag", id: f.id } : null, false);
+    const f = pick(e.offsetX, e.offsetY), sp = f ? null : pickSuper(e.offsetX, e.offsetY), ck = f && state.show.cores ? coreByKey(f.id) : null;
+    select(ck ? { type: "core", id: ck.n } : f ? { type: "frag", id: f.id } : sp, false);
   }
   if (pointers.size < 2) pinchD = 0;
 };
@@ -1691,10 +1701,15 @@ cv.addEventListener("pointerup", endPointer); cv.addEventListener("pointercancel
 cv.addEventListener("pointerleave", () => { if (!pointers.size) $("#tip").hidden = true; });
 cv.addEventListener("wheel", e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
 function hover(sx, sy) {
-  const tip = $("#tip"), f = state.res && pick(sx, sy);
-  if (!f) { tip.hidden = true; return; }
-  const g = state.res.clusterOf.get(f.id);
-  tip.innerHTML = `Frammento <b>${esc(f.id)}</b>${g ? " · G" + g : ""}<br>Vaso ${esc(f.vessel ?? "—")} · US ${esc(f.us ?? "—")}${f.z !== null ? " · q. " + fmtN(f.z) : ""}`;
+  const tip = $("#tip"), f = state.res && pick(sx, sy), sp = state.res && !f ? pickSuper(sx, sy) : null;
+  if (!f && !sp) { tip.hidden = true; return; }
+  if (sp) {
+    const V = sp.type === "vessel" ? findVessel(sp.id) : null, G = sp.type === "core" ? findCore(sp.id) : null;
+    tip.innerHTML = V ? `Vaso <b>${esc(V.v)}</b> (supernodo)<br>${V.m.length} frammenti · ${V.groups} ${V.groups === 1 ? "gruppo" : "gruppi"}${V.loose ? " · " + V.loose + " senza attacchi" : ""}<br>US ${esc(V.us.join(", ") || "—")}` : `Nucleo <b>${esc(G.n)}</b> (baricentro)<br>${G.prods.length} prodotti`;
+  } else {
+    const g = state.res.clusterOf.get(f.id);
+    tip.innerHTML = `Frammento <b>${esc(f.id)}</b>${g ? " · G" + g : ""}<br>Vaso ${esc(f.vessel ?? "—")} · US ${esc(f.us ?? "—")}${f.z !== null ? " · q. " + fmtN(f.z) : ""}${semTip(f)}`;
+  }
   tip.hidden = false;
   const r = $("#mapwrap").getBoundingClientRect();
   tip.style.left = Math.min(sx, r.width - tip.offsetWidth - 20) + "px"; tip.style.top = sy + "px";
@@ -1709,8 +1724,10 @@ new ResizeObserver(resize).observe($("#mapwrap"));
 /* selezione */
 function select(sel, zoom) {
   state.sel = sel;
+  for (const [t, k, id] of [["vessel", "vessels", "optVessels"], ["core", "cores", "optCores"]])
+    if (sel && sel.type === t && !state.show[k]) { state.show[k] = true; $("#" + id).checked = true; renderLegend(); }
   if (sel && zoom && state.res) {
-    const ids = sel.type === "group" ? state.res.clusters[sel.id - 1].members : [sel.id];
+    const ids = selIds(sel);
     if (state.view === "3d") { fit3D(ids); renderDetail(); draw(); return; }
     const pts = ids.map(id => state.res.frags.get(id)).filter(Boolean).map(proj).filter(Boolean);
     if (pts.length) {
@@ -1720,6 +1737,47 @@ function select(sel, zoom) {
   }
   renderDetail(); draw();
   document.querySelectorAll("tbody tr[data-g]").forEach(tr => tr.classList.toggle("on", !!sel && sel.type === "group" && +tr.dataset.g === sel.id));
+  if (state.tab === "grafi" || state.tab === "matrix") {           // le schede seguono la selezione, senza perdere lo scorrimento
+    const sc = []; for (let el = $("#tabpanel"); el; el = el.parentElement) sc.push([el, el.scrollTop, el.scrollLeft]);
+    renderTabs(); for (const [el, t, l] of sc) { el.scrollTop = t; el.scrollLeft = l; }
+  }
+}
+/* dettagli semantici: padre, figli, linea fino al nucleo */
+const idb = k => typeof k === "string" && k.startsWith("nucleo:") ? `<button class="idbtn" data-core="${esc(k.slice(7))}" type="button">nucleo ${esc(k.slice(7))}</button>` : `<button class="idbtn" data-id="${esc(k)}" type="button">${esc(k)}</button>`;
+function semDetail(f) {
+  const G = coreOf(f.id); if (!G) return "";
+  if (G.key === f.id) return `<dt>Nucleo</dt><dd><button class="idbtn" data-core="${esc(G.n)}" type="button">${esc(G.n)}</button> · è il nucleo, padre di ${G.prods.length} prodotti</dd>`;
+  const L = lineage(G, f.id);
+  return `<dt>Nucleo</dt><dd><button class="idbtn" data-core="${esc(G.n)}" type="button">${esc(G.n)}</button>${f.ord !== null ? " · stacco " + fmtN(f.ord, 0) : ""}</dd>
+    ${f.cat ? `<dt>Categoria</dt><dd>${esc(f.cat)}${f.cortex !== null ? " · cortice " + fmtN(f.cortex, 0) + "%" : ""}${f.size !== null ? " · " + esc(state.map.misura) + " " + fmtN(f.size, 1) : ""}</dd>` : ""}
+    <dt>Padre</dt><dd>${idb(L.parent)}</dd>
+    <dt>Figli</dt><dd>${L.kids.length ? L.kids.map(idb).join(" ") : "nessuno (primo stacco della catena)"}</dd>
+    <dt>Fino al nucleo</dt><dd>${[f.id, ...L.up].map(k => esc(semName(k))).join(" → ")}</dd>`;
+}
+function semDetailSuper(sel) {
+  const res = state.res, x = `<button type="button" aria-label="Chiudi">×</button>`, list = ids => `<div style="display:flex;flex-wrap:wrap;gap:4px">${ids.map(idb).join("")}</div>`;
+  if (sel.type === "vessel") {
+    const V = findVessel(sel.id); if (!V) return null;
+    const byG = new Map(); for (const f of V.m) { const g = res.clusterOf.get(f.id) || 0; if (!byG.has(g)) byG.set(g, []); byG.get(g).push(f.id); }
+    return `<h3>Vaso ${esc(V.v)} ${x}</h3><dl class="kv"><dt>Figli</dt><dd>${V.m.length} frammenti</dd><dt>US</dt><dd>${esc(V.us.join(", ") || "—")}</dd><dt>Dal baricentro</dt><dd>fino a ${fmtLen(V.spread)}</dd><dt>Dislivello</dt><dd>${V.dz !== null ? fmtLen(V.dz) : "—"}</dd></dl>
+      ${[...byG].sort((a, b) => (a[0] || 1e9) - (b[0] || 1e9)).map(([g, ids]) => `<div><span class="label">${g ? `<button class="idbtn" data-g="${g}" type="button">G${g}</button>` : "Senza attacchi"}</span>${list(ids.sort(natCmp))}</div>`).join("")}`;
+  }
+  if (sel.type === "core") {
+    const G = findCore(sel.id); if (!G) return null;
+    const chain = G.edges.slice().sort((a, b) => (b.to.ord ?? -1) - (a.to.ord ?? -1));
+    return `<h3>Nucleo ${esc(G.n)} ${x}</h3><dl class="kv"><dt>Pezzo</dt><dd>${G.core ? idb(G.core.id) : "non schedato (baricentro)"}</dd><dt>Figli diretti</dt><dd>${(G.children.get(G.key) || []).map(idb).join(" ") || "—"}</dd><dt>Prodotti</dt><dd>${G.prods.length}</dd>${G.core ? `<dt>US, quota</dt><dd>${esc(G.core.us ?? "—")} · ${fmtN(G.core.z)}</dd>` : ""}</dl>
+      <div><span class="label">Dal nucleo verso l'esterno</span><div style="display:grid;gap:3px;margin-top:3px">${chain.map(e => `<span>${idb(e.to.id)} <span class="mono" style="color:var(--muted)">${e.to.ord !== null ? "stacco " + fmtN(e.to.ord, 0) + " · " : ""}${esc(e.to.cat || "")}</span></span>`).join("")}</div></div>`;
+  }
+  if (sel.type === "uspair") {
+    const [a, b] = sel.id.split("|"), ls = pairLinks(sel.id), g = state.matrix && state.matrix.g, r = g ? mxRelation(g, a, b) : null;
+    const lab = r ? { contemporanee: "US contemporanee", diretto: "rapporto diretto", due: "2 passaggi nel matrix", lontane: `${r.d} passaggi nel matrix`, rami: "rami diversi del matrix", fuori: "fuori dal matrix" }[r.k] : "";
+    return `<h3>US ${esc(a)} – US ${esc(b)} ${x}</h3><dl class="kv"><dt>Attacchi</dt><dd>${ls.length}</dd><dt>Nel matrix</dt><dd>${esc(lab)}</dd></dl><div style="display:grid;gap:3px">${ls.map(l => `<span>${idb(l.a)} ↔ ${idb(l.b)} <span class="mono" style="color:var(--muted)">${fmtN(l.d2, 2)} m${l.dz !== null ? ", Δz " + fmtN(l.dz, 3) : ""}</span></span>`).join("")}</div>`;
+  }
+  if (sel.type === "us") {
+    const ids = usFrags(sel.id), g = state.matrix && state.matrix.g;
+    return `<h3>${esc(g ? g.label(sel.id) : "US " + sel.id)} ${x}</h3><dl class="kv"><dt>Frammenti</dt><dd>${ids.length}</dd></dl>${ids.length ? list(ids.sort(natCmp).slice(0, 80)) : `<p class="hint">Nessun frammento in questa US (taglio, struttura o US non scavata).</p>`}`;
+  }
+  return null;
 }
 function renderDetail() {
   const box = $("#detail"), res = state.res, sel = state.sel;
@@ -1739,8 +1797,9 @@ function renderDetail() {
       box.innerHTML = `<h3>Frammento ${esc(f.id)} <button type="button" aria-label="Chiudi">×</button></h3>
         <dl class="kv">
           <dt>Gruppo</dt><dd>${g ? `<button class="idbtn" data-g="${g}" type="button">G${g}</button> · ${res.clusters[g - 1].members.length} frammenti` : "nessun attacco"}</dd>
-          <dt>Vaso</dt><dd>${esc(f.vessel ?? "—")}</dd>
+          <dt>Vaso</dt><dd>${vesselOf(f.id) ? `<button class="idbtn" data-v="${esc(f.vessel)}" type="button">${esc(f.vessel)}</button> · padre di ${vesselOf(f.id).m.length} frammenti` : esc(f.vessel ?? "—")}</dd>
           <dt>US</dt><dd>${esc(f.us ?? "—")}</dd>
+          ${semDetail(f)}
           <dt>E, N</dt><dd>${fmtN(f.x)}, ${fmtN(f.y)}</dd>
           <dt>Quota</dt><dd>${fmtN(f.z)}</dd>
           ${state.ph && state.ph.ok && state.ph.frag.get(f.id) ? `<dt>Concentrazione</dt><dd>C${state.ph.frag.get(f.id).phase} · appartenenza ${fmtN(state.ph.frag.get(f.id).p, 2)}</dd>` : ""}
@@ -1748,6 +1807,9 @@ function renderDetail() {
         ${rel.length ? `<div><span class="label">Collegato a</span><div style="display:grid;gap:3px;margin-top:3px">${rel.join("<br>")}</div></div>` : ""}
         ${missing.length ? `<p class="hint">Attacchi non mappabili: ${missing.join(", ")}</p>` : ""}`;
     }
+  } else if (sel.type !== "group") {
+    const h = semDetailSuper(sel); if (!h) { box.hidden = true; return; }
+    box.innerHTML = h;
   } else {
     const c = res.clusters[sel.id - 1];
     if (!c) { box.hidden = true; return; }
@@ -1767,6 +1829,9 @@ $("#detail").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.id) select({ type: "frag", id: b.dataset.id }, true);
   else if (b.dataset.g) select({ type: "group", id: +b.dataset.g }, true);
+  else if (b.dataset.v) select({ type: "vessel", id: b.dataset.v }, true);
+  else if (b.dataset.core) select({ type: "core", id: b.dataset.core }, true);
+  else if (b.dataset.us) select({ type: "us", id: b.dataset.us }, true);
   else select(null);
 });
 
@@ -2165,51 +2230,114 @@ function matrixProblems(A) {
   if (A && A.missing.length) out.push(`${A.missing.length === 1 ? "La US" : "Le US"} ${A.missing.join(", ")} ${A.missing.length === 1 ? "ha frammenti ma non compare" : "hanno frammenti ma non compaiono"} nel matrix.`);
   return out;
 }
-/* diagramma: US su livelli dall'alto (più recenti) in basso, attacchi come archi colorati */
+/* diagramma gerarchico e ortogonale: US su livelli dall'alto (più recenti) in basso, solo i rapporti diretti,
+   linee ad angolo retto; gli attacchi sono archi colorati sopra il diagramma */
+function matrixLayout(G) {
+  const classes = [...G.cls.keys()];
+  // riduzione transitiva: un rapporto già implicato da un altro percorso non si disegna
+  const edges = []; let redundant = 0;
+  for (const [u, vs] of G.out) for (const v of vs) {
+    if ([...vs].some(w => w !== v && G.dist.get(w).has(v))) { redundant++; continue; }
+    edges.push([u, v]);
+  }
+  const lev = c => G.level.get(c) || 0, nL = Math.max(0, ...classes.map(lev)) + 1;
+  const layers = Array.from({ length: nL }, () => []), node = new Map();
+  for (const c of classes) { const n = { id: c, real: true, L: lev(c), up: [], dn: [] }; node.set(c, n); layers[n.L].push(n); }
+  // nodi fittizi dove un rapporto salta più livelli, per far passare la linea tra le US
+  const segs = []; let k = 0;
+  for (const [u, v] of edges) {
+    let a = node.get(u); const b = node.get(v), t = G.etype.get(u + "\u0000" + v) || "";
+    for (let L = a.L + 1; L < b.L; L++) { const d = { id: "·" + (k++), real: false, L, up: [], dn: [] }; layers[L].push(d); segs.push({ a, b: d, t, u, v }); a.dn.push(d); d.up.push(a); a = d; }
+    segs.push({ a, b, t, u, v }); a.dn.push(b); b.up.push(a);
+  }
+  // ordine nei livelli: baricentro, passate in giù e in su
+  layers[0].sort((a, b) => natCmp(a.id, b.id));
+  const idx = () => layers.forEach(Ly => Ly.forEach((n, i) => n.o = i));
+  idx();
+  const bary = (n, side) => { const ns = n[side]; return ns.length ? ns.reduce((s, m) => s + m.o, 0) / ns.length : n.o; };
+  for (let it = 0; it < 6; it++) {
+    for (let L = 1; L < nL; L++) { layers[L].sort((a, b) => bary(a, "up") - bary(b, "up") || natCmp(a.id, b.id)); idx(); }
+    for (let L = nL - 2; L >= 0; L--) { layers[L].sort((a, b) => bary(a, "dn") - bary(b, "dn") || natCmp(a.id, b.id)); idx(); }
+  }
+  return { layers, segs, node, redundant, nL };
+}
 function matrixSVG(A) {
-  const G = A.G, classes = [...G.cls.keys()];
-  const byLevel = new Map(); for (const c of classes) { const l = G.level.get(c) || 0; if (!byLevel.has(l)) byLevel.set(l, []); byLevel.get(l).push(c); }
-  const levels = [...byLevel.keys()].sort((a, b) => a - b);
+  const G = A.G, { layers, segs, node, redundant, nL } = matrixLayout(G);
   const fr = new Map(); for (const f of state.res.frags.values()) { const u = usKey(f.us); if (u) { const c = G.classOf.get(u); if (c) fr.set(c, (fr.get(c) || 0) + 1); } }
   const inside = new Map(); for (const l of state.res.direct) { const a = usKey(l.usA), b = usKey(l.usB); if (a && b && G.classOf.get(a) && G.classOf.get(a) === G.classOf.get(b)) { const c = G.classOf.get(a); inside.set(c, (inside.get(c) || 0) + 1); } }
   const sub = c => { const n = fr.get(c) || 0, ins = inside.get(c) || 0; return n ? `${n} fr.${ins ? ` · ${ins} att. interni` : ""}` : "senza frammenti"; };
-  const bw = c => Math.max(84, G.label(c).length * 7.6 + 24, sub(c).length * 6.6 + 20), BH = 40, GAP = 40, ROW = 92, TOP = 26;
-  const x = new Map();
-  // ordine nei livelli: baricentro delle US sopra (due passate)
-  for (let pass = 0; pass < 2; pass++) for (const l of levels) {
-    const row = byLevel.get(l);
-    row.sort((a, b) => { const bc = c => { const ps = [...G.inn.get(c)].filter(p => x.has(p)); return ps.length ? ps.reduce((s, p) => s + x.get(p), 0) / ps.length : 1e9; }; return bc(a) - bc(b) || natCmp(a, b); });
-    let cx = 0; for (const c of row) { x.set(c, cx + bw(c) / 2); cx += bw(c) + GAP; }
+  const BH = 40, ROW = 104, TOP = 30, GAP = 26, M = 40;
+  for (const n of node.values()) n.w = n.real ? Math.max(84, G.label(n.id).length * 7.6 + 24, sub(n.id).length * 6.6 + 20) : 10;
+  for (const Ly of layers) for (const n of Ly) if (!n.real) n.w = 10;
+  // coordinate: ogni nodo verso la media dei vicini, mantenendo ordine e distanza minima
+  for (const Ly of layers) { let x = 0; for (const n of Ly) { n.x = x + n.w / 2; x += n.w + GAP; } }
+  const place = (Ly, want) => {
+    const sep = i => (Ly[i - 1].w + Ly[i].w) / 2 + GAP, l = [], r = [];
+    Ly.forEach((n, i) => l[i] = i ? Math.max(want[i], l[i - 1] + sep(i)) : want[i]);
+    for (let i = Ly.length - 1; i >= 0; i--) r[i] = i < Ly.length - 1 ? Math.min(want[i], r[i + 1] - sep(i + 1)) : want[i];
+    Ly.forEach((n, i) => n.x = (l[i] + r[i]) / 2);
+    for (let i = 1; i < Ly.length; i++) Ly[i].x = Math.max(Ly[i].x, Ly[i - 1].x + sep(i));
+  };
+  const avg = ns => ns.reduce((s, m) => s + m.x, 0) / ns.length;
+  for (let it = 0; it < 8; it++) {
+    for (let L = 1; L < nL; L++) place(layers[L], layers[L].map(n => n.up.length ? avg(n.up) : n.x));
+    for (let L = nL - 2; L >= 0; L--) place(layers[L], layers[L].map(n => n.dn.length ? (avg(n.dn) + (n.up.length ? avg(n.up) : avg(n.dn))) / 2 : n.x));
   }
-  const rowW = l => byLevel.get(l).reduce((s, c) => s + bw(c), 0) + GAP * (byLevel.get(l).length - 1);
-  const W = Math.max(...levels.map(rowW)) + 240;
-  for (const l of levels) { const off = (W - 200 - rowW(l)) / 2; for (const c of byLevel.get(l)) x.set(c, x.get(c) + off); }
-  const y = c => TOP + (G.level.get(c) || 0) * ROW;
-  const H = TOP + (levels.length - 1) * ROW + BH + 70;
-  let edges = "", arcs = "", boxes = "";
-  for (const [u, vs] of G.out) for (const v of vs) {
-    const t = G.etype.get(u + "\u0000" + v) || "";
-    edges += `<line x1="${x.get(u)}" y1="${y(u) + BH}" x2="${x.get(v)}" y2="${y(v)}" class="mxe${t === "si appoggia a" ? " dash" : ""}"><title>${esc(G.label(u))} ${esc(t)} ${esc(G.label(v))}</title></line>`;
-  }
-  const colOf = k => `var(${MX_CAT.find(c => c[0] === k)[2]})`;
-  A.pairs.forEach((p, i) => {
-    const ca = G.classOf.get(p.a), cb = G.classOf.get(p.b); if (!ca || !cb || ca === cb) return;
-    const w = Math.min(9, 1.4 + 1.1 * p.n), same = (G.level.get(ca) || 0) === (G.level.get(cb) || 0);
-    let x1, y1, x2, y2, mx, my;
-    if (same) { x1 = x.get(ca); x2 = x.get(cb); y1 = y2 = y(ca) + BH; mx = (x1 + x2) / 2; my = y1 + 34 + (i % 3) * 8; }
-    else {
-      x1 = x.get(ca) + bw(ca) / 2; y1 = y(ca) + BH / 2; x2 = x.get(cb) + bw(cb) / 2; y2 = y(cb) + BH / 2;
-      mx = Math.max(x1, x2) + 40 + 26 * Math.abs((G.level.get(ca) || 0) - (G.level.get(cb) || 0)) + (i % 3) * 10; my = (y1 + y2) / 2;
+  const all = layers.flat();
+  const minX = Math.min(...all.map(n => n.x - n.w / 2)); for (const n of new Set(all)) n.x += M - minX;
+  let W = Math.max(...all.map(n => n.x + n.w / 2)) + M + 40, H = TOP + (nL - 1) * ROW + BH + 60;
+  const y = n => TOP + n.L * ROW;
+  // linee ortogonali: per ogni intercapedine un canale orizzontale per ogni nodo di partenza
+  let lines = "";
+  for (let L = 0; L < nL - 1; L++) {
+    const src = layers[L].filter(n => segs.some(s => s.a === n && Math.abs(s.b.x - n.x) > .5));
+    const gapTop = y({ L }) + BH, gapH = ROW - BH, ch = new Map();
+    src.forEach((n, i) => ch.set(n, gapTop + gapH * (src.length === 1 ? .5 : .2 + .6 * i / (src.length - 1))));
+    for (const s of segs.filter(s => s.a.L === L)) {
+      const ym = ch.get(s.a) ?? gapTop + gapH / 2, x1 = s.a.x, x2 = s.b.x;
+      const d = Math.abs(x1 - x2) < .5 ? `M${x1},${gapTop} V${y(s.b)}` : `M${x1},${gapTop} V${ym} H${x2} V${y(s.b)}`;
+      lines += `<path d="${d}" class="mxe${s.t === "si appoggia a" ? " dash" : ""}" fill="none"><title>${esc(G.label(s.u))} ${esc(s.t)} ${esc(G.label(s.v))}</title></path>`;
     }
-    const lab = { stessa: "", contemporanee: "contemporanee", diretto: "rapporto diretto", due: "2 passaggi", lontane: `${p.r.d} passaggi`, rami: "rami diversi", fuori: "fuori dal matrix" }[p.r.k];
-    arcs += `<path d="M${x1},${y1} Q${mx},${my} ${x2},${y2}" fill="none" stroke="${colOf(p.r.k)}" stroke-width="${w}" stroke-opacity=".8"><title>US ${esc(p.a)} – US ${esc(p.b)}: ${p.n} attacchi · ${lab}</title></path>`;
-    arcs += `<text x="${(x1 + x2) / 4 + mx / 2 + 4}" y="${same ? (y1 + my) / 2 + 12 : my + 4}" class="mxn">${p.n}</text>`;
-  });
-  for (const c of classes) {
-    const n = fr.get(c) || 0, ins = inside.get(c) || 0, w = bw(c);
-    boxes += `<g><rect x="${x.get(c) - w / 2}" y="${y(c)}" width="${w}" height="${BH}" rx="4" class="mxb${n ? "" : " empty"}"/><text x="${x.get(c)}" y="${y(c) + 17}" class="mxl">${esc(G.label(c))}</text><text x="${x.get(c)}" y="${y(c) + 32}" class="mxs">${sub(c)}</text><title>${esc(G.label(c))}: ${n} frammenti, ${ins} attacchi interni</title></g>`;
   }
-  return `<div class="svgscroll"><svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 1200)}px;max-width:${W}px" role="img" aria-label="Matrix di Harris con gli attacchi">${edges}${arcs}${boxes}</svg></div>`;
+  for (const n of layers.flat()) if (!n.real) lines += `<path d="M${n.x},${y(n)} V${y(n) + BH}" class="mxe" fill="none"/>`;
+  // selezione: US selezionata, US dei frammenti evidenziati sulla mappa
+  const sel = state.sel, hl = highlightSet(), hitUS = new Set();
+  if (hl) for (const id of hl) { const f = state.res.frags.get(id), u = f && usKey(f.us), c = u && G.classOf.get(u); if (c) hitUS.add(c); }
+  const selC = sel && sel.type === "us" ? sel.id : null, selP = sel && sel.type === "uspair" ? sel.id : null;
+  // attacchi tra US: linee colorate ad angolo retto in corsie a destra del diagramma, dietro le caselle
+  const colOf = k => `var(${MX_CAT.find(c => c[0] === k)[2]})`;
+  const right = Math.max(...layers.flat().map(n => n.x + n.w / 2));
+  const shown = state.mxArcs === false ? [] : A.pairs.map(p => ({ p, ca: G.classOf.get(p.a), cb: G.classOf.get(p.b) })).filter(o => o.ca && o.cb && o.ca !== o.cb);
+  const ports = new Map(), port = (c, k) => { if (!ports.has(c)) ports.set(c, []); ports.get(c).push(k); };
+  shown.forEach((o, i) => { port(o.ca, i); port(o.cb, i); });
+  const py = (c, i) => { const ps = ports.get(c), n = node.get(c); return y(n) + 8 + (BH - 16) * (ps.indexOf(i) + 1) / (ps.length + 1); };
+  const lanes = [];
+  shown.map((o, i) => ({ ...o, i, y1: py(o.ca, i), y2: py(o.cb, i) })).sort((u, v) => Math.abs(u.y1 - u.y2) - Math.abs(v.y1 - v.y2)).forEach(o => {
+    const lo = Math.min(o.y1, o.y2) - 4, hi = Math.max(o.y1, o.y2) + 4;
+    let k = lanes.findIndex(L => L.every(([a, b]) => hi < a || lo > b)); if (k < 0) { lanes.push([]); k = lanes.length - 1; }
+    lanes[k].push([lo, hi]); o.lane = k;
+    shown[o.i].geo = o;
+  });
+  let arcs = "", counts = "";
+  for (const o of shown) {
+    const { p, ca, cb } = o, g = o.geo, id = p.a + "|" + p.b, w = Math.min(7, 1.4 + .9 * p.n);
+    const lx = right + 26 + g.lane * 15, xa = node.get(ca).x, xb = node.get(cb).x;
+    const d = `M${xa},${g.y1} H${lx} V${g.y2} H${xb}`;
+    const lab = { contemporanee: "contemporanee", diretto: "rapporto diretto", due: "2 passaggi", lontane: `${p.r.d} passaggi`, rami: "rami diversi", fuori: "fuori dal matrix" }[p.r.k];
+    const on = selP === id, dim = (selC && ca !== selC && cb !== selC) || (selP && !on) || (hl && !selC && !selP && !(hitUS.has(ca) && hitUS.has(cb)));
+    const cls = `mxarc${on ? " on" : ""}${dim ? " semdim" : ""}`, ym = (g.y1 + g.y2) / 2;
+    const tt = `<title>US ${esc(p.a)} – US ${esc(p.b)}: ${p.n} ${p.n === 1 ? "attacco" : "attacchi"} · ${lab}. Clic per vederli sulla mappa</title>`;
+    arcs += `<g class="${cls}" data-pair="${esc(id)}"><path d="${d}" fill="none" stroke="transparent" stroke-width="12"/><path class="halo" d="${d}" fill="none" stroke="${colOf(p.r.k)}" stroke-width="${w}" stroke-opacity=".85" stroke-linejoin="round"/>${tt}</g>`;
+    counts += `<g class="${cls}" data-pair="${esc(id)}"><circle cx="${lx}" cy="${ym}" r="9" fill="var(--surface)" stroke="${colOf(p.r.k)}" stroke-width="1.5"/><text x="${lx}" y="${ym + 4}" class="mxn" style="text-anchor:middle">${p.n}</text>${tt}</g>`;
+  }
+  let boxes = "";
+  for (const n of node.values()) {
+    const c = n.id, w = n.w, nf = fr.get(c) || 0;
+    boxes += `<g class="semnode${selC === c ? " on" : ""}${hitUS.has(c) && selC !== c ? " hit" : ""}" data-us="${esc(c)}"><rect class="halo mxb${nf ? "" : " empty"}" x="${n.x - w / 2}" y="${y(n)}" width="${w}" height="${BH}" rx="3"/><text x="${n.x}" y="${y(n) + 17}" class="mxl">${esc(G.label(c))}</text><text x="${n.x}" y="${y(n) + 32}" class="mxs">${sub(c)}</text><title>${esc(G.label(c))}: ${nf} frammenti. Clic per vederli sulla mappa</title></g>`;
+  }
+  const note = redundant ? `<text x="${M}" y="${H - 14}" class="mxs" style="text-anchor:start">${redundant} ${redundant === 1 ? "rapporto ridondante non disegnato" : "rapporti ridondanti non disegnati"} (già implicati da altri)</text>` : "";
+  W = Math.max(W, right + 26 + lanes.length * 15 + 30);
+  return `<div class="svgscroll"><svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 1200)}px;max-width:${W}px" role="img" aria-label="Matrix di Harris con gli attacchi">${arcs}${lines}${boxes}${counts}${note}</svg></div>`;
 }
 function tabMatrixHarris(P, res) {
   const A = matrixAnalysis(res);
@@ -2226,15 +2354,21 @@ function tabMatrixHarris(P, res) {
       ${rami.length ? `<p>Gli attacchi tra US su rami diversi (${rami.map(p => `US ${esc(p.a)} – US ${esc(p.b)}: ${p.n}`).join("; ")}) collegano unità che il matrix non mette in sequenza: possono indicare che sono contemporanee, o la stessa unità divisa in scavo.</p>` : ""}
       ${probs.length ? `<p class="rwarn">${probs.map(esc).join("<br>")}</p>` : ""}
     </div>
-    <div class="chart"><h3>Matrix di Harris e attacchi</h3><p>Dall'alto le US più recenti. Linee grigie: rapporti stratigrafici (tratteggio: si appoggia a). Archi colorati: attacchi tra US, spessore = numero di attacchi.</p>
+    <div class="chart"><h3>Matrix di Harris e attacchi</h3><p>Dall'alto le US più recenti; ogni US sta un livello sotto l'ultima che la copre, taglia o riempie. Linee ad angolo retto: rapporti stratigrafici diretti (tratteggio: si appoggia a). Archi colorati: attacchi tra US, spessore = numero di attacchi. Clicca una US o un arco per vedere i frammenti in pianta, nelle proiezioni e nel 3D; clicca un frammento sulla mappa per vedere qui la sua US.</p>
+      <div class="checks" style="margin:4px 0 8px"><label><input type="checkbox" id="mxArcs"${state.mxArcs !== false ? " checked" : ""}> Mostra gli attacchi sul matrix</label></div>
       ${matrixSVG(A)}
       <div class="lg" style="margin-top:6px">${MX_CAT.filter(c => !["stessa", "fuori"].includes(c[0])).map(c => `<span><i style="background:var(${c[2]})"></i>${c[1].replace(/^Tra /, "")}</span>`).join("")}</div>
     </div>
     <h3 class="sub">Attacchi tra US secondo il matrix</h3>
     <div class="tablewrap"><table><thead><tr><th>US</th><th>US</th><th class="n">Attacchi</th><th>Relazione nel matrix</th></tr></thead><tbody>
-    ${A.pairs.map(p => `<tr><td class="mono">${esc(p.a)}</td><td class="mono">${esc(p.b)}</td><td class="n">${p.n}</td><td>${{ contemporanee: "contemporanee", diretto: `rapporto diretto (US ${esc(p.r.sopra)} sopra)`, due: `2 passaggi (US ${esc(p.r.sopra)} sopra)`, lontane: `${p.r.d} passaggi (US ${esc(p.r.sopra)} sopra)`, rami: "rami diversi: non in sequenza", fuori: "una delle US non è nel matrix" }[p.r.k]}</td></tr>`).join("") || `<tr><td colspan="4">Nessun attacco tra US diverse.</td></tr>`}
+    ${A.pairs.map(p => `<tr data-pair="${esc(p.a + "|" + p.b)}" class="${state.sel && state.sel.type === "uspair" && state.sel.id === p.a + "|" + p.b ? "on" : ""}" style="cursor:pointer"><td class="mono">${esc(p.a)}</td><td class="mono">${esc(p.b)}</td><td class="n">${p.n}</td><td>${{ contemporanee: "contemporanee", diretto: `rapporto diretto (US ${esc(p.r.sopra)} sopra)`, due: `2 passaggi (US ${esc(p.r.sopra)} sopra)`, lontane: `${p.r.d} passaggi (US ${esc(p.r.sopra)} sopra)`, rami: "rami diversi: non in sequenza", fuori: "una delle US non è nel matrix" }[p.r.k]}</td></tr>`).join("") || `<tr><td colspan="4">Nessun attacco tra US diverse.</td></tr>`}
     </tbody></table></div>
     <p class="note">Il matrix si importa come CSV con una riga per rapporto: US, rapporto, US. Rapporti riconosciuti: copre / coperto da, taglia / tagliato da, riempie / riempito da, si appoggia a / gli si appoggia, posteriore a / anteriore a, uguale a, si lega a (anche in inglese). Le coordinate x, y, z dei frammenti non cambiano: il matrix aggiunge solo la sequenza delle US.</p>`;
+  for (const box of [P.querySelector("svg[aria-label^='Matrix']"), P.querySelector("tbody")]) if (box) box.addEventListener("click", ev => {
+    const t = ev.target.closest("[data-us],[data-pair]"); if (!t) return;
+    select(t.dataset.us ? { type: "us", id: t.dataset.us } : { type: "uspair", id: t.dataset.pair }, true);
+  });
+  const ck = P.querySelector("#mxArcs"); if (ck) ck.addEventListener("change", () => { state.mxArcs = ck.checked; renderTabs(); });
 }
 function renderMatrixPanel() {
   const M = state.matrix, h = $("#mxHint");
@@ -2472,13 +2606,14 @@ function vesselGraphs(res) {
 }
 
 function coreGraphs(res) {
-  if (!state.map.nucleo) return [];
+  if (!state.map.nucleo || state.map.nucleo === state.map.id) return [];
   const by = new Map();
   for (const f of res.frags.values()) if (f.nucleo) { if (!by.has(f.nucleo)) by.set(f.nucleo, []); by.get(f.nucleo).push(f); }
   const out = [];
   for (const [n, m] of by) {
     const core = m.find(f => isCoreCat(f.cat)) || m.find(f => f.id === n) || null;
     const prods = m.filter(f => f !== core);
+    if (!prods.length) continue;                    // un "nucleo" senza prodotti non è una sequenza
     const hasOrd = prods.some(f => f.ord !== null), hasCx = prods.some(f => f.cortex !== null);
     // dal nucleo verso l'esterno: ultimo stacco vicino al nucleo, primi stacchi (corticali) per ultimi
     const key = f => hasOrd ? f.ord : hasCx ? (f.cortex === null ? null : -f.cortex) : null;
@@ -2502,7 +2637,9 @@ function coreGraphs(res) {
     const sizes = prods.map(f => f.size).filter(v => v !== null);
     const late = hasOrd && hasCx ? ranked.filter((f, i) => f.cortex >= 50 && i < ranked.length / 2) : [];
     const otherCore = prods.filter(f => f.refits.some(r => { const g = res.frags.get(r); return g && g.nucleo && g.nucleo !== n; }));
-    out.push({ n, core, hub, prods, levels, free, edges, hasOrd, hasCx, late, otherCore,
+    const k = core ? core.id : "nucleo:" + n, parent = new Map(), children = new Map();
+    for (const e of edges) { const p = e.from ? e.from.id : k; parent.set(e.to.id, p); if (!children.has(p)) children.set(p, []); children.get(p).push(e.to.id); }
+    out.push({ n, key: k, core, hub, prods, levels, free, edges, hasOrd, hasCx, late, otherCore, parent, children,
       smin: sizes.length ? Math.min(...sizes) : null, smax: sizes.length ? Math.max(...sizes) : null });
   }
   return out.sort((a, b) => natCmp(a.n, b.n));
@@ -2512,6 +2649,67 @@ function edgeWidth(G, f) {
   const t = G.smax > G.smin ? (Math.sqrt(f.size) - Math.sqrt(G.smin)) / (Math.sqrt(G.smax) - Math.sqrt(G.smin)) : .5;
   return 1.4 + t * 6;
 }
+/* padri e figli: nel vaso il padre è il vaso; nella litica il padre è il pezzo più vicino al nucleo nella catena */
+function lineage(G, id) {
+  const up = []; let p = G.parent.get(id);
+  while (p !== undefined) { up.push(p); p = G.parent.get(p); }
+  const down = [], st = [...(G.children.get(id) || [])];
+  while (st.length) { const c = st.shift(); down.push(c); st.push(...(G.children.get(c) || [])); }
+  return { up, down, parent: G.parent.get(id), kids: G.children.get(id) || [] };
+}
+const findVessel = v => semGraphs().vessels.find(V => V.v === v) || null;
+const findCore = n => semGraphs().cores.find(G => G.n === n) || null;
+const vesselOf = id => semGraphs().vessels.find(V => V.m.some(f => f.id === id)) || null;
+const coreOf = id => semGraphs().cores.find(G => G.key === id || G.parent.has(id)) || null;
+const coreByKey = id => semGraphs().cores.find(G => G.key === id) || null;
+function usFrags(c) {
+  const g = state.matrix && state.matrix.g; if (!g || !state.res) return [];
+  return [...state.res.frags.values()].filter(f => { const u = usKey(f.us); return u && g.classOf.get(u) === c; }).map(f => f.id);
+}
+function pairLinks(id) {
+  const [a, b] = id.split("|");
+  return state.res.direct.filter(l => { const x = usKey(l.usA), y = usKey(l.usB); return (x === a && y === b) || (x === b && y === a); });
+}
+/* gli ID evidenziati da una selezione semantica (null = selezione normale) */
+function semHighlight(sel) {
+  if (!state.res || !sel) return null;
+  if (sel.type === "vessel") { const V = findVessel(sel.id); return new Set(V ? V.m.map(f => f.id) : []); }
+  if (sel.type === "core") { const G = findCore(sel.id); return new Set(G ? [G.key, ...G.prods.map(f => f.id)] : []); }
+  if (sel.type === "us") return new Set(usFrags(sel.id));
+  if (sel.type === "uspair") return new Set(pairLinks(sel.id).flatMap(l => [l.a, l.b]));
+  if (sel.type !== "frag") return null;
+  if (state.show.cores) { const G = coreOf(sel.id); if (G) { const L = lineage(G, sel.id); return new Set([sel.id, ...L.up, ...L.down]); } }
+  if (state.show.vessels) { const V = vesselOf(sel.id); if (V) return new Set(V.m.map(f => f.id)); }
+  return null;
+}
+function selIds(sel) {
+  if (sel.type === "group") return state.res.clusters[sel.id - 1]?.members || [];
+  if (sel.type === "frag") {                       // inquadra il pezzo con il padre e i figli
+    const G = state.show.cores && coreOf(sel.id);
+    if (G) { const L = lineage(G, sel.id); return [sel.id, L.parent, ...L.kids].filter(k => k !== undefined); }
+    return [sel.id];
+  }
+  return [...(semHighlight(sel) || [])];
+}
+/* supernodo sotto il puntatore */
+function pickSuper(sx, sy) {
+  if (!state.res) return null;
+  const { vessels, cores } = semGraphs(); let best = null, bd = 13;
+  const test = (pt, hit) => { const p = screenPos(pt); if (!p) return; const d = Math.hypot(p[0] - sx, p[1] - sy); if (d < bd) { bd = d; best = hit; } };
+  if (state.show.vessels) for (const V of vessels) test(V.c, { type: "vessel", id: V.v });
+  if (state.show.cores) for (const G of cores) if (!G.core) test(G.hub, { type: "core", id: G.n });
+  return best;
+}
+function semTip(f) {
+  const out = [];
+  if (state.show.cores) { const G = coreOf(f.id); if (G) {
+    if (G.key === f.id) out.push(`Nucleo <b>${esc(G.n)}</b> · ${G.prods.length} prodotti`);
+    else { const L = lineage(G, f.id); out.push(`Nucleo ${esc(G.n)}${f.ord !== null ? " · stacco " + fmtN(f.ord, 0) : ""}${f.cat ? " · " + esc(f.cat) : ""}<br>Padre ${esc(semName(L.parent))} · figli ${L.kids.length ? L.kids.map(esc).join(", ") : "nessuno"}`); }
+  } }
+  if (state.show.vessels) { const V = vesselOf(f.id); if (V) out.push(`Vaso ${esc(V.v)}: ${V.m.length} frammenti in ${V.groups || 0} ${V.groups === 1 ? "gruppo" : "gruppi"}`); }
+  return out.length ? "<br>" + out.join("<br>") : "";
+}
+const semName = k => typeof k === "string" && k.startsWith("nucleo:") ? "nucleo " + k.slice(7) : k ?? "—";
 const semCache = { res: null, v: null, c: null };
 function semGraphs() {
   const res = state.res;
@@ -2526,16 +2724,21 @@ function drawSemantic(pos, alphaOf, pass) {
   const diamond = (p, r) => { ctx.beginPath(); ctx.moveTo(p[0], p[1] - r); ctx.lineTo(p[0] + r, p[1]); ctx.lineTo(p[0], p[1] + r); ctx.lineTo(p[0] - r, p[1]); ctx.closePath(); };
   const label = (t, x, y, col) => { ctx.font = `600 11.5px ${css("--f-display")}`; ctx.lineWidth = 3; ctx.strokeStyle = surf; ctx.strokeText(t, x, y); ctx.fillStyle = col; ctx.fillText(t, x, y); };
   ctx.lineCap = "round"; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  const ea = (a, b) => Math.min(alphaOf([a]), alphaOf([b])), sel = state.sel, mark = css("--mark"), acc = css("--accent");
+  const ring = (p, r, col, dash) => { ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI * 2); ctx.lineWidth = 2.5; ctx.strokeStyle = col; ctx.setLineDash(dash ? [3, 3] : []); ctx.stroke(); ctx.setLineDash([]); };
+  const tag = (p, t, col) => { ctx.globalAlpha = 1; ctx.font = `600 10.5px ${css("--f-display")}`; ctx.lineWidth = 3; ctx.strokeStyle = surf; ctx.strokeText(t, p[0] + 10, p[1] + 12); ctx.fillStyle = col; ctx.fillText(t, p[0] + 10, p[1] + 12); };
   if (state.show.vessels) for (const V of vessels) {
     const c = pos(V.c); if (!c) continue;
     const col = state.colorBy === "vaso" ? colorCache.vessel(V.v) : css("--ink-2"), a = alphaOf(V.m.map(f => f.id));
     if (pass === "edges") {
       ctx.strokeStyle = col; ctx.lineWidth = 1.3; ctx.setLineDash([1.5, 3]); ctx.globalAlpha = .9 * a;
-      for (const f of V.m) { const p = pos(f); if (!p) continue; ctx.beginPath(); ctx.moveTo(c[0], c[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); }
+      for (const f of V.m) { const p = pos(f); if (!p) continue; ctx.globalAlpha = .9 * alphaOf([f.id]); ctx.beginPath(); ctx.moveTo(c[0], c[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); }
       ctx.setLineDash([]);
     } else {
       ctx.globalAlpha = a; diamond(c, 7); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = surf; ctx.stroke();
       label("V" + V.v.replace(/^v/i, ""), c[0] + 9, c[1] - 8, col);
+      if (sel && sel.type === "vessel" && sel.id === V.v) ring(c, 11, mark);
+      else if (sel && sel.type === "frag" && V.m.some(f => f.id === sel.id) && !(state.show.cores && coreOf(sel.id))) { ring(c, 11, acc, true); tag(c, "padre", acc); }
     }
   }
   if (state.show.cores) for (const G of cores) {
@@ -2544,7 +2747,7 @@ function drawSemantic(pos, alphaOf, pass) {
     if (pass === "edges") {
       for (const e of G.edges) {
         const p = e.from ? pos(e.from) : h, q = pos(e.to); if (!p || !q) continue;
-        ctx.globalAlpha = .85 * a; ctx.strokeStyle = lithicColor(e.to.cat); ctx.lineWidth = edgeWidth(G, e.to);
+        ctx.globalAlpha = .85 * ea(e.from ? e.from.id : G.key, e.to.id); ctx.strokeStyle = lithicColor(e.to.cat); ctx.lineWidth = edgeWidth(G, e.to);
         if (e.loose) ctx.setLineDash([4, 4]);
         ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); ctx.setLineDash([]);
       }
@@ -2554,6 +2757,12 @@ function drawSemantic(pos, alphaOf, pass) {
       ctx.beginPath(); ctx.arc(h[0], h[1], 9, 0, Math.PI * 2); ctx.fillStyle = css("--l5"); ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = surf; ctx.stroke();
       ctx.beginPath(); ctx.arc(h[0], h[1], 12.5, 0, Math.PI * 2); ctx.lineWidth = 1.5; ctx.strokeStyle = css("--l5"); ctx.stroke();
       label("Nucleo " + G.n + (G.core ? "" : " (baricentro)"), h[0] + 15, h[1] - 10, ink);
+      if (sel && sel.type === "core" && sel.id === G.n) ring(h, 16, mark);
+      if (sel && sel.type === "frag" && G.parent.has(sel.id)) {
+        const L = lineage(G, sel.id), at = k => k === G.key ? h : pos(state.res.frags.get(k));
+        const pp = at(L.parent); if (pp) { ring(pp, L.parent === G.key ? 16 : 9, acc, true); tag(pp, "padre", acc); }
+        for (const k of L.kids) { const q = at(k); if (q) { ring(q, 9, acc); tag(q, "figlio", acc); } }
+      }
     }
   }
   ctx.globalAlpha = 1;
@@ -2570,7 +2779,11 @@ function semLegend(items, sw) {
   }
 }
 
-/* scheda Vasi e nuclei */
+/* scheda Vasi e nuclei: tutto cliccabile, collegato a pianta, proiezioni e 3D */
+function semSelState() {
+  const sel = state.sel, hl = sel ? (semHighlight(sel) || new Set(selIds(sel))) : null;
+  return { sel, hl, fid: sel && sel.type === "frag" ? sel.id : null };
+}
 function coreSVG(G) {
   const R = 30, STEP = 96, TOP = 46, cols = [[G.core], ...G.levels];
   if (G.free.length) cols.push(G.free);
@@ -2580,39 +2793,71 @@ function coreSVG(G) {
   cols.forEach((c, i) => c.forEach((f, j) => pos.set(f || "core", [50 + i * STEP, mid + (j - (c.length - 1) / 2) * 64 + 16])));
   const P = f => pos.get(f || "core");
   const cxFill = v => v === null ? "var(--surface-2)" : `color-mix(in srgb, var(--l5) ${Math.round(v)}%, var(--surface))`;
+  const { sel, hl, fid } = semSelState(), lin = fid && G.parent.has(fid) ? lineage(G, fid) : (fid === G.key ? lineage(G, fid) : null);
+  const dim = k => hl && hl.size && !hl.has(k) ? " semdim" : "";
+  const role = k => !lin ? "" : k === lin.parent ? "padre" : lin.kids.includes(k) ? "figlio" : "";
   let e = "", n = "";
   for (const ed of G.edges) {
-    const a = P(ed.from), b = P(ed.to);
-    e += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${lithicColor(ed.to.cat)}" stroke-width="${edgeWidth(G, ed.to).toFixed(1)}" stroke-linecap="round"${ed.loose ? ' stroke-dasharray="4 4"' : ""}><title>${esc(ed.to.id)} · ${esc(ed.to.cat || "categoria non indicata")}${ed.to.size !== null ? " · " + esc(state.map.misura) + " " + fmtN(ed.to.size, 1) : ""} · distanza reale ${fmtLen(ed.d)}</title></line>`;
+    const a = P(ed.from), b = P(ed.to), ka = ed.from ? ed.from.id : G.key;
+    e += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" class="${hl && hl.size && !(hl.has(ka) && hl.has(ed.to.id)) ? "semdim" : ""}" stroke="${lithicColor(ed.to.cat)}" stroke-width="${edgeWidth(G, ed.to).toFixed(1)}" stroke-linecap="round"${ed.loose ? ' stroke-dasharray="4 4"' : ""}><title>${esc(semName(ka))} → ${esc(ed.to.id)} · ${esc(ed.to.cat || "categoria non indicata")}${ed.to.size !== null ? " · " + esc(state.map.misura) + " " + fmtN(ed.to.size, 1) : ""} · distanza reale ${fmtLen(ed.d)}</title></line>`;
   }
-  const c = P(G.core);
-  n += `<g><circle cx="${c[0]}" cy="${c[1]}" r="${R * .62}" fill="var(--l5)" stroke="var(--surface)" stroke-width="2.5"/><circle cx="${c[0]}" cy="${c[1]}" r="${R * .62 + 4}" fill="none" stroke="var(--l5)" stroke-width="1.5"/><text x="${c[0]}" y="${c[1] + R * .62 + 18}" class="mxl">${esc(G.core ? G.core.id : "—")}</text><text x="${c[0]}" y="${c[1] - R * .62 - 10}" class="mxs">nucleo</text></g>`;
+  const c = P(G.core), on = (sel && sel.type === "core" && sel.id === G.n) || fid === G.key;
+  n += `<g class="semnode${on ? " on" : ""}${dim(G.key)}" data-core="${esc(G.n)}"><circle cx="${c[0]}" cy="${c[1]}" r="${R * .62}" fill="var(--l5)" stroke="var(--surface)" stroke-width="2.5"/><circle class="halo" cx="${c[0]}" cy="${c[1]}" r="${R * .62 + 4}" fill="none" stroke="var(--l5)" stroke-width="1.5"/><text x="${c[0]}" y="${c[1] + R * .62 + 18}" class="mxl">${esc(G.core ? G.core.id : "—")}</text><text x="${c[0]}" y="${c[1] - R * .62 - 10}" class="mxs">${role(G.key) || "nucleo"}</text><title>Nucleo ${esc(G.n)}: clic per vederlo sulla mappa</title></g>`;
   for (const f of G.prods) {
     const p = P(f); if (!p) continue;
-    n += `<g><circle cx="${p[0]}" cy="${p[1]}" r="13" fill="${cxFill(f.cortex)}" stroke="var(--ink-2)" stroke-width="1.2"/><text x="${p[0]}" y="${p[1] + 4}" class="mxn" style="text-anchor:middle${f.cortex !== null && f.cortex > 55 ? ";fill:var(--surface)" : ""}">${f.ord !== null ? fmtN(f.ord, 0) : "?"}</text><text x="${p[0]}" y="${p[1] + 28}" class="mxs">${esc(f.id)}</text><title>${esc(f.id)}${f.ord !== null ? " · stacco " + fmtN(f.ord, 0) : ""} · ${esc(f.cat || "—")} · cortice ${f.cortex !== null ? fmtN(f.cortex, 0) + "%" : "n.d."}</title></g>`;
+    const r = role(f.id);
+    n += `<g class="semnode${fid === f.id ? " on" : ""}${dim(f.id)}" data-id="${esc(f.id)}"><circle class="halo" cx="${p[0]}" cy="${p[1]}" r="13" fill="${cxFill(f.cortex)}" stroke="var(--ink-2)" stroke-width="1.2"/><text x="${p[0]}" y="${p[1] + 4}" class="mxn" style="text-anchor:middle${f.cortex !== null && f.cortex > 55 ? ";fill:var(--surface)" : ""}">${f.ord !== null ? fmtN(f.ord, 0) : "?"}</text><text x="${p[0]}" y="${p[1] + 28}" class="mxs">${esc(f.id)}</text>${r ? `<text x="${p[0]}" y="${p[1] - 19}" class="mxs semrole">${r}</text>` : ""}<title>${esc(f.id)}${f.ord !== null ? " · stacco " + fmtN(f.ord, 0) : ""} · ${esc(f.cat || "—")} · cortice ${f.cortex !== null ? fmtN(f.cortex, 0) + "%" : "n.d."}: clic per vederlo sulla mappa</title></g>`;
   }
   const ax = `<text x="50" y="18" class="mxs" style="text-anchor:start">← verso il nucleo: ultimi stacchi</text><text x="${W - 20}" y="18" class="mxs" style="text-anchor:end">primi stacchi, più corticali →</text>`;
   return `<div class="svgscroll"><svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 900)}px;max-width:${W}px" role="img" aria-label="Sequenza di scheggiatura del nucleo ${esc(G.n)}">${ax}${e}${n}</svg></div>`;
 }
+/* albero del vaso: vaso → gruppi di rimontaggio → frammenti, con rami ortogonali */
+function vesselTreeSVG(V, res) {
+  const { fid } = semSelState(), byG = new Map();
+  for (const f of V.m) { const g = res.clusterOf.get(f.id) || 0; if (!byG.has(g)) byG.set(g, []); byG.get(g).push(f); }
+  const groups = [...byG].sort((a, b) => (a[0] || 1e9) - (b[0] || 1e9));
+  const RH = 24, X0 = 30, X1 = 190, X2 = 350, TOP = 20;
+  let row = 0, e = "", n = "";
+  const gy = [];
+  for (const [g, fs] of groups) {
+    fs.sort((a, b) => natCmp(a.id, b.id));
+    const ys = fs.map(() => TOP + (row++) * RH + 10); row += .4;
+    const y = (ys[0] + ys[ys.length - 1]) / 2; gy.push(y);
+    fs.forEach((f, i) => {
+      e += `<path d="M${X1 + 14},${y} H${(X1 + X2) / 2} V${ys[i]} H${X2 - 8}" class="semtree${fid && fid !== f.id ? " semdim" : ""}"/>`;
+      n += `<g class="semnode${fid === f.id ? " on" : ""}" data-id="${esc(f.id)}"><circle class="halo" cx="${X2}" cy="${ys[i]}" r="6" fill="${fragColor(f)}" stroke="var(--surface)" stroke-width="1.5"/><text x="${X2 + 12}" y="${ys[i] + 4}" class="mxn">${esc(f.id)}</text><text x="${X2 + 70}" y="${ys[i] + 4}" class="mxs" style="text-anchor:start">US ${esc(f.us ?? "—")}${f.z !== null ? " · q. " + fmtN(f.z, 2) : ""}${fid === f.id ? " · selezionato" : ""}</text><title>Frammento ${esc(f.id)}: clic per vederlo sulla mappa</title></g>`;
+    });
+    n += g ? `<g class="semnode" data-g="${g}"><rect class="halo" x="${X1 - 22}" y="${y - 11}" width="44" height="22" rx="4" fill="var(--surface)" stroke="${colorCache.group(g)}" stroke-width="2"/><text x="${X1}" y="${y + 4}" class="mxn" style="text-anchor:middle">G${g}</text><title>Gruppo di rimontaggio G${g}: ${fs.length} frammenti</title></g>`
+           : `<g><rect x="${X1 - 40}" y="${y - 11}" width="80" height="22" rx="4" fill="var(--surface-2)" stroke="var(--ink-2)" stroke-dasharray="3 3"/><text x="${X1}" y="${y + 4}" class="mxs">senza attacchi</text></g>`;
+  }
+  const ry = (gy[0] + gy[gy.length - 1]) / 2;
+  for (const y of gy) e += `<path d="M${X0 + 10},${ry} H${(X0 + X1) / 2} V${y} H${X1 - 24}" class="semtree"/>`;
+  n += `<g class="semnode" data-v="${esc(V.v)}"><path class="halo" d="M${X0},${ry - 11} L${X0 + 11},${ry} L${X0},${ry + 11} L${X0 - 11},${ry} Z" fill="var(--ink-2)" stroke="var(--surface)" stroke-width="2"/><text x="${X0}" y="${ry - 17}" class="mxl">V${esc(V.v.replace(/^v/i, ""))}</text><title>Vaso ${esc(V.v)}</title></g>`;
+  const H = TOP + row * RH + 20;
+  return `<div class="svgscroll"><svg viewBox="0 0 640 ${H}" style="max-width:640px" role="img" aria-label="Albero del vaso ${esc(V.v)}"><text x="${X0 - 10}" y="12" class="mxs" style="text-anchor:start">vaso (padre)</text><text x="${X1}" y="12" class="mxs">gruppi di rimontaggio</text><text x="${X2 + 30}" y="12" class="mxs">frammenti (figli)</text>${e}${n}</svg></div>`;
+}
 function tabSemantic(P, res) {
-  const { vessels, cores } = semGraphs();
+  const { vessels, cores } = semGraphs(), { sel, fid } = semSelState();
   const tbl = (head, rows) => `<div class="tablewrap"><table><thead><tr>${head.map(h => `<th class="${h[1] ? "n" : ""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
-  let h = `<div class="summary"><p>Qui i rimontaggi si leggono a <b>livello semantico</b>: un nodo in più (il <b>supernodo</b>) rappresenta l'oggetto intero, il vaso o il nucleo, e si collega a tutti i suoi pezzi. I frammenti restano nella posizione x, y, z in cui sono stati trovati: il supernodo aggiunge solo un legame di appartenenza. Si attiva sulla mappa dal riquadro <b>Mostra</b>.</p></div>`;
+  let h = `<div class="summary"><p>Qui i rimontaggi si leggono a <b>livello semantico</b>: un nodo in più (il <b>supernodo</b>) rappresenta l'oggetto intero, il vaso o il nucleo, ed è il <b>padre</b> di tutti i suoi pezzi. I frammenti restano nella posizione x, y, z in cui sono stati trovati: il supernodo aggiunge solo un legame di appartenenza. Ogni nodo e ogni riga si possono cliccare: il pezzo viene mostrato e inquadrato in pianta, nelle proiezioni e nel 3D, con il padre e i figli evidenziati. Vale anche al contrario: cliccando sulla mappa si aggiorna questa scheda.</p></div>`;
   h += `<h3 class="sub">Ceramica: il vaso come supernodo</h3>`;
   if (!state.map.vessel) h += `<p class="hint">Scegli il campo Vaso nel pannello Campi per vedere i vasi come supernodi.</p>`;
   else if (!vessels.length) h += `<p class="hint">Nessun vaso con almeno due frammenti.</p>`;
   else {
     const multi = vessels.filter(V => V.groups > 1 || V.loose);
-    h += `<p class="hint">Il supernodo sta nel baricentro dei frammenti del vaso; i raggi tratteggiati vanno a ogni frammento, anche a quelli che non attaccano. Così si vede tutto il vaso e non solo i pezzi uniti. ${multi.length ? `${multi.length} ${multi.length === 1 ? "vaso ha" : "vasi hanno"} pezzi non ancora riattaccati tra loro (più gruppi o frammenti isolati): sono i candidati per cercare altri attacchi.` : "Tutti i frammenti di ogni vaso sono uniti da attacchi."}</p>`;
+    h += `<p class="hint">Il supernodo sta nel baricentro dei frammenti del vaso; i raggi tratteggiati vanno a ogni frammento, anche a quelli che non attaccano. ${multi.length ? `${multi.length} ${multi.length === 1 ? "vaso ha" : "vasi hanno"} pezzi non ancora riattaccati tra loro (più gruppi o frammenti isolati): sono i candidati per cercare altri attacchi.` : "Tutti i frammenti di ogni vaso sono uniti da attacchi."} Clicca un vaso per vederne l'albero.</p>`;
+    const cur = sel && sel.type === "vessel" ? findVessel(sel.id) : fid ? vesselOf(fid) : null;
+    if (cur) h += `<div class="chart"><h3>Albero del vaso ${esc(cur.v)} · ${cur.m.length} frammenti</h3><p>Il vaso è il padre, i gruppi di rimontaggio sono i rami, i frammenti sono i figli. I frammenti sotto "senza attacchi" appartengono al vaso ma non sono ancora stati riattaccati.</p>${vesselTreeSVG(cur, res)}</div>`;
     h += tbl([["Vaso"], ["Frammenti", 1], ["Gruppi di rimontaggio", 1], ["Senza attacchi", 1], ["US"], ["Max dal baricentro", 1], ["Dislivello", 1]],
-      vessels.map(V => `<tr><td class="mono">${esc(V.v)}</td><td class="n">${V.m.length}</td><td class="n">${V.groups}</td><td class="n">${V.loose || ""}</td><td class="mono">${esc(V.us.join(", ") || "—")}</td><td class="n">${fmtLen(V.spread)}</td><td class="n">${V.dz !== null ? fmtLen(V.dz) : "—"}</td></tr>`));
+      vessels.map(V => `<tr data-v="${esc(V.v)}" class="${cur === V ? "on" : ""}" style="cursor:pointer"><td class="mono">${esc(V.v)}</td><td class="n">${V.m.length}</td><td class="n">${V.groups}</td><td class="n">${V.loose || ""}</td><td class="mono">${esc(V.us.join(", ") || "—")}</td><td class="n">${fmtLen(V.spread)}</td><td class="n">${V.dz !== null ? fmtLen(V.dz) : "—"}</td></tr>`));
   }
   h += `<h3 class="sub">Litica: il nucleo come supernodo e la sequenza di scheggiatura</h3>`;
   if (!state.map.nucleo) {
     h += `<p class="hint">Per la litica scegli nel pannello Campi almeno il campo <b>Nucleo</b> (l'ID del nucleo a cui il pezzo rimonta). Facoltativi: <b>Ordine di stacco</b> (1 = primo pezzo staccato), <b>Categoria del prodotto</b> (scheggia corticale, lama, lamella…; la riga del nucleo ha categoria "nucleo"), <b>Corticalità</b> (percentuale di cortice, o assente / parziale / totale) e <b>Misura</b> (lunghezza o peso). Esempio: <span class="mono">5_litica_nuclei.csv</span> nei dati di esempio.</p>`;
-  } else if (!cores.length) h += `<p class="hint">Nessun pezzo ha il campo Nucleo compilato.</p>`;
+  } else if (state.map.nucleo === state.map.id) h += `<p class="rwarn">Il campo Nucleo è la stessa colonna dell'ID del frammento: ogni pezzo sarebbe un nucleo a sé. Scegli nel pannello Campi la colonna che contiene l'ID del nucleo.</p>`;
+  else if (!cores.length) h += `<p class="rwarn">Nessun nucleo ha prodotti: nella colonna «${esc(state.map.nucleo)}» ogni valore compare una volta sola. Deve contenere l'ID del nucleo, uguale per tutti i pezzi che vi rimontano.</p>`;
   else {
-    h += `<p class="hint">Ogni catena parte dal nucleo e va all'indietro nella scheggiatura: prima l'ultimo pezzo staccato, poi i precedenti, fino ai primi stacchi, che sono i più corticali e stanno all'esterno. ${cores.some(G => !G.hasOrd) ? "Dove manca l'ordine di stacco la catena segue la corticalità (meno cortice = più vicino al nucleo). " : ""}Colore dell'arco = categoria del prodotto; spessore = misura${state.map.misura ? ` (${esc(state.map.misura)})` : " (campo non scelto)"}; riempimento del cerchio = cortice (chiaro = assente, scuro = totale). Sulla mappa la stessa catena è disegnata sulle posizioni reali dei pezzi.</p>`;
+    h += `<p class="hint">Ogni catena parte dal nucleo e va all'indietro nella scheggiatura: prima l'ultimo pezzo staccato, poi i precedenti, fino ai primi stacchi, che sono i più corticali e stanno all'esterno. Il <b>padre</b> di un pezzo è quello più vicino al nucleo nella catena, i <b>figli</b> sono quelli staccati prima. ${cores.some(G => !G.hasOrd) ? "Dove manca l'ordine di stacco la catena segue la corticalità (meno cortice = più vicino al nucleo). " : ""}Colore dell'arco = categoria del prodotto; spessore = misura${state.map.misura ? ` (${esc(state.map.misura)})` : " (campo non scelto)"}; riempimento del cerchio = cortice (chiaro = assente, scuro = totale).</p>`;
     for (const G of cores) {
       const far = G.edges.filter(e => !e.loose).sort((a, b) => b.d - a.d)[0];
       const notes = [];
@@ -2620,14 +2865,22 @@ function tabSemantic(P, res) {
       if (G.late.length) notes.push(`Pezzi con molto cortice ma staccati tardi: ${G.late.map(f => `${esc(f.id)} (stacco ${fmtN(f.ord, 0)}, cortice ${fmtN(f.cortex, 0)}%)`).join(", ")}. Può essere cortice residuo su un fianco del nucleo, o un errore nell'ordine.`);
       if (G.free.length) notes.push(`${G.free.length} ${G.free.length === 1 ? "pezzo" : "pezzi"} senza ordine di stacco, collegati al nucleo con il tratteggio: ${G.free.map(f => esc(f.id)).join(", ")}.`);
       if (G.otherCore.length) notes.push(`Attacchi verso pezzi di un altro nucleo: ${G.otherCore.map(f => esc(f.id)).join(", ")}. Controllare il campo Nucleo.`);
-      h += `<div class="chart"><h3>Nucleo ${esc(G.n)} · ${G.prods.length} prodotti${G.core && G.core.us ? " · US " + esc(G.core.us) : ""}</h3><p>${far ? `Il passo più lungo della catena sul terreno è ${esc(far.from ? far.from.id : G.n)} → ${esc(far.to.id)}: ${fmtLen(far.d)}.` : ""}</p>${coreSVG(G)}${notes.length ? `<p class="rwarn">${notes.join("<br>")}</p>` : ""}</div>`;
-      h += tbl([["Stacco", 1], ["Pezzo"], ["Categoria"], ["Cortice", 1], ["Misura", 1], ["Dal pezzo prima", 1], ["Dal nucleo", 1], ["Dislivello", 1], ["US"]],
-        G.edges.slice().sort((a, b) => (b.to.ord ?? -1) - (a.to.ord ?? -1)).map(e => { const f = e.to, dz = f.z !== null && G.hub.z !== null ? f.z - G.hub.z : null; return `<tr><td class="n">${f.ord !== null ? fmtN(f.ord, 0) : "—"}</td><td class="mono">${esc(f.id)}</td><td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:${lithicColor(f.cat)}"></span>${esc(f.cat || "—")}</td><td class="n">${f.cortex !== null ? fmtN(f.cortex, 0) + "%" : "—"}</td><td class="n">${f.size !== null ? fmtN(f.size, 1) : "—"}</td><td class="n">${fmtLen(e.d)}</td><td class="n">${fmtLen(d3of(G.hub, f))}</td><td class="n">${dz !== null ? (dz > 0 ? "+" : "") + fmtN(dz * 100, 1) + " cm" : "—"}</td><td class="mono">${esc(f.us || "—")}</td></tr>`; }));
+      const L = fid && (G.parent.has(fid) || fid === G.key) ? lineage(G, fid) : null;
+      const linTxt = L ? `<p><b>${esc(fid)}</b>: padre ${L.parent !== undefined ? esc(semName(L.parent)) : "nessuno (è il nucleo)"} · figli ${L.kids.length ? L.kids.map(esc).join(", ") : "nessuno"} · ${L.down.length} discendenti · ${L.up.length} passi fino al nucleo.</p>` : "";
+      h += `<div class="chart"><h3>Nucleo ${esc(G.n)} · ${G.prods.length} prodotti${G.core && G.core.us ? " · US " + esc(G.core.us) : ""}</h3><p>${far ? `Il passo più lungo della catena sul terreno è ${esc(far.from ? far.from.id : G.n)} → ${esc(far.to.id)}: ${fmtLen(far.d)}.` : ""}</p>${linTxt}${coreSVG(G)}${notes.length ? `<p class="rwarn">${notes.join("<br>")}</p>` : ""}</div>`;
+      h += tbl([["Stacco", 1], ["Pezzo"], ["Padre"], ["Categoria"], ["Cortice", 1], ["Misura", 1], ["Dal padre", 1], ["Dal nucleo", 1], ["Dislivello", 1], ["US"]],
+        G.edges.slice().sort((a, b) => (b.to.ord ?? -1) - (a.to.ord ?? -1)).map(e => { const f = e.to, dz = f.z !== null && G.hub.z !== null ? f.z - G.hub.z : null; return `<tr data-id="${esc(f.id)}" class="${fid === f.id ? "on" : ""}" style="cursor:pointer"><td class="n">${f.ord !== null ? fmtN(f.ord, 0) : "—"}</td><td class="mono">${esc(f.id)}</td><td class="mono">${esc(semName(G.parent.get(f.id)))}</td><td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:${lithicColor(f.cat)}"></span>${esc(f.cat || "—")}</td><td class="n">${f.cortex !== null ? fmtN(f.cortex, 0) + "%" : "—"}</td><td class="n">${f.size !== null ? fmtN(f.size, 1) : "—"}</td><td class="n">${fmtLen(e.d)}</td><td class="n">${fmtLen(d3of(G.hub, f))}</td><td class="n">${dz !== null ? (dz > 0 ? "+" : "") + fmtN(dz * 100, 1) + " cm" : "—"}</td><td class="mono">${esc(f.us || "—")}</td></tr>`; }));
     }
   }
-  P.innerHTML = h;
+  P.innerHTML = `<div class="semwrap">${h}</div>`;
+  P.querySelector(".semwrap").addEventListener("click", ev => {
+    const t = ev.target.closest("[data-id],[data-core],[data-v],[data-g]"); if (!t) return;
+    if (t.dataset.id) select({ type: "frag", id: t.dataset.id }, true);
+    else if (t.dataset.core) select({ type: "core", id: t.dataset.core }, true);
+    else if (t.dataset.v) select({ type: "vessel", id: t.dataset.v }, true);
+    else select({ type: "group", id: +t.dataset.g }, true);
+  });
 }
-
 function matrixBanner(P, res) {
   const A = matrixAnalysis(res); if (!A || !A.L) return;
   const pc = n => Math.round(100 * n / A.L) + "%", c = A.cnt;
