@@ -65,6 +65,77 @@ Da far notare: qui l'attacco lungo non è un disturbo. Area d'uso e scarico appa
 | Stesso vaso scritto in due modi (V5 e V05) | 1091 | Da verificare: unificare in V05 |
 | Attacco verso un frammento che non esiste (1999) | 1007 | Nessuna correzione automatica: va sistemato a mano nella scheda Dati |
 
+## Il matrix di Harris: come crearlo e importarlo
+
+Il matrix è facoltativo. Con il matrix gli attacchi tra US vengono letti sulla **sequenza stratigrafica vera** e non più sull'ordine di quota. Le coordinate x, y, z dei frammenti non cambiano: il matrix aggiunge solo i rapporti tra le US.
+
+### Come si crea
+
+Un file CSV (da Excel, LibreOffice o esportato dal database di scavo) con **una riga per rapporto stratigrafico** e tre colonne: US, rapporto, US.
+
+```
+US;rapporto;US
+6;copre;16
+16;copre;17
+17;copre;20
+20;copre;21
+20;copre;33
+20;copre;36
+36;riempie;34
+34;taglia;21
+34;taglia;33
+21;si appoggia a;30
+33;si appoggia a;30
+```
+
+- Si legge da sinistra a destra: "6 copre 16", "36 riempie 34", "34 taglia 21".
+- Basta scrivere ogni rapporto una volta; anche le forme inverse vanno bene ("16 coperto da 6").
+- Rapporti riconosciuti:
+
+| Rapporto | Forma inversa | Significato per la sequenza |
+|---|---|---|
+| copre | coperto da | la prima US è più recente |
+| taglia | tagliato da | la prima US è più recente |
+| riempie | riempito da | la prima US è più recente |
+| si appoggia a | gli si appoggia | la prima US è più recente |
+| posteriore a | anteriore a | la prima US è più recente |
+| uguale a | | stessa posizione nella sequenza (contemporanee) |
+| si lega a | | stessa posizione nella sequenza (contemporanee) |
+
+  Sono riconosciute anche le forme inglesi (covers, cuts, fills, abuts, same as, bonds with).
+- I nomi delle colonne sono liberi; il separatore (punto e virgola, virgola, tabulazione) viene riconosciuto da solo.
+- Le US possono essere scritte come `20` o `US 20`; "20 base" e "20 tetto" valgono come US 20.
+- Possono comparire US senza frammenti, per esempio tagli e strutture (nell'esempio la fossa US 34 e il muro US 30).
+
+### Come si importa
+
+1. Carica prima i dati dei frammenti.
+2. Nel pannello a sinistra, riquadro **Matrix di Harris**, trascina il CSV o fai clic su **Carica il matrix**. Va bene anche trascinarlo nel riquadro Dati: lo strumento riconosce il matrix dalla colonna "rapporto".
+3. Apri la scheda **Matrix**: il diagramma mostra le US dalla più recente alla più antica, con gli attacchi disegnati come archi colorati.
+
+Con **Scarica il modello** si ottiene un CSV di partenza. Il matrix si salva insieme al progetto. Se carichi un altro file di frammenti, il matrix viene tolto, perché le US sono diverse.
+
+### Che cosa calcola
+
+Ogni attacco tra due US viene classificato:
+
+- nella stessa US;
+- tra US contemporanee ("uguale a", "si lega a");
+- tra US in rapporto diretto (un passaggio nel matrix);
+- tra US a due, tre o più passaggi;
+- tra US su **rami diversi**, che il matrix non mette in sequenza: possono essere contemporanee, o la stessa unità divisa in scavo.
+
+Il matrix viene anche controllato: righe non riconosciute, cicli (A copre B e B copre A), US dichiarate contemporanee e insieme in sequenza, US con frammenti che non compaiono nel matrix.
+
+### Matrix di esempio
+
+| File | Da usare con | Che cosa mostra |
+|---|---|---|
+| `0_esempio_lezione_matrix.csv` | l'esempio interno allo strumento (si carica da solo con l'esempio) | La US 36 riempie una fossa (US 34) che taglia le US 21 e 33: è più bassa in quota ma più recente. Le US 21 e 33 si appoggiano a un muro (US 30) e stanno su rami diversi: i loro 6 attacchi fanno pensare che siano contemporanee |
+| `1_deposito_stratificato_matrix.csv` | `1_deposito_stratificato` e `4_dati_da_correggere` | Una sequenza semplice: quasi tutti gli attacchi nella stessa US |
+| `2_fossa_che_taglia_matrix.csv` | `2_fossa_che_taglia` | La fossa US 211 (senza frammenti) taglia 202 e 203 ed è riempita da 210: gli attacchi del riempimento sono a 2 o 3 passaggi |
+| `3_area_uso_e_scarico_matrix.csv` | `3_area_uso_e_scarico` | Piano d'uso e scarico legati ("si lega a"): i loro attacchi risultano tra US contemporanee |
+
 ## Come deve essere un file perché venga accettato
 
 Lo strumento legge CSV (anche `.txt` e `.tsv`) e GeoJSON di punti. Non serve installare nulla: basta il browser.

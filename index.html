@@ -154,6 +154,14 @@ select { width: 100%; min-width: 0; padding: 5px 8px; border: 1px solid var(--li
 .rwarn { color: color-mix(in srgb, var(--warn) 55%, var(--ink)); }
 .rfoot { margin-top: auto; padding-top: 4px; }
 .rgo { font-size: 12px; padding: 3px 9px; }
+.mxe { stroke: var(--grid-strong); stroke-width: 1.6; }
+.mxe.dash { stroke-dasharray: 5 4; }
+.mxb { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.2; }
+.mxb.empty { fill: var(--surface-2); stroke-dasharray: 3 3; }
+.mxl { font: 600 13px var(--f-display); text-anchor: middle; fill: var(--ink); letter-spacing: .03em; }
+.mxs { font: 10.5px var(--f-mono); text-anchor: middle; fill: var(--muted); }
+.mxn { font: 600 11px var(--f-mono); fill: var(--ink-2); }
+.drop.small { padding: 10px; }
 @media (max-width: 560px) { .fix { grid-template-columns: minmax(0, 1fr); } }
 
 /* main column */
@@ -315,6 +323,21 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
       </section>
 
       <section>
+        <h2>Matrix di Harris <span class="n" id="mxCount"></span></h2>
+        <label class="drop small" for="mxFile">
+          <strong>Carica il matrix</strong>
+          <small>CSV con una riga per rapporto: US, rapporto, US</small>
+          <input type="file" id="mxFile" accept=".csv,.txt,.tsv" hidden>
+        </label>
+        <div class="row">
+          <button class="btn" id="mxDemo" type="button" hidden>Matrix dell'esempio</button>
+          <button class="btn" id="mxTpl" type="button">Scarica il modello</button>
+          <button class="btn danger" id="mxDel" type="button" hidden>Rimuovi</button>
+        </div>
+        <p class="hint" id="mxHint"></p>
+      </section>
+
+      <section>
         <h2>Progetto <span class="n" id="projCount"></span></h2>
         <div class="proj-save">
           <input type="text" id="projName" placeholder="Nome del progetto" maxlength="80" aria-label="Nome del progetto">
@@ -459,6 +482,7 @@ textarea.fallback { width: 100%; height: 160px; font-family: var(--f-mono); font
           <button role="tab" data-tab="distanze" aria-selected="false">Distanze</button>
           <button role="tab" data-tab="fasi" aria-selected="false">Concentrazioni</button>
           <button role="tab" data-tab="palinsesto" aria-selected="false">Palinsesto</button>
+          <button role="tab" data-tab="matrix" aria-selected="false">Matrix</button>
           <button role="tab" data-tab="controlli" aria-selected="false">Controlli<span class="cnt" id="cntI"></span></button>
           <button role="tab" data-tab="dati" aria-selected="false">Dati<span class="cnt" id="cntD"></span></button>
         </div>
@@ -1093,7 +1117,7 @@ const state = {
   strataA: 0.3, strataFocus: "",
   colorBy: "gruppo", view: "pianta", exag: 1,
   res: null, sel: null, tab: "riassunto", sort: {},
-  project: null, history: [], fixLog: [], dirty: false, dataFilter: "", dataOnlyBad: false,
+  matrix: null, project: null, history: [], fixLog: [], dirty: false, dataFilter: "", dataOnlyBad: false,
 };
 
 /* ---------- lettura file ---------- */
@@ -1148,6 +1172,7 @@ function readFile(file) {
   rd("utf-8").then(t => t.includes(String.fromCharCode(0xFFFD)) ? rd("windows-1252") : t).then(text => {
     const isJson = /\.(geo)?json$/i.test(file.name) || /^\s*\{/.test(text);
     if (isJson) { let d = null; try { d = JSON.parse(text); } catch { /* lo segnala parseGeoJSON */ } if (d && d.formato === PROJ_FMT) { projImport(d); return; } }
+    if (!isJson && isMatrixCSV(text)) { loadMatrixText(text, file.name); return; }
     const parsed = isJson ? parseGeoJSON(text) : parseCSV(text);
     loadData(parsed, file.name, false);
   }).catch(e => toast(`Impossibile leggere ${file.name}: ${e.message}`));
@@ -1170,6 +1195,7 @@ function loadData(parsed, source, demo) {
   $("#tbSource").textContent = source;
   $("#demoBadge").hidden = !demo;
   $("#rowCount").textContent = `${parsed.rows.length} righe`;
+  setMatrix(demo ? parseMatrix(DEMO_MATRIX, "matrix_esempio.csv") : null);
   renderFields(); run(true);
 }
 
@@ -1248,7 +1274,7 @@ function run(refit) {
   else $("#emptyMap").hidden = true;
   state.ph = null;
   fillStrataFocus();
-  renderStats(); renderTabs(); renderLegend(); renderDetail();
+  renderStats(); renderTabs(); renderLegend(); renderDetail(); renderMatrixPanel();
   if (refit) fit(); draw();
   schedulePhases();
 }
@@ -1766,7 +1792,7 @@ function renderTabs() {
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === state.tab));
   const P = $("#tabpanel");
   if (!res && state.tab !== "dati") { P.innerHTML = `<p class="hint">I risultati compaiono qui dopo il caricamento dei dati. Puoi anche compilare la tabella nella scheda Dati.</p>`; return; }
-  ({ riassunto: tabSummary, dati: tabData, gruppi: tabGroups, collegamenti: tabLinks, matrice: tabMatrix, distanze: tabDist, fasi: tabPhases, palinsesto: tabPalimpsest, controlli: tabIssues })[state.tab](P, res);
+  ({ riassunto: tabSummary, matrix: tabMatrixHarris, dati: tabData, gruppi: tabGroups, palinsesto: (Q, r) => { tabPalimpsest(Q, r); matrixBanner(Q, r); }, collegamenti: tabLinks, matrice: tabMatrix, distanze: tabDist, fasi: tabPhases, controlli: tabIssues })[state.tab](P, res);
 }
 document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => { state.tab = b.dataset.tab; renderTabs(); }));
 
@@ -1896,7 +1922,7 @@ function tabSummary(P, res) {
   let dati = `<p>La tabella ha <b>${state.rows.length} righe</b> e descrive <b>${s.frags} frammenti</b> con coordinate${s.excluded ? ` (altri ${s.excluded} sono esclusi dalla mappa)` : ""}. ${s.linked} frammenti, il ${pc(s.linked, s.frags)}, hanno almeno un attacco: in tutto <b>${s.joins} attacchi</b>${s.pert ? ` e ${s.pert} pertinenze` : ""}, che formano <b>${s.groups} gruppi di rimontaggio</b>${vessels ? `, attribuiti a ${vessels} vasi` : ""}${u && u.units.length ? `, in ${u.units.length} US` : ""}.</p>`;
   if (issues.length || fixes.length || noZ) {
     dati += `<p class="rwarn">Prima di interpretare, controlla i dati: ${issues.length ? `${issues.length} ${issues.length === 1 ? "segnalazione" : "segnalazioni"} nei controlli` : "nessuna segnalazione grave"}${fixes.length ? `, ${fixes.length} ${fixes.length === 1 ? "correzione proposta" : "correzioni proposte"} (${safe} ${safe === 1 ? "sicura" : "sicure"})` : ""}.${missing ? ` ${missing === 1 ? "Un attacco punta a un frammento che non è" : `${missing} attacchi puntano a frammenti che non sono`} nella tabella: forse la tabella è incompleta, e i numeri qui sotto sono parziali.` : ""}${noZ ? ` ${noZ} frammenti non hanno quota e restano fuori dalle misure verticali.` : ""}</p>`;
-    sintesi.push(missing ? `<b>Dati da completare.</b> ${missing === 1 ? "Manca un frammento a cui punta un attacco" : `Mancano frammenti a cui puntano ${missing} attacchi`}: prima di trarre conclusioni conviene recuperarli.` : `<b>Dati da controllare.</b> Ci sono ${issues.length + fixes.length} punti da verificare nella scheda Controlli.`);
+    sintesi.push(missing ? `<b>Dati da completare.</b> ${missing === 1 ? "Manca un frammento a cui punta un attacco" : `Mancano frammenti a cui puntano ${missing} attacchi`}: prima di trarre conclusioni conviene recuperar${missing === 1 ? "lo" : "li"}.` : `<b>Dati da controllare.</b> Ci sono ${issues.length + fixes.length} punti da verificare nella scheda Controlli.`);
   } else dati += `<p>I controlli non segnalano problemi nei dati.</p>`;
   if (state.demo) dati += `<p class="hint">Sono dati di esempio sintetici, costruiti per mostrare come funziona lo strumento.</p>`;
   card("I dati", dati, "controlli", "Controlli");
@@ -1944,7 +1970,13 @@ function tabSummary(P, res) {
     const tiny = u.units.filter(x => x.n <= 2);
     if (tiny.length) t += `<p>${tiny.length === 1 ? "La US" : "Le US"} ${tiny.map(x => esc(x.us)).join(", ")} ${tiny.length === 1 ? "ha" : "hanno"} uno o due frammenti soltanto: nell'ordine di quota ${tiny.length === 1 ? "occupa" : "occupano"} comunque un posto, e un attacco tra le US vicine può risultare un "salto" solo per questo.</p>`;
     t += `<p class="hint">L'ordine di quota delle US è un'approssimazione: va confrontato con il matrix di Harris.</p>`;
-    card("Gli attacchi e le US", t, "palinsesto", "Palinsesto");
+    const MA = matrixAnalysis(res);
+    if (MA && MA.L) {
+      const c = MA.cnt, q = n => Math.round(100 * n / MA.L) + "%";
+      t += `<p><b>Con il matrix di Harris</b>, cioè sulla sequenza stratigrafica vera: ${q(c.stessa)} nella stessa US, ${q(c.contemporanee)} tra US contemporanee, ${q(c.diretto)} tra US in rapporto diretto, ${q(c.due + c.lontane)} tra US più lontane nella sequenza, ${q(c.rami)} tra US su rami diversi del matrix.${c.rami ? " Gli attacchi tra rami diversi uniscono US che il matrix non mette in sequenza: forse sono contemporanee, o la stessa unità divisa in scavo." : ""}</p>`;
+      sintesi.push(`<b>Con il matrix</b> ${q(c.stessa + c.contemporanee + c.diretto)} degli attacchi resta nella stessa US o tra US a contatto nella sequenza${c.rami ? `; ${q(c.rami)} unisce US su rami diversi` : ""}.`);
+    }
+    card("Gli attacchi e le US", t, MA ? "matrix" : "palinsesto", MA ? "Matrix" : "Palinsesto");
     sintesi.push(`<b>Tra le US</b> ${same >= 0.7 ? "gli attacchi restano soprattutto dentro la stessa US" : near >= jump ? "prevalgono i legami tra US vicine in quota: forse più US che eventi" : "molti attacchi saltano più US: possibili tagli, bioturbazione o errori"}${sets.length > 1 ? `; la rete separa ${sets.length} insiemi di US` : ""}.`);
   }
 
@@ -1982,6 +2014,206 @@ function tabSummary(P, res) {
 
   P.innerHTML = `<div class="rtop"><h3>In sintesi</h3><ul class="rlist">${sintesi.map(x => `<li>${x}</li>`).join("") || "<li>Carica dati con attacchi per avere un riassunto.</li>"}</ul>${busy ? `<p class="hint">Le concentrazioni sono ancora in calcolo: il riassunto si completa da solo.</p>` : ""}</div><div class="rgrid">${cards.join("")}</div>`;
   P.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => { state.tab = b.dataset.go; renderTabs(); }));
+}
+/* ---------- matrix di Harris: import, sequenza, attacchi letti sulla sequenza ---------- */
+// rapporti riconosciuti: dir 1 = "A è più recente di B" (A sta sopra), -1 = il contrario, 0 = contemporanee
+const MX_REL = [
+  [/^(copre|covers?|sopra a|sopra)$/, 1, "copre"], [/^(coperto da|covered by|sotto a|sotto)$/, -1, "copre"],
+  [/^(taglia|cuts?)$/, 1, "taglia"], [/^(tagliato da|cut by)$/, -1, "taglia"],
+  [/^(riempie|fills?)$/, 1, "riempie"], [/^(riempito da|filled by)$/, -1, "riempie"],
+  [/^(si appoggia a|si appoggia|appoggia a|abuts?|leans on)$/, 1, "si appoggia a"], [/^(gli si appoggia|appoggiato da|abutted by)$/, -1, "si appoggia a"],
+  [/^(posteriore a|successivo a|later than|after)$/, 1, "posteriore a"], [/^(anteriore a|precedente a|earlier than|before)$/, -1, "posteriore a"],
+  [/^(uguale a|uguale|same as|equal to|=)$/, 0, "uguale a"], [/^(si lega a|si lega|legato a|bonds? with|bonded to)$/, 0, "si lega a"],
+];
+const mxKey = v => { const s = String(v ?? "").trim().replace(/^(usm|usr|us|su)\s*[.:]?\s*/i, ""); return s ? usKey(s) : null; };
+const DEMO_MATRIX = `US;rapporto;US
+6;copre;16
+16;copre;17
+17;copre;20
+20;copre;21
+20;copre;33
+20;copre;36
+36;riempie;34
+34;taglia;21
+34;taglia;33
+21;si appoggia a;30
+33;si appoggia a;30
+`;
+function parseMatrix(text, source) {
+  const P = parseCSV(text), H = P.headers;
+  const find = re => H.find(h => re.test(h));
+  const cr = find(/rapport|relaz|relation|tipo|rel$/i) || H[1];
+  const rest = H.filter(h => h !== cr);
+  const ca = find(/^(us_?a|us1|da|from|source|us)$/i) && rest.includes(find(/^(us_?a|us1|da|from|source|us)$/i)) ? find(/^(us_?a|us1|da|from|source|us)$/i) : rest[0];
+  const cb = rest.find(h => h !== ca);
+  const rows = [], bad = [];
+  P.rows.forEach((r, i) => {
+    const a = mxKey(r[ca]), b = mxKey(r[cb]), t = String(r[cr] ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+    if (!a && !b && !t) return;
+    const m = MX_REL.find(([re]) => re.test(t));
+    if (!a || !b || !m) { bad.push(`riga ${i + 2}: «${[r[ca], r[cr], r[cb]].map(x => String(x ?? "").trim()).join(" ")}»`); return; }
+    rows.push({ a, b, dir: m[1], tipo: m[2], raw: t });
+  });
+  return { source, rows, bad, text };
+}
+function buildMatrix(mx) {
+  const par = new Map(), find = x => { if (!par.has(x)) par.set(x, x); let r = x; while (par.get(r) !== r) r = par.get(r); par.set(x, r); return r; };
+  const nodes = new Set();
+  for (const r of mx.rows) { nodes.add(r.a); nodes.add(r.b); find(r.a); find(r.b); if (r.dir === 0) { const ra = find(r.a), rb = find(r.b); if (ra !== rb) par.set(rb, ra); } }
+  const cls = new Map(); for (const n of nodes) { const c = find(n); if (!cls.has(c)) cls.set(c, []); cls.get(c).push(n); }
+  const classOf = new Map(); for (const [c, ms] of cls) { ms.sort(natCmp); for (const m of ms) classOf.set(m, c); }
+  const out = new Map(), inn = new Map(), etype = new Map(), issues = [];
+  for (const c of cls.keys()) { out.set(c, new Set()); inn.set(c, new Set()); }
+  for (const r of mx.rows) {
+    if (r.dir === 0) continue;
+    const [hi, lo] = r.dir > 0 ? [classOf.get(r.a), classOf.get(r.b)] : [classOf.get(r.b), classOf.get(r.a)];
+    if (hi === lo) { issues.push(`US ${r.a} e US ${r.b} sono dichiarate contemporanee ma anche in sequenza (${r.tipo}).`); continue; }
+    out.get(hi).add(lo); inn.get(lo).add(hi); etype.set(hi + "\u0000" + lo, r.tipo);
+  }
+  // cicli: archi di ritorno trovati con una visita in profondità (vengono ignorati per l'ordinamento)
+  const state0 = new Map(), back = new Set();
+  const dfs = u => { state0.set(u, 1); for (const v of out.get(u)) { const s = state0.get(v); if (s === 1) back.add(u + "\u0000" + v); else if (!s) dfs(v); } state0.set(u, 2); };
+  for (const c of [...cls.keys()].sort(natCmp)) if (!state0.get(c)) dfs(c);
+  for (const k of back) { const [u, v] = k.split("\u0000"); out.get(u).delete(v); inn.get(v).delete(u); issues.push(`Il matrix contiene un ciclo tra US ${cls.get(u).join("=")} e US ${cls.get(v).join("=")}: un rapporto è da correggere.`); }
+  // livelli: cammino più lungo dalle US più recenti
+  const level = new Map(), indeg = new Map([...inn].map(([k, s]) => [k, s.size])), queue = [...cls.keys()].filter(c => !indeg.get(c));
+  queue.forEach(c => level.set(c, 0));
+  while (queue.length) { const u = queue.shift(); for (const v of out.get(u)) { level.set(v, Math.max(level.get(v) || 0, level.get(u) + 1)); indeg.set(v, indeg.get(v) - 1); if (!indeg.get(v)) queue.push(v); } }
+  // distanze in passaggi (ricerca in ampiezza da ogni classe verso le più antiche)
+  const dist = new Map();
+  for (const c of cls.keys()) { const d = new Map([[c, 0]]), q = [c]; while (q.length) { const u = q.shift(); for (const v of out.get(u)) if (!d.has(v)) { d.set(v, d.get(u) + 1); q.push(v); } } dist.set(c, d); }
+  const label = c => cls.get(c).map(x => "US " + x).join(" = ");
+  return { cls, classOf, out, inn, etype, level, dist, issues, label };
+}
+function setMatrix(mx) { state.matrix = mx ? { ...mx, g: buildMatrix(mx) } : null; renderMatrixPanel(); }
+/* relazione tra due US secondo il matrix */
+function mxRelation(G, a, b) {
+  if (a === null || b === null) return { k: "fuori" };
+  if (a === b) return { k: "stessa" };
+  const ca = G.classOf.get(a), cb = G.classOf.get(b);
+  if (!ca || !cb) return { k: "fuori" };
+  if (ca === cb) return { k: "contemporanee" };
+  const d1 = G.dist.get(ca).get(cb), d2 = G.dist.get(cb).get(ca), d = d1 ?? d2;
+  if (d === undefined) return { k: "rami" };
+  return { k: d === 1 ? "diretto" : d === 2 ? "due" : "lontane", d, sopra: d1 !== undefined ? a : b };
+}
+const MX_CAT = [["stessa", "Nella stessa US", "--c3"], ["contemporanee", "Tra US contemporanee (uguale a, si lega a)", "--c3"], ["diretto", "Tra US in rapporto diretto", "--c1"], ["due", "Tra US a due passaggi nella sequenza", "--c4"], ["lontane", "Tra US a tre o più passaggi", "--c2"], ["rami", "Tra US su rami diversi del matrix (non in sequenza)", "--c8"], ["fuori", "Con US che non sono nel matrix", "--other"]];
+function matrixAnalysis(res) {
+  const M = state.matrix; if (!M || !res) return null;
+  const G = M.g, cnt = Object.fromEntries(MX_CAT.map(c => [c[0], 0])), pairs = new Map();
+  const usData = new Set([...res.frags.values()].map(f => usKey(f.us)).filter(Boolean));
+  let L = 0;
+  for (const l of res.direct) {
+    const a = usKey(l.usA), b = usKey(l.usB); if (a === null || b === null) continue;
+    const r = mxRelation(G, a, b); cnt[r.k]++; L++;
+    if (a !== b) { const [p, q] = natCmp(a, b) <= 0 ? [a, b] : [b, a], key = p + "\u0000" + q; const o = pairs.get(key) || { a: p, b: q, n: 0, r }; o.n++; pairs.set(key, o); }
+  }
+  const missing = [...usData].filter(u => !G.classOf.has(u)).sort(natCmp);
+  return { G, cnt, L, pairs: [...pairs.values()].sort((x, y) => y.n - x.n), missing, usData };
+}
+function matrixProblems(A) {
+  const M = state.matrix, out = [];
+  if (!M) return out;
+  if (M.bad.length) out.push(`${M.bad.length} ${M.bad.length === 1 ? "riga del matrix non è stata riconosciuta" : "righe del matrix non sono state riconosciute"}: ${M.bad.slice(0, 4).join("; ")}${M.bad.length > 4 ? "…" : ""}.`);
+  out.push(...M.g.issues);
+  if (A && A.missing.length) out.push(`${A.missing.length === 1 ? "La US" : "Le US"} ${A.missing.join(", ")} ${A.missing.length === 1 ? "ha frammenti ma non compare" : "hanno frammenti ma non compaiono"} nel matrix.`);
+  return out;
+}
+/* diagramma: US su livelli dall'alto (più recenti) in basso, attacchi come archi colorati */
+function matrixSVG(A) {
+  const G = A.G, classes = [...G.cls.keys()];
+  const byLevel = new Map(); for (const c of classes) { const l = G.level.get(c) || 0; if (!byLevel.has(l)) byLevel.set(l, []); byLevel.get(l).push(c); }
+  const levels = [...byLevel.keys()].sort((a, b) => a - b);
+  const fr = new Map(); for (const f of state.res.frags.values()) { const u = usKey(f.us); if (u) { const c = G.classOf.get(u); if (c) fr.set(c, (fr.get(c) || 0) + 1); } }
+  const inside = new Map(); for (const l of state.res.direct) { const a = usKey(l.usA), b = usKey(l.usB); if (a && b && G.classOf.get(a) && G.classOf.get(a) === G.classOf.get(b)) { const c = G.classOf.get(a); inside.set(c, (inside.get(c) || 0) + 1); } }
+  const sub = c => { const n = fr.get(c) || 0, ins = inside.get(c) || 0; return n ? `${n} fr.${ins ? ` · ${ins} att. interni` : ""}` : "senza frammenti"; };
+  const bw = c => Math.max(84, G.label(c).length * 7.6 + 24, sub(c).length * 6.6 + 20), BH = 40, GAP = 40, ROW = 92, TOP = 26;
+  const x = new Map();
+  // ordine nei livelli: baricentro delle US sopra (due passate)
+  for (let pass = 0; pass < 2; pass++) for (const l of levels) {
+    const row = byLevel.get(l);
+    row.sort((a, b) => { const bc = c => { const ps = [...G.inn.get(c)].filter(p => x.has(p)); return ps.length ? ps.reduce((s, p) => s + x.get(p), 0) / ps.length : 1e9; }; return bc(a) - bc(b) || natCmp(a, b); });
+    let cx = 0; for (const c of row) { x.set(c, cx + bw(c) / 2); cx += bw(c) + GAP; }
+  }
+  const rowW = l => byLevel.get(l).reduce((s, c) => s + bw(c), 0) + GAP * (byLevel.get(l).length - 1);
+  const W = Math.max(...levels.map(rowW)) + 240;
+  for (const l of levels) { const off = (W - 200 - rowW(l)) / 2; for (const c of byLevel.get(l)) x.set(c, x.get(c) + off); }
+  const y = c => TOP + (G.level.get(c) || 0) * ROW;
+  const H = TOP + (levels.length - 1) * ROW + BH + 70;
+  let edges = "", arcs = "", boxes = "";
+  for (const [u, vs] of G.out) for (const v of vs) {
+    const t = G.etype.get(u + "\u0000" + v) || "";
+    edges += `<line x1="${x.get(u)}" y1="${y(u) + BH}" x2="${x.get(v)}" y2="${y(v)}" class="mxe${t === "si appoggia a" ? " dash" : ""}"><title>${esc(G.label(u))} ${esc(t)} ${esc(G.label(v))}</title></line>`;
+  }
+  const colOf = k => `var(${MX_CAT.find(c => c[0] === k)[2]})`;
+  A.pairs.forEach((p, i) => {
+    const ca = G.classOf.get(p.a), cb = G.classOf.get(p.b); if (!ca || !cb || ca === cb) return;
+    const w = Math.min(9, 1.4 + 1.1 * p.n), same = (G.level.get(ca) || 0) === (G.level.get(cb) || 0);
+    let x1, y1, x2, y2, mx, my;
+    if (same) { x1 = x.get(ca); x2 = x.get(cb); y1 = y2 = y(ca) + BH; mx = (x1 + x2) / 2; my = y1 + 34 + (i % 3) * 8; }
+    else {
+      x1 = x.get(ca) + bw(ca) / 2; y1 = y(ca) + BH / 2; x2 = x.get(cb) + bw(cb) / 2; y2 = y(cb) + BH / 2;
+      mx = Math.max(x1, x2) + 40 + 26 * Math.abs((G.level.get(ca) || 0) - (G.level.get(cb) || 0)) + (i % 3) * 10; my = (y1 + y2) / 2;
+    }
+    const lab = { stessa: "", contemporanee: "contemporanee", diretto: "rapporto diretto", due: "2 passaggi", lontane: `${p.r.d} passaggi`, rami: "rami diversi", fuori: "fuori dal matrix" }[p.r.k];
+    arcs += `<path d="M${x1},${y1} Q${mx},${my} ${x2},${y2}" fill="none" stroke="${colOf(p.r.k)}" stroke-width="${w}" stroke-opacity=".8"><title>US ${esc(p.a)} – US ${esc(p.b)}: ${p.n} attacchi · ${lab}</title></path>`;
+    arcs += `<text x="${(x1 + x2) / 4 + mx / 2 + 4}" y="${same ? (y1 + my) / 2 + 12 : my + 4}" class="mxn">${p.n}</text>`;
+  });
+  for (const c of classes) {
+    const n = fr.get(c) || 0, ins = inside.get(c) || 0, w = bw(c);
+    boxes += `<g><rect x="${x.get(c) - w / 2}" y="${y(c)}" width="${w}" height="${BH}" rx="4" class="mxb${n ? "" : " empty"}"/><text x="${x.get(c)}" y="${y(c) + 17}" class="mxl">${esc(G.label(c))}</text><text x="${x.get(c)}" y="${y(c) + 32}" class="mxs">${sub(c)}</text><title>${esc(G.label(c))}: ${n} frammenti, ${ins} attacchi interni</title></g>`;
+  }
+  return `<div class="svgscroll"><svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W, 1200)}px;max-width:${W}px" role="img" aria-label="Matrix di Harris con gli attacchi">${edges}${arcs}${boxes}</svg></div>`;
+}
+function tabMatrixHarris(P, res) {
+  const A = matrixAnalysis(res);
+  if (!A) {
+    P.innerHTML = `<div class="summary"><p>Nessun matrix caricato. Carica un CSV con una riga per rapporto stratigrafico (<span class="mono">US;rapporto;US</span>) dal riquadro <b>Matrix di Harris</b> nel pannello a sinistra, oppure scarica il modello.</p><p>Con il matrix gli attacchi vengono letti sulla sequenza stratigrafica vera e non più sull'ordine di quota.</p></div>`;
+    return;
+  }
+  const probs = matrixProblems(A), pc = n => A.L ? Math.round(100 * n / A.L) + "%" : "—";
+  const cat = MX_CAT.filter(c => A.cnt[c[0]] || ["stessa", "diretto", "rami"].includes(c[0]));
+  const rami = A.pairs.filter(p => p.r.k === "rami");
+  P.innerHTML = `<div class="summary">
+      <p>Matrix: <b>${A.G.cls.size}</b> ${A.G.cls.size === 1 ? "unità" : "unità"} stratigrafiche (US uguali o legate contano come una), ${state.matrix.rows.length} rapporti${state.matrix.source ? ` · <span class="mono">${esc(state.matrix.source)}</span>` : ""}.</p>
+      <p>Su <b>${A.L}</b> attacchi tra frammenti con US: ${cat.map(c => `<b>${pc(A.cnt[c[0]])}</b> ${c[1][0].toLowerCase() + c[1].slice(1)}`).join("; ")}.</p>
+      ${rami.length ? `<p>Gli attacchi tra US su rami diversi (${rami.map(p => `US ${esc(p.a)} – US ${esc(p.b)}: ${p.n}`).join("; ")}) collegano unità che il matrix non mette in sequenza: possono indicare che sono contemporanee, o la stessa unità divisa in scavo.</p>` : ""}
+      ${probs.length ? `<p class="rwarn">${probs.map(esc).join("<br>")}</p>` : ""}
+    </div>
+    <div class="chart"><h3>Matrix di Harris e attacchi</h3><p>Dall'alto le US più recenti. Linee grigie: rapporti stratigrafici (tratteggio: si appoggia a). Archi colorati: attacchi tra US, spessore = numero di attacchi.</p>
+      ${matrixSVG(A)}
+      <div class="lg" style="margin-top:6px">${MX_CAT.filter(c => !["stessa", "fuori"].includes(c[0])).map(c => `<span><i style="background:var(${c[2]})"></i>${c[1].replace(/^Tra /, "")}</span>`).join("")}</div>
+    </div>
+    <h3 class="sub">Attacchi tra US secondo il matrix</h3>
+    <div class="tablewrap"><table><thead><tr><th>US</th><th>US</th><th class="n">Attacchi</th><th>Relazione nel matrix</th></tr></thead><tbody>
+    ${A.pairs.map(p => `<tr><td class="mono">${esc(p.a)}</td><td class="mono">${esc(p.b)}</td><td class="n">${p.n}</td><td>${{ contemporanee: "contemporanee", diretto: `rapporto diretto (US ${esc(p.r.sopra)} sopra)`, due: `2 passaggi (US ${esc(p.r.sopra)} sopra)`, lontane: `${p.r.d} passaggi (US ${esc(p.r.sopra)} sopra)`, rami: "rami diversi: non in sequenza", fuori: "una delle US non è nel matrix" }[p.r.k]}</td></tr>`).join("") || `<tr><td colspan="4">Nessun attacco tra US diverse.</td></tr>`}
+    </tbody></table></div>
+    <p class="note">Il matrix si importa come CSV con una riga per rapporto: US, rapporto, US. Rapporti riconosciuti: copre / coperto da, taglia / tagliato da, riempie / riempito da, si appoggia a / gli si appoggia, posteriore a / anteriore a, uguale a, si lega a (anche in inglese). Le coordinate x, y, z dei frammenti non cambiano: il matrix aggiunge solo la sequenza delle US.</p>`;
+}
+function renderMatrixPanel() {
+  const M = state.matrix, h = $("#mxHint");
+  $("#mxCount").textContent = M ? `${M.g.cls.size} US · ${M.rows.length} rapporti` : "";
+  $("#mxDemo").hidden = !state.demo;
+  $("#mxDel").hidden = !M;
+  if (!M) h.textContent = "Facoltativo. Una riga per rapporto: US, rapporto, US (per esempio 6;copre;16). Con il matrix gli attacchi si leggono sulla sequenza vera.";
+  else { const A = matrixAnalysis(state.res), pr = matrixProblems(A); h.textContent = `Caricato: ${M.source}.${pr.length ? " " + pr.length + (pr.length === 1 ? " problema: vedi la scheda Matrix." : " problemi: vedi la scheda Matrix.") : ""}`; }
+}
+function loadMatrixText(text, source) {
+  const mx = parseMatrix(text, source);
+  if (!mx.rows.length) { toast(`Nessun rapporto riconosciuto in ${source}: servono tre colonne US, rapporto, US.`); return; }
+  setMatrix(mx); state.dirty = !!state.project; renderProjects(); renderTabs();
+  toast(`Matrix caricato: ${mx.rows.length} rapporti${mx.bad.length ? `, ${mx.bad.length} ${mx.bad.length === 1 ? "riga non riconosciuta" : "righe non riconosciute"}` : ""}.`);
+}
+const isMatrixCSV = text => { const first = (text.replace(/^﻿/, "").split(/\r?\n/).find(l => l.trim()) || "").toLowerCase(); return /rapport|relaz|relation/.test(first); };
+$("#mxFile").addEventListener("change", e => { const f = e.target.files[0]; if (f) f.text().then(t => loadMatrixText(t, f.name)); e.target.value = ""; });
+$("#mxDemo").addEventListener("click", () => { loadMatrixText(DEMO_MATRIX, "matrix_esempio.csv"); state.tab = "matrix"; renderTabs(); });
+$("#mxDel").addEventListener("click", () => { setMatrix(null); renderTabs(); toast("Matrix rimosso."); });
+$("#mxTpl").addEventListener("click", () => deliver({ name: "modello_matrix.csv", data: DEMO_MATRIX, keepName: true }));
+function matrixBanner(P, res) {
+  const A = matrixAnalysis(res); if (!A || !A.L) return;
+  const pc = n => Math.round(100 * n / A.L) + "%", c = A.cnt;
+  P.insertAdjacentHTML("afterbegin", `<div class="rtop"><h3>Con il matrix di Harris</h3><p>Sulla sequenza stratigrafica vera: ${[[c.stessa, "nella stessa US"], [c.contemporanee, "tra US contemporanee"], [c.diretto, "tra US in rapporto diretto"], [c.due + c.lontane, "tra US più lontane nella sequenza"], [c.rami, "tra US su rami diversi"], [c.fuori, "con US fuori dal matrix"]].filter(([n], i) => n || i === 0).map(([n, t]) => `${pc(n)} ${t}`).join(", ")}.</p><p class="hint">Più sotto l'ordine delle US è ancora quello di quota, un'approssimazione: la sequenza vera è nella scheda Matrix.</p><div class="rfoot"><button class="btn rgo" type="button" data-go="matrix">Matrix →</button></div></div>`);
+  P.querySelector('[data-go="matrix"]').addEventListener("click", () => { state.tab = "matrix"; renderTabs(); });
 }
 function tabIssues(P, res) {
   const fixHtml = fixesBlock();
@@ -2936,7 +3168,7 @@ $("#newBtn").addEventListener("click", newDataset);
 
 /* ---------- progetti: salvati nel browser, si riprendono o si eliminano ---------- */
 const PROJ_KEY = "rete-rimontaggi.progetti.v1", PROJ_FMT = "rete-rimontaggi-progetto";
-const VIEWS = ["pianta", "eo", "ns", "3d"], TABS = ["riassunto", "gruppi", "collegamenti", "matrice", "distanze", "fasi", "palinsesto", "controlli", "dati"];
+const VIEWS = ["pianta", "eo", "ns", "3d"], TABS = ["riassunto", "gruppi", "collegamenti", "matrice", "distanze", "fasi", "palinsesto", "matrix", "controlli", "dati"];
 let projMem = null;   // ripiego se l'archivio del browser non è disponibile
 function projAll() {
   if (projMem) return projMem;
@@ -2950,6 +3182,7 @@ function projSnapshot(nome, id) {
   return { formato: PROJ_FMT, versione: 1, id, nome, salvato: new Date().toISOString(),
     source: state.source, demo: state.demo, headers: state.headers, rows: state.rows, map: state.map,
     opt: state.opt, show: state.show, phOpt: state.phOpt, correzioni: state.fixLog,
+    matrix: state.matrix ? { source: state.matrix.source, text: state.matrix.text } : null,
     vista: { colorBy: state.colorBy, view: state.view, exag: state.exag, strataA: state.strataA, tab: state.tab } };
 }
 /* riporta lo stato sui comandi del pannello */
@@ -2977,6 +3210,7 @@ function projOpen(p) {
   state.view = "pianta"; state.sel = null; state.strataFocus = ""; state.sort = {};
   state.project = { id: p.id, nome: p.nome };
   state.history = []; state.dirty = false; state.dataFilter = "";
+  setMatrix(p.matrix && typeof p.matrix.text === "string" ? parseMatrix(p.matrix.text, String(p.matrix.source || "matrix")) : null);
   state.fixLog = Array.isArray(p.correzioni) ? p.correzioni.filter(x => x && typeof x.msg === "string").map(x => ({ t: String(x.t || ""), msg: x.msg })) : [];
   $("#tbSource").textContent = state.source; $("#demoBadge").hidden = !state.demo; $("#rowCount").textContent = `${state.rows.length} righe`;
   syncControls(); renderFields(); run(true);

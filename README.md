@@ -64,6 +64,7 @@ Le regole complete sono in [`dati_esempio/LEGGIMI.md`](dati_esempio/LEGGIMI.md).
 | Distanze | Istogrammi della distanza in pianta e della differenza di quota |
 | Concentrazioni | Raggruppamenti statistici dei frammenti per posizione e verifica con i rimontaggi |
 | Palinsesto | Attacchi nell'ordine di quota delle US, osservati contro attesi, insiemi di US |
+| Matrix | Il matrix di Harris importato, con gli attacchi letti sulla sequenza stratigrafica vera |
 | Controlli | Errori nei dati e correzioni proposte |
 | Dati | La tabella, modificabile cella per cella |
 
@@ -92,6 +93,25 @@ Ogni correzione si applica con un clic, si può annullare e resta registrata nel
 
 **Esportazioni.** Collegamenti, gruppi e frammenti in GeoJSON (si aprono in QGIS; il sistema di riferimento va assegnato a mano), tabelle CSV di matrice US, controlli, concentrazioni, sintesi per US, osservati e attesi, un CSV pronto per `palimpsestr::fit_sef` e la tabella dei dati modificati.
 
+## Matrix di Harris
+
+Facoltativo. Si importa un CSV con una riga per rapporto stratigrafico, nella forma `US;rapporto;US`:
+
+```
+US;rapporto;US
+6;copre;16
+36;riempie;34
+34;taglia;21
+21;si appoggia a;30
+21;uguale a;22
+```
+
+Rapporti riconosciuti: copre / coperto da, taglia / tagliato da, riempie / riempito da, si appoggia a / gli si appoggia, posteriore a / anteriore a, uguale a, si lega a (anche in inglese). Si carica dal riquadro **Matrix di Harris** dopo i dati dei frammenti; **Scarica il modello** dà un file di partenza. Ogni attacco viene classificato: nella stessa US, tra US contemporanee, in rapporto diretto, a due o più passaggi nella sequenza, oppure tra US su rami diversi del matrix. Le coordinate x, y, z dei frammenti non cambiano.
+
+La scheda **Matrix** disegna il diagramma con gli attacchi come archi colorati. Istruzioni complete ed esempi in [`dati_esempio/LEGGIMI.md`](dati_esempio/LEGGIMI.md).
+
+![Scheda Matrix](docs/img/scheda_matrix.jpg)
+
 ## Dati di esempio
 
 Nella cartella [`dati_esempio`](dati_esempio) ci sono dataset **sintetici**, costruiti per mostrare configurazioni diverse:
@@ -103,7 +123,7 @@ Nella cartella [`dati_esempio`](dati_esempio) ci sono dataset **sintetici**, cos
 | `3_area_uso_e_scarico` | Frammenti piccoli nell'area d'uso, pezzi grandi in uno scarico a cinque metri: attacchi lunghi in pianta |
 | `4_dati_da_correggere` | Il primo dataset con errori messi apposta, per provare il correttore |
 
-I primi tre sono sia in CSV sia in GeoJSON, con dati identici.
+I primi tre sono sia in CSV sia in GeoJSON, con dati identici. Per ognuno c'è anche un matrix di Harris d'esempio (`*_matrix.csv`); il matrix dell'esempio interno si carica da solo.
 
 ## Parole usate
 
